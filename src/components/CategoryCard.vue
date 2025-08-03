@@ -1,67 +1,78 @@
 <template>
-  <v-card rounded>
-    <v-toolbar>
-      <v-toolbar-title>
-        {{ name }}
+  <Card class="w-full">
+    <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+      <div class="flex items-center space-x-2">
+        <CardTitle>{{ name }}</CardTitle>
         <DancerCount :count="totalDancers" />
-      </v-toolbar-title>
-      <span>Split into: &nbsp;</span>
-      <v-text-field
-        type="number"
-        v-model="numAgeGroups"
-        hide-details
-        density="compact"
-        variant="outlined"
-        :min="1"
-        :max="ageCountsArray.length"
-        class="flex-grow-0 mr-4"
-        @blur="!numAgeGroups && (numAgeGroups = getDefaultNumAgeGroups())"
-        @keyup.enter="!numAgeGroups && $event.target.blur()"
-      />
-    </v-toolbar>
-    <div class="cols-container">
-      <div ref="colsRef" class="cols">
-        <v-list dense>
-          <v-list-item
-            v-for="[age, count] in ageCountsArray"
-            :key="age"
-            ref="leftSideRef"
-            style="min-height: 0"
-          >
-            Age {{ age }}
-            <DancerCount :count="count" :total="totalDancers" size="x-small" />
-          </v-list-item>
-        </v-list>
-        <v-spacer />
-        <v-list dense>
-          <v-list-item
-            v-for="([[minAge, maxAge], count], index) in partitionedAgeCountsArray"
-            :key="index"
-            ref="rightSideRef"
-            :style="{ height: `${(count / totalDancers) * 100}%` }"
-          >
-            {{ getAgeGroupName(minAge, maxAge, isPrintingYears) }}
-            <DancerCount :count="count" :total="totalDancers" size="x-small" />
-          </v-list-item>
-        </v-list>
       </div>
-      <svg v-if="rightSideRef?.length > 1">
-        <path
-          v-for="(el, index) in rightSideRef.slice(0, rightSideRef.length - 1)"
-          :key="index"
-          :d="getCurvePath(el, index)"
+      <div class="flex items-center space-x-2">
+        <span class="text-sm text-muted-foreground">Split into:</span>
+        <Input
+          type="number"
+          v-model.number="numAgeGroups"
+          :min="1"
+          :max="ageCountsArray.length"
+          class="w-20"
+          @blur="!numAgeGroups && (numAgeGroups = getDefaultNumAgeGroups())"
+          @keyup.enter="($event.target as HTMLInputElement).blur()"
         />
-      </svg>
-    </div>
-  </v-card>
+      </div>
+    </CardHeader>
+    <CardContent>
+      <div class="cols-container">
+        <div ref="colsRef" class="cols">
+          <!-- Left side: Individual ages -->
+          <div class="space-y-1">
+            <div
+              v-for="[age, count] in ageCountsArray"
+              :key="age"
+              ref="leftSideRef"
+              class="flex items-center justify-between p-2 text-sm bg-muted/30 rounded"
+            >
+              <span>Age {{ age }}</span>
+              <DancerCount :count="count" :total="totalDancers" size="x-small" />
+            </div>
+          </div>
+          
+          <!-- Spacer -->
+          <div class="w-8"></div>
+          
+          <!-- Right side: Partitioned groups -->
+          <div class="space-y-1">
+            <div
+              v-for="([[minAge, maxAge], count], index) in partitionedAgeCountsArray"
+              :key="index"
+              ref="rightSideRef"
+              :style="{ height: `${Math.max(20, (count / totalDancers) * 200)}px` }"
+              class="flex items-center justify-between p-2 text-sm bg-primary/10 border border-primary/20 rounded"
+            >
+              <span class="font-medium">{{ getAgeGroupName(minAge, maxAge, isPrintingYears) }}</span>
+              <DancerCount :count="count" :total="totalDancers" size="x-small" />
+            </div>
+          </div>
+        </div>
+        
+        <!-- SVG connections -->
+        <svg v-if="rightSideRef?.length > 1" class="absolute inset-0 w-full h-full pointer-events-none">
+          <path
+            v-for="(el, index) in rightSideRef.slice(0, rightSideRef.length - 1)"
+            :key="index"
+            :d="getCurvePath(el, index)"
+            class="stroke-muted-foreground/25 fill-none stroke-1"
+          />
+        </svg>
+      </div>
+    </CardContent>
+  </Card>
 </template>
 
 <script lang="ts" setup>
 import { ref, computed, watch, inject, onMounted, onUnmounted } from 'vue'
 import partition from 'linear-partitioning'
-
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import DancerCount from '@/components/DancerCount.vue'
-import { getAgeGroupName } from '@/helpers'
+import { getAgeGroupName } from '@/lib/helpers'
 
 const props = defineProps({
   name: {
@@ -73,6 +84,7 @@ const props = defineProps({
     required: true,
   },
 })
+
 const isPrintingYears = inject<boolean>('isPrintingYears')
 
 const ageCountsArray = computed(() => {
@@ -80,17 +92,21 @@ const ageCountsArray = computed(() => {
     .map(([age, count]) => [Number(age), count])
     .sort(([ageA], [ageB]) => ageA - ageB)
 })
+
 const totalDancers = computed(() => {
   return ageCountsArray.value.reduce((sum, [, count]) => sum + count, 0)
 })
+
 const averageDancersPerAge = computed(() => {
   return ageCountsArray.value.length
     ? Math.ceil(totalDancers.value / ageCountsArray.value.length)
     : 0
 })
+
 const maxDancersPerAge = computed(() => {
   return ageCountsArray.value.reduce((max, [, count]) => Math.max(max, count), 0)
 })
+
 function getPartitionedAgeCounts(ageCounts: number[][], numPartitions: number) {
   const counts = ageCounts.map(([, count]) => count)
   const partitionedCounts: number[][] = partition(
@@ -123,9 +139,11 @@ function getPartitionedAgeCounts(ageCounts: number[][], numPartitions: number) {
   // TODO: handle edge case where Premier needs to be split around/above 12 y/o, since steps change
   return result
 }
+
 function getAverage(array: number[]) {
   return array.reduce((sum, value) => sum + value, 0) / array.length
 }
+
 function getDefaultNumAgeGroups() {
   const targetDancersPerGroup = Math.max(
     totalDancers.value / averageDancersPerAge.value,
@@ -143,39 +161,48 @@ function getDefaultNumAgeGroups() {
   }
   return min.numPartitions
 }
+
 const numAgeGroups = ref(getDefaultNumAgeGroups())
 const partitionedAgeCountsArray = computed(() => {
   return getPartitionedAgeCounts(ageCountsArray.value, numAgeGroups.value)
 })
 
 const colsRef = ref()
-const leftSideRef = ref()
-const rightSideRef = ref()
+const leftSideRef = ref<HTMLElement[]>([])
+const rightSideRef = ref<HTMLElement[]>([])
 const changeTracker = ref(false)
-function getCurvePath(rightSide: any, rightSideIndex: number) {
+
+function getCurvePath(rightSide: HTMLElement, rightSideIndex: number) {
   const maxAge = partitionedAgeCountsArray.value[rightSideIndex]?.[0]?.[1]
   const leftSideIndex = ageCountsArray.value.findIndex(([age]) => age === maxAge)
-  const leftSide =
-    leftSideRef.value[leftSideIndex === -1 ? leftSideRef.value.length - 1 : leftSideIndex]
-  const root = colsRef.value?.getBoundingClientRect()
-  const left = leftSide.$el.getBoundingClientRect()
-  const right = rightSide.$el.getBoundingClientRect()
-  const path = `
+  const leftSide = leftSideRef.value[leftSideIndex === -1 ? leftSideRef.value.length - 1 : leftSideIndex]
+  
+  if (!colsRef.value || !leftSide || !rightSide) return ''
+  
+  const root = colsRef.value.getBoundingClientRect()
+  const left = leftSide.getBoundingClientRect()
+  const right = rightSide.getBoundingClientRect()
+  
+  return `
     M ${left.left - root.left} ${left.top - root.top + left.height}
     L ${left.left - root.left + left.width} ${left.top - root.top + left.height}
     C ${root.left + root.width / 2} ${left.top - root.top + left.height},
       ${root.left + root.width / 2} ${right.top - root.top + right.height},
       ${right.left - root.left} ${right.top - root.top + right.height}
     L ${right.left - root.left + right.width} ${right.top - root.top + right.height}`
-  return path
 }
+
 function refresh() {
   changeTracker.value = !changeTracker.value
 }
+
 defineExpose({ refresh })
+
 const resizeObserver = new ResizeObserver(() => refresh())
 onMounted(() => {
-  resizeObserver.observe(colsRef.value)
+  if (colsRef.value) {
+    resizeObserver.observe(colsRef.value)
+  }
 })
 onUnmounted(() => {
   resizeObserver.disconnect()
@@ -198,26 +225,14 @@ watch(
 .cols-container {
   position: relative;
 }
+
 .cols {
   display: flex;
+  gap: 1rem;
 }
-.cols > * {
-  flex: auto;
-  flex-basis: calc(100% / 3);
-  overflow: visible;
-}
-.cols > * > * {
-  min-height: 0 !important;
-}
-svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-svg path {
-  stroke: rgba(0, 0, 0, 0.25);
-  fill: transparent;
+
+.cols > div:first-child,
+.cols > div:last-child {
+  flex: 1;
 }
 </style>
