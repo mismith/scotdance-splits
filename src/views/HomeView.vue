@@ -19,20 +19,21 @@
         </div>
 
         <!-- Two-column preview with more data -->
-        <div class="flex min-h-0">
-          <div class="flex flex-col xl:flex-row gap-6 max-w-6xl mx-auto justify-center items-center">
+        <div class="flex min-h-0 justify-center">
+          <div class="preview-grid">
             <!-- Input preview -->
-            <div class="space-y-4 flex-1 flex flex-col items-center">
+            <div class="input-section">
               <h3
-                class="text-lg text-center font-semibold text-foreground animate-fade-in-up opacity-0 [animation-delay:200ms]!"
+                class="text-lg text-center font-semibold text-foreground animate-fade-in-up opacity-0 [animation-delay:200ms]! mb-4"
               >
+                <span class="text-muted-foreground text-xs uppercase">From:</span>
                 Input
               </h3>
               <div class="bg-card border rounded-lg p-4 min-w-max animate-fade-in-up opacity-0 [animation-delay:100ms]!">
                 <div
                   class="text-sm font-medium text-muted-foreground mb-3 animate-fade-in-up opacity-0 [animation-delay:300ms]!"
                 >
-                  Your CSV file
+                  Your CSV file:
                 </div>
                 <div class="grid grid-cols-5 gap-1 text-xs min-w-max  -mx-2">
                   <div
@@ -269,28 +270,28 @@
                     Mar 20
                   </div>
                 </div>
+              </div>
 
-                <!-- Help tip -->
-                <div class="flex items-start gap-2 mt-6 p-2 bg-muted text-muted-foreground rounded-md animate-fade-in-up opacity-0 [animation-delay:1400ms]!">
-                  <Info class="h-3 w-3  shrink-0 mt-0.5" />
-                  <p class="text-xs ">
-                    You can have different columns, in any order, and it can parse many different formats.
-                  </p>
-                </div>
+              <!-- Help tip moved outside the card -->
+              <div class="flex items-start text-xs gap-2 mt-4 p-2 bg-muted text-muted-foreground rounded-md animate-fade-in-up opacity-0 [animation-delay:1400ms]!">
+                <Info class="h-3 w-3 shrink-0 mt-0.5" />
+                  You can have different columns, in any order,<br />
+                  and it can parse many different formats.
               </div>
             </div>
 
             <!-- Arrow - responsive direction -->
-            <div class="flex-shrink-0 text-muted-foreground">
+            <div class="arrow-section">
               <ChevronRight class="h-8 w-8 hidden xl:block animate-slide-in-left opacity-0 [animation-delay:1800ms]!" />
               <ChevronDown class="h-8 w-8 block xl:hidden animate-slide-in-down opacity-0 [animation-delay:1800ms]!" />
             </div>
 
             <!-- Output preview -->
-            <div class="space-y-4 flex-1 flex flex-col items-center">
+            <div class="output-section">
               <h3
-                class="text-lg text-center font-semibold text-foreground animate-fade-in-up opacity-0 [animation-delay:2100ms]!"
+                class="text-lg text-center font-semibold text-foreground animate-fade-in-up opacity-0 [animation-delay:2100ms]! mb-4"
               >
+                <span class="text-muted-foreground text-xs uppercase">To:</span>
                 Output
               </h3>
               <div
@@ -299,7 +300,7 @@
                 <div
                   class="text-sm font-medium text-muted-foreground animate-fade-in-up opacity-0 [animation-delay:2200ms]!"
                 >
-                  Organized by age groups with bib numbers
+                  Organized by age groups with bib numbers:
                 </div>
 
                 <!-- Premier 6-8 Years -->
@@ -704,5 +705,59 @@ defineEmits<{
 
 .animate-slide-in-down {
   animation: slide-in-down 0.8s ease-out forwards;
+}
+
+/* CSS Grid layout for preview sections */
+.preview-grid {
+  display: grid;
+  gap: 1.5rem;
+  place-items: center;
+  /* Mobile/tablet: vertical stack */
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto auto;
+  grid-template-areas:
+    "input"
+    "arrow"
+    "output";
+}
+
+/* Desktop: horizontal layout with precise positioning */
+@media (min-width: 1280px) {
+  .preview-grid {
+    grid-template-columns: auto auto auto;
+    grid-template-rows: auto;
+    grid-template-areas: "input arrow output";
+    align-items: start;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .arrow-section {
+    /* Center the arrow based on the shorter table height */
+    align-self: center;
+    margin-top: 2.5rem; /* Offset for headers */
+  }
+}
+
+.input-section {
+  grid-area: input;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.arrow-section {
+  grid-area: arrow;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: rgb(var(--color-muted-foreground));
+}
+
+.output-section {
+  grid-area: output;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 </style>
