@@ -1,9 +1,11 @@
 <template>
-  <HotTable
-    ref="hotRef"
-    :settings="hotSettings"
-    class="overflow-hidden"
-  />
+  <div class="h-full w-full">
+    <HotTable
+      ref="hotRef"
+      :settings="hotSettings"
+      class="overflow-hidden w-full h-full"
+    />
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -30,6 +32,7 @@ const defaultSettings = {
   colHeaders: true,
   rowHeaders: true,
   stretchH: 'all',
+  height: 400,
   modifyColWidth: (w: number) => Math.min(w, window.innerWidth / 2), // prevent super-wide cells
 };
 

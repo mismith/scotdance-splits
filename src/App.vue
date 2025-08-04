@@ -1,205 +1,236 @@
 <script setup lang="ts">
-import { ref, computed, reactive, watch, provide, nextTick } from "vue";
-import { parse, unparse } from "papaparse";
+import { ref, computed, reactive, watch, provide, nextTick } from 'vue'
+import { parse, unparse } from 'papaparse'
 
-import { getAgeGroupName, CATEGORY_CODE_NAMES, INPUT_COLUMNS, downloadCSV, type InputColumn } from "@/lib/helpers";
-import HotTable from "@/components/HotTable.vue";
-import CategoryCard from "@/components/CategoryCard.vue";
-import SettingsPane from "@/components/SettingsPane.vue";
-import SettingsGroup from "@/components/SettingsGroup.vue";
-import HomePage from "@/components/HomePage.vue";
-import FileUpload from "@/components/FileUpload.vue";
+import {
+  getAgeGroupName,
+  CATEGORY_CODE_NAMES,
+  INPUT_COLUMNS,
+  downloadCSV,
+  type InputColumn,
+} from '@/lib/helpers'
+import HotTable from '@/components/HotTable.vue'
+import CategoryCard from '@/components/CategoryCard.vue'
+import SettingsPane from '@/components/SettingsPane.vue'
+import SettingsGroup from '@/components/SettingsGroup.vue'
+import HomePage from '@/components/HomePage.vue'
+import FileUpload from '@/components/FileUpload.vue'
 
 // Using custom stepper implementation instead of shadcn stepper
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useDarkMode } from "@/composables/useDarkMode";
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useDarkMode } from '@/composables/useDarkMode'
+import { Sun, Moon } from 'lucide-vue-next'
 
 // Dark mode
-const { isDark, toggle: toggleDarkMode } = useDarkMode();
+const { isDark, toggle } = useDarkMode()
 
 // Step management
-const step = ref(1);
-const maxStep = ref(step.value);
+const step = ref(1)
+const maxStep = ref(step.value)
 watch(step, () => {
   if (maxStep.value < step.value) {
-    maxStep.value = step.value;
+    maxStep.value = step.value
   }
-});
+})
 
 // File input handling
-const INPUT_FILE_ACCEPT = "text/csv";
-const inputFiles = ref<File[]>();
-const inputError = ref<string>();
+const INPUT_FILE_ACCEPT = 'text/csv'
+const inputFiles = ref<File[]>()
+const inputError = ref<string>()
 
-// CSV data processing  
-const inputCSV = ref<string[][]>();
-const isLoadingInputFile = ref(false);
+// CSV data processing
+const inputCSV = ref<string[][]>()
+const isLoadingInputFile = ref(false)
 
 async function handleFileSelected(file: File) {
-  inputError.value = undefined;
-  isLoadingInputFile.value = true;
-  
+  inputError.value = undefined
+  isLoadingInputFile.value = true
+
   try {
     const results = await new Promise<any>((resolve, reject) => {
       parse(file, {
         worker: true,
         complete: resolve,
         error: reject,
-      });
-    });
-    inputCSV.value = results.data as string[][];
-    inputFiles.value = [file];
+      })
+    })
+    inputCSV.value = results.data as string[][]
+    inputFiles.value = [file]
   } catch (error) {
-    inputError.value = "Failed to parse CSV file";
+    inputError.value = 'Failed to parse CSV file'
   } finally {
-    isLoadingInputFile.value = false;
+    isLoadingInputFile.value = false
   }
 }
 
 function handleErrorDismiss() {
-  inputError.value = undefined;
+  inputError.value = undefined
 }
 
 watch(inputCSV, () => {
-  step.value = 1;
-  maxStep.value = 1;
-});
+  step.value = 1
+  maxStep.value = 1
+})
 
 // Column mapping
-const inputHotRef = ref();
-const defaultInputHeaders = ref<string[]>();
-const hasHeaderRow = ref(true);
+const inputHotRef = ref()
+const defaultInputHeaders = ref<string[]>()
+const hasHeaderRow = ref(true)
 
 watch(hasHeaderRow, async (v) => {
   if (!v) {
-    await nextTick();
-    defaultInputHeaders.value = inputHotRef.value?.hotInstance.getColHeader();
+    await nextTick()
+    defaultInputHeaders.value = inputHotRef.value?.hotInstance.getColHeader()
   }
-});
+})
 
 const inputHeaders = computed<string[]>(() => {
-  return (hasHeaderRow.value
-    ? inputCSV.value?.[0]
-    : defaultInputHeaders.value)
-    || [];
-});
+  return (hasHeaderRow.value ? inputCSV.value?.[0] : defaultInputHeaders.value) || []
+})
 
 const inputData = computed(() => {
-  return inputCSV.value?.slice(hasHeaderRow.value ? 1 : 0);
-});
+  return inputCSV.value?.slice(hasHeaderRow.value ? 1 : 0)
+})
 
-const colIndexes = reactive(INPUT_COLUMNS.reduce((acc, col) => {
-  acc[col.id] = 0;
-  return acc;
-}, {} as Record<string, number>));
+const colIndexes = reactive(
+  INPUT_COLUMNS.reduce(
+    (acc, col) => {
+      acc[col.id] = 0
+      return acc
+    },
+    {} as Record<string, number>,
+  ),
+)
 
 watch(inputHeaders, (headers) => {
   INPUT_COLUMNS.forEach((col) => {
-    colIndexes[col.id] = headers.findIndex((header) => col.regex.test(header));
-  });
-});
+    colIndexes[col.id] = headers.findIndex((header) => col.regex.test(header))
+  })
+})
 
 // Bib number assignment
-const maxBibNumber = ref<number>();
-const defaultMaxBibNumber = ref<number>();
-const isPrintingYears = ref(true);
-provide("isPrintingYears", isPrintingYears);
+const maxBibNumber = ref<number>()
+const defaultMaxBibNumber = ref<number>()
+const isPrintingYears = ref(true)
+provide('isPrintingYears', isPrintingYears)
 
 watch(inputData, (v) => {
-  const defaultValue = Math.round(((v?.length || 100) + 50) / 100) * 100 + 100;
+  const defaultValue = Math.round(((v?.length || 100) + 50) / 100) * 100 + 100
   if (!maxBibNumber.value || maxBibNumber.value === defaultValue) {
-    maxBibNumber.value = defaultValue;
+    maxBibNumber.value = defaultValue
   }
-  defaultMaxBibNumber.value = defaultValue;
-});
+  defaultMaxBibNumber.value = defaultValue
+})
 
 const numberedCSV = computed(() => {
   const output = inputData.value
     ?.filter((row) => row[colIndexes.firstName])
     .sort((rowA, rowB) => rowA[colIndexes.timestamp]?.localeCompare(rowB[colIndexes.timestamp]))
-    .map((row, index) => [...row, `${(maxBibNumber.value || 0) - index}`]);
-  return output;
-});
+    .map((row, index) => [...row, `${(maxBibNumber.value || 0) - index}`])
+  return output
+})
 
 // Age categorization
-const categories = computed(() => inputData.value?.reduce((acc, row) => {
-  const cell = row[colIndexes.code];
-  if (cell && /^[PBNIRX]\d{2}$/.test(cell)) {
-    const categoryCode = cell.substring(0, 1);
-    const age = cell.substring(1);
-    acc[categoryCode] = acc[categoryCode] || {};
-    acc[categoryCode][age] = (acc[categoryCode][age] || 0) + 1;
-  }
-  return acc;
-}, {} as Record<string, Record<string, number>>));
+const categories = computed(() =>
+  inputData.value?.reduce(
+    (acc, row) => {
+      const cell = row[colIndexes.code]
+      if (cell && /^[PBNIRX]\d{2}$/.test(cell)) {
+        const categoryCode = cell.substring(0, 1)
+        const age = cell.substring(1)
+        acc[categoryCode] = acc[categoryCode] || {}
+        acc[categoryCode][age] = (acc[categoryCode][age] || 0) + 1
+      }
+      return acc
+    },
+    {} as Record<string, Record<string, number>>,
+  ),
+)
 
 // Age group partitioning
 type Partition = {
-  categoryCode: string;
-  ageRange: number[],
-  codes: string[];
-};
+  categoryCode: string
+  ageRange: number[]
+  codes: string[]
+}
 
-const partitions = ref<Record<string, Partition[]>>({});
-const categoryCardRef = ref<(typeof CategoryCard)[]>();
+const partitions = ref<Record<string, Partition[]>>({})
+const categoryCardRef = ref<(typeof CategoryCard)[]>()
 
 watch(inputData, () => {
-  partitions.value = {};
-});
+  partitions.value = {}
+})
 
 watch(step, () => {
   setTimeout(() => {
-    categoryCardRef.value?.forEach((card) => card.refresh?.());
-  }, 500); // duration of stepper transition
-});
+    categoryCardRef.value?.forEach((card) => card.refresh?.())
+  }, 500) // duration of stepper transition
+})
 
 function handlePartition(categoryCode: string, partitionedAgeRanges: number[][]) {
-  const ageCodesWithinGroup = Object.keys(categories.value?.[categoryCode] || {});
-  const partitioned = partitionedAgeRanges.map(([minAge, maxAge]) => ({
-    categoryCode,
-    ageRange: [minAge, maxAge],
-    codes: [],
-  } as Partition));
-  
+  const ageCodesWithinGroup = Object.keys(categories.value?.[categoryCode] || {})
+  const partitioned = partitionedAgeRanges.map(
+    ([minAge, maxAge]) =>
+      ({
+        categoryCode,
+        ageRange: [minAge, maxAge],
+        codes: [],
+      }) as Partition,
+  )
+
   ageCodesWithinGroup.forEach((ageCode) => {
-    const age = Number(ageCode);
+    const age = Number(ageCode)
     partitionedAgeRanges.forEach(([minAge, maxAge], index) => {
       if (minAge <= age && age <= maxAge) {
-        const code = `${categoryCode}${ageCode}`;
-        partitioned[index].codes.push(code);
+        const code = `${categoryCode}${ageCode}`
+        partitioned[index].codes.push(code)
       }
-    });
-  });
-  
-  partitions.value[categoryCode] = partitioned;
+    })
+  })
+
+  partitions.value[categoryCode] = partitioned
 }
 
 // Output generation
-const outputNumColumns = ref(4);
+const outputNumColumns = ref(4)
 const output = computed(() => {
-  let data: any[][] = [];
-  Object.values(partitions.value).flat().forEach((partition) => {
-    if (data.length) data.push([]);
+  const data: any[][] = []
+  Object.values(partitions.value)
+    .flat()
+    .forEach((partition) => {
+      if (data.length) data.push([])
 
-    const name = `${CATEGORY_CODE_NAMES[partition.categoryCode]} ${getAgeGroupName(partition.ageRange[0], partition.ageRange[1], isPrintingYears.value)}`;
-    data.push([name]);
+      const name = `${CATEGORY_CODE_NAMES[partition.categoryCode]} ${getAgeGroupName(partition.ageRange[0], partition.ageRange[1], isPrintingYears.value)}`
+      data.push([name])
 
-    const rows = numberedCSV.value?.filter((row) => row.find((value) => partition.codes.includes(value))) || [];
-    data.push(...rows.map((row) => [
-      row[row.length - 1],
-      row[colIndexes.firstName] || (!row[colIndexes.lastName] && row[colIndexes.fullName]),
-      row[colIndexes.lastName],
-      [row[colIndexes.location], row[colIndexes.region], row[colIndexes.country]].filter(Boolean).join(', '),
-    ]));
-  });
-  return data;
-});
+      const rows =
+        numberedCSV.value?.filter((row) => row.find((value) => partition.codes.includes(value))) ||
+        []
+      data.push(
+        ...rows.map((row) => [
+          row[row.length - 1],
+          row[colIndexes.firstName] || (!row[colIndexes.lastName] && row[colIndexes.fullName]),
+          row[colIndexes.lastName],
+          [row[colIndexes.location], row[colIndexes.region], row[colIndexes.country]]
+            .filter(Boolean)
+            .join(', '),
+        ]),
+      )
+    })
+  return data
+})
 
-const outputCSV = computed(() => unparse(output.value));
+const outputCSV = computed(() => unparse(output.value))
 </script>
 
 <template>
@@ -225,29 +256,29 @@ const outputCSV = computed(() => unparse(output.value));
     </div>
 
     <!-- Main stepper interface -->
-    <div v-else class="flex-1 flex flex-col">
-      <!-- Header with app title and step indicators -->
-      <div class="border-b bg-card shadow-sm">
+    <div v-else class="flex-1 flex flex-col h-full">
+      <!-- Header with logo and step indicators -->
+      <div class="border-b bg-primary shadow-sm">
         <div class="px-6 py-4">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-              <h1 class="text-2xl font-bold text-foreground">Splits</h1>
-              <span class="text-muted-foreground">Highland Dance Competition Organizer</span>
+            <div class="flex items-center gap-3">
+              <img src="/touchicon.png" alt="Splits Logo" class="w-8 h-8" />
+              <h1 class="text-2xl font-bold text-primary-foreground">Splits</h1>
             </div>
-            
+
             <Button
               variant="ghost"
               size="sm"
-              @click="toggleDarkMode"
-              class="w-9 h-9 p-0"
+              @click="toggle"
+              class="w-9 h-9 p-0 hover:bg-primary-foreground/10"
               :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
             >
-              <span v-if="isDark" class="text-lg">☀️</span>
-              <span v-else class="text-lg">🌙</span>
+              <Sun v-if="isDark" class="h-4 w-4" />
+              <Moon v-else class="h-4 w-4" />
             </Button>
           </div>
         </div>
-        
+
         <div class="px-6 py-3 border-t">
           <div class="flex items-center justify-center max-w-2xl mx-auto">
             <div class="flex items-center space-x-8">
@@ -258,17 +289,21 @@ const outputCSV = computed(() => unparse(output.value));
                 :disabled="stepNum > maxStep"
                 class="flex items-center space-x-3 step-indicator"
                 :class="[
-                  step === stepNum ? 'text-primary' : stepNum <= maxStep ? 'text-muted-foreground hover:text-foreground' : 'text-muted-foreground/50'
+                  step === stepNum
+                    ? 'text-primary'
+                    : stepNum <= maxStep
+                      ? 'text-muted-foreground hover:text-foreground'
+                      : 'text-muted-foreground/50',
                 ]"
               >
-                <div 
-                  class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-200"
+                <div
+                  class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-200 aspect-square"
                   :class="[
-                    step === stepNum 
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25' 
-                      : stepNum <= maxStep 
-                        ? 'bg-secondary text-secondary-foreground border-2 border-border hover:border-primary/50' 
-                        : 'bg-muted/50 text-muted-foreground/50 border border-border'
+                    step === stepNum
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+                      : stepNum <= maxStep
+                        ? 'bg-secondary text-secondary-foreground border-2 border-border hover:border-primary/50'
+                        : 'bg-muted/50 text-muted-foreground/50 border border-border',
                   ]"
                 >
                   {{ stepNum }}
@@ -278,10 +313,12 @@ const outputCSV = computed(() => unparse(output.value));
                     {{ stepNum === 1 ? 'Input' : stepNum === 2 ? 'Group' : 'Export' }}
                   </div>
                   <div class="text-sm text-muted-foreground">
-                    {{ 
-                      stepNum === 1 ? 'Upload and map CSV data' : 
-                      stepNum === 2 ? 'Review age group partitions' : 
-                      'Configure and download results' 
+                    {{
+                      stepNum === 1
+                        ? 'Upload and map CSV data'
+                        : stepNum === 2
+                          ? 'Review age group partitions'
+                          : 'Configure and download results'
                     }}
                   </div>
                 </div>
@@ -292,9 +329,9 @@ const outputCSV = computed(() => unparse(output.value));
       </div>
 
       <!-- Step content -->
-      <div class="flex-1 flex flex-col">
+      <div class="flex-1 overflow-hidden h-full">
         <!-- Step 1: Input -->
-        <div v-if="step === 1" class="flex-1 flex flex-col">
+        <div v-if="step === 1" class="h-full">
           <SettingsPane>
             <HotTable
               v-if="inputData"
@@ -305,12 +342,13 @@ const outputCSV = computed(() => unparse(output.value));
                 readOnly: true,
               }"
             />
-            
+
             <template #settings>
               <div class="space-y-4">
                 <p class="text-sm text-muted-foreground">
-                  The page shows your input data. In order to do grouping automatically, you need to map the columns to the correct fields.
-                  If there are extra rows, remove them in the spreadsheet file first then try again.
+                  The page shows your input data. In order to do grouping automatically, you need to
+                  map the columns to the correct fields. If there are extra rows, remove them in the
+                  spreadsheet file first then try again.
                 </p>
 
                 <SettingsGroup title="Input file">
@@ -322,13 +360,10 @@ const outputCSV = computed(() => unparse(output.value));
                 <SettingsGroup title="Column mapping">
                   <div class="space-y-4">
                     <div class="flex items-center space-x-2">
-                      <Switch
-                        id="header-row"
-                        v-model:checked="hasHeaderRow"
-                      />
+                      <Switch id="header-row" v-model:checked="hasHeaderRow" />
                       <Label for="header-row">Header row</Label>
                     </div>
-                    
+
                     <div
                       v-for="{ id, name, required } in INPUT_COLUMNS"
                       :key="id"
@@ -337,7 +372,9 @@ const outputCSV = computed(() => unparse(output.value));
                       <Label :for="id">{{ name }}{{ required ? ' *' : '' }}</Label>
                       <Select
                         :model-value="inputHeaders[colIndexes[id]]"
-                        @update:model-value="(value) => colIndexes[id] = inputHeaders.indexOf(value as string)"
+                        @update:model-value="
+                          (value) => (colIndexes[id] = inputHeaders.indexOf(value as string))
+                        "
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select column..." />
@@ -353,7 +390,7 @@ const outputCSV = computed(() => unparse(output.value));
                 </SettingsGroup>
               </div>
             </template>
-            
+
             <template #footer>
               <Button @click="step = 2" class="w-full">Next</Button>
             </template>
@@ -361,11 +398,13 @@ const outputCSV = computed(() => unparse(output.value));
         </div>
 
         <!-- Step 2: Group -->
-        <div v-else-if="step === 2" class="flex-1 flex flex-col">
+        <div v-else-if="step === 2" class="h-full">
           <SettingsPane>
             <div class="p-4 space-y-4">
               <CategoryCard
-                v-for="categoryCode in Object.keys(CATEGORY_CODE_NAMES).filter(c => categories?.[c])"
+                v-for="categoryCode in Object.keys(CATEGORY_CODE_NAMES).filter(
+                  (c) => categories?.[c],
+                )"
                 :key="categoryCode"
                 ref="categoryCardRef"
                 :name="CATEGORY_CODE_NAMES[categoryCode]"
@@ -373,13 +412,13 @@ const outputCSV = computed(() => unparse(output.value));
                 @partition="handlePartition(categoryCode, $event)"
               />
             </div>
-            
+
             <template #settings>
               <p class="text-sm text-muted-foreground">
                 Ensure the categories are split appropriately, or adjust them as needed.
               </p>
             </template>
-            
+
             <template #footer>
               <Button @click="step = 3" class="w-full">Next</Button>
             </template>
@@ -387,7 +426,7 @@ const outputCSV = computed(() => unparse(output.value));
         </div>
 
         <!-- Step 3: Export -->
-        <div v-else-if="step === 3" class="flex-1 flex flex-col">
+        <div v-else-if="step === 3" class="h-full">
           <SettingsPane>
             <HotTable
               v-if="output?.length"
@@ -398,12 +437,12 @@ const outputCSV = computed(() => unparse(output.value));
                 height: 600,
               }"
             />
-            
+
             <template #settings>
               <div class="space-y-4">
                 <p class="text-sm text-muted-foreground">
-                  Bib numbers are assigned based on reverse order of registration.
-                  You can adjust the highest bib number to start from.
+                  Bib numbers are assigned based on reverse order of registration. You can adjust
+                  the highest bib number to start from.
                 </p>
 
                 <SettingsGroup title="Bib numbers">
@@ -421,16 +460,13 @@ const outputCSV = computed(() => unparse(output.value));
 
                 <SettingsGroup title="CSV output">
                   <div class="flex items-center space-x-2">
-                    <Switch
-                      id="print-years"
-                      v-model:checked="isPrintingYears"
-                    />
+                    <Switch id="print-years" v-model:checked="isPrintingYears" />
                     <Label for="print-years">Print 'Years' in age group names</Label>
                   </div>
                 </SettingsGroup>
               </div>
             </template>
-            
+
             <template #footer>
               <Button @click="downloadCSV(outputCSV)" class="w-full">Export CSV</Button>
             </template>

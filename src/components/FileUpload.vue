@@ -7,12 +7,10 @@
     <!-- Drop zone overlay -->
     <div
       v-show="isOverDropZone"
-      class="absolute inset-4 border-2 border-dashed border-primary rounded-lg pointer-events-none z-10"
+      class="absolute inset-4 border-2 border-dashed border-primary bg-background/50 backdrop-blur-md rounded-2xl pointer-events-none z-10"
     >
       <div class="w-full h-full flex items-center justify-center">
-        <div class="text-2xl font-semibold text-primary animate-pulse">
-          Drop your CSV file here
-        </div>
+        <div class="text-2xl font-semibold text-primary animate-pulse">Drop your CSV file here</div>
       </div>
     </div>
 
@@ -23,15 +21,17 @@
         <div class="text-center space-y-4 max-w-md">
           <div class="text-2xl font-semibold text-foreground">Ready to get started?</div>
           <div class="text-muted-foreground">Drag your CSV file here or click to browse</div>
-          
-          <Button 
+
+          <Button
             size="lg"
             :disabled="isLoading"
             @click="fileInputRef?.click()"
             class="relative px-8 py-3 text-lg"
           >
             <span v-if="isLoading" class="flex items-center gap-2">
-              <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+              <div
+                class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
+              ></div>
               Processing...
             </span>
             <span v-else>Choose CSV File</span>
@@ -50,56 +50,62 @@
     />
 
     <!-- Error display -->
-    <div v-if="error" class="absolute bottom-4 right-4 p-4 bg-destructive text-destructive-foreground rounded-md shadow-lg max-w-md z-20">
+    <div
+      v-if="error"
+      class="absolute bottom-4 right-4 p-4 bg-destructive text-destructive-foreground rounded-md shadow-lg max-w-md z-20"
+    >
       <div class="flex items-center gap-2">
-        <span class="text-sm">⚠️</span>
+        <AlertTriangle class="h-4 w-4" />
         <span class="text-sm">{{ error }}</span>
-        <button @click="$emit('error-dismiss')" class="ml-auto text-lg hover:opacity-70">&times;</button>
+        <button @click="$emit('error-dismiss')" class="ml-auto hover:opacity-70">
+          <X class="h-4 w-4" />
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useDropZone } from '@vueuse/core';
-import { Button } from '@/components/ui/button';
+import { ref } from 'vue'
+import { useDropZone } from '@vueuse/core'
+import { Button } from '@/components/ui/button'
+import { AlertTriangle, X } from 'lucide-vue-next'
 
 interface Props {
-  accept?: string;
-  isLoading?: boolean;
-  error?: string;
+  accept?: string
+  isLoading?: boolean
+  error?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   accept: 'text/csv',
   isLoading: false,
-});
+})
 
 const emit = defineEmits<{
-  'file-selected': [file: File];
-  'error-dismiss': [];
-}>();
+  'file-selected': [file: File]
+  'error-dismiss': []
+}>()
 
-const dropZoneRef = ref<HTMLElement>();
-const fileInputRef = ref<HTMLInputElement>();
+const dropZoneRef = ref<HTMLElement>()
+const fileInputRef = ref<HTMLInputElement>()
 
 const { isOverDropZone } = useDropZone(dropZoneRef, {
   onDrop(files) {
-    emit('error-dismiss');
+    emit('error-dismiss')
     if (files?.length === 1 && files[0].type === props.accept) {
-      emit('file-selected', files[0]);
+      emit('file-selected', files[0])
     } else {
       // Error will be handled by parent component
     }
   },
-});
+})
 
 function handleFileChange(event: Event) {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
   if (file) {
-    emit('file-selected', file);
+    emit('file-selected', file)
   }
 }
 </script>
