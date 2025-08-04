@@ -1,5 +1,6 @@
 {
   "name": "scotdance-splits",
+  "description": "Split registrants into groups with bib numbers",
   "version": "0.0.0",
   "private": true,
   "type": "module",

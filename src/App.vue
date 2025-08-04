@@ -16,7 +16,6 @@ import SettingsGroup from '@/components/SettingsGroup.vue'
 import HomePage from '@/components/HomePage.vue'
 import FileUpload from '@/components/FileUpload.vue'
 
-// Using custom stepper implementation instead of shadcn stepper
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
@@ -28,6 +27,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Stepper,
+  StepperItem,
+  StepperTrigger,
+  StepperIndicator,
+  StepperTitle,
+  StepperDescription,
+  StepperSeparator,
+} from '@/components/ui/stepper'
 import { useDarkMode } from '@/composables/useDarkMode'
 import { Sun, Moon } from 'lucide-vue-next'
 
@@ -281,49 +289,57 @@ const outputCSV = computed(() => unparse(output.value))
 
         <div class="px-6 py-3 border-t">
           <div class="flex items-center justify-center max-w-2xl mx-auto">
-            <div class="flex items-center space-x-8">
-              <button
+            <Stepper
+              v-model:step="step"
+              class="flex items-center space-x-8"
+            >
+              <StepperItem
                 v-for="stepNum in [1, 2, 3]"
                 :key="stepNum"
-                @click="stepNum <= maxStep && (step = stepNum)"
-                :disabled="stepNum > maxStep"
-                class="flex items-center space-x-3 step-indicator"
-                :class="[
-                  step === stepNum
-                    ? 'text-primary'
-                    : stepNum <= maxStep
-                      ? 'text-muted-foreground hover:text-foreground'
-                      : 'text-muted-foreground/50',
-                ]"
+                :step="stepNum"
+                class="flex items-center space-x-3"
               >
-                <div
-                  class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-200 aspect-square"
+                <StepperTrigger
+                  @click="stepNum <= maxStep && (step = stepNum)"
+                  :disabled="stepNum > maxStep"
+                  class="flex items-center space-x-3"
                   :class="[
                     step === stepNum
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+                      ? 'text-primary'
                       : stepNum <= maxStep
-                        ? 'bg-secondary text-secondary-foreground border-2 border-border hover:border-primary/50'
-                        : 'bg-muted/50 text-muted-foreground/50 border border-border',
+                        ? 'text-muted-foreground hover:text-foreground'
+                        : 'text-muted-foreground/50',
                   ]"
                 >
-                  {{ stepNum }}
-                </div>
-                <div class="text-left">
-                  <div class="font-semibold text-base">
-                    {{ stepNum === 1 ? 'Input' : stepNum === 2 ? 'Group' : 'Export' }}
+                  <StepperIndicator
+                    class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-200 aspect-square"
+                    :class="[
+                      step === stepNum
+                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+                        : stepNum <= maxStep
+                          ? 'bg-secondary text-secondary-foreground border-2 border-border hover:border-primary/50'
+                          : 'bg-muted/50 text-muted-foreground/50 border border-border',
+                    ]"
+                  >
+                    {{ stepNum }}
+                  </StepperIndicator>
+                  <div class="text-left">
+                    <StepperTitle class="font-semibold text-base">
+                      {{ stepNum === 1 ? 'Input' : stepNum === 2 ? 'Group' : 'Export' }}
+                    </StepperTitle>
+                    <StepperDescription class="text-sm text-muted-foreground">
+                      {{
+                        stepNum === 1
+                          ? 'Load and map CSV data'
+                          : stepNum === 2
+                            ? 'Review age group partitions'
+                            : 'Configure and download results'
+                      }}
+                    </StepperDescription>
                   </div>
-                  <div class="text-sm text-muted-foreground">
-                    {{
-                      stepNum === 1
-                        ? 'Upload and map CSV data'
-                        : stepNum === 2
-                          ? 'Review age group partitions'
-                          : 'Configure and download results'
-                    }}
-                  </div>
-                </div>
-              </button>
-            </div>
+                </StepperTrigger>
+              </StepperItem>
+            </Stepper>
           </div>
         </div>
       </div>
