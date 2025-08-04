@@ -504,7 +504,7 @@
 
         <!-- Privacy banner at bottom -->
         <div
-          class="sticky bottom-6 max-w-4xl w-full mx-auto backdrop-blur-md mt-8 p-4 bg-primary/10 border border-primary/20 rounded-lg"
+          class="sticky bottom-6 max-w-4xl w-full mx-auto backdrop-blur-md mt-8 p-4 bg-primary/10 border border-primary/20 rounded-lg animate-fade-in-up opacity-0 [animation-delay:4200ms]!"
         >
           <div class="flex items-start gap-3">
             <Shield class="h-5 w-5 text-primary shrink-0" />
