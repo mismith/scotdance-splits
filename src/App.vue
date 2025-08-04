@@ -2,13 +2,7 @@
 import { ref, computed, reactive, watch, provide, nextTick } from 'vue'
 import { parse, unparse } from 'papaparse'
 
-import {
-  getAgeGroupName,
-  CATEGORY_CODE_NAMES,
-  INPUT_COLUMNS,
-  downloadCSV,
-  type InputColumn,
-} from '@/lib/helpers'
+import { getAgeGroupName, CATEGORY_CODE_NAMES, INPUT_COLUMNS, downloadCSV } from '@/lib/helpers'
 import HotTable from '@/components/HotTable.vue'
 import CategoryCard from '@/components/CategoryCard.vue'
 import SettingsPane from '@/components/SettingsPane.vue'
@@ -28,15 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Stepper,
-  StepperItem,
-  StepperTrigger,
-  StepperIndicator,
-  StepperTitle,
-  StepperDescription,
-  StepperSeparator,
-} from '@/components/ui/stepper'
 
 // Step management
 const step = ref(1)
@@ -48,7 +33,6 @@ watch(step, () => {
 })
 
 // File input handling
-const INPUT_FILE_ACCEPT = 'text/csv'
 const inputFiles = ref<File[]>()
 const inputError = ref<string>()
 
@@ -240,7 +224,7 @@ const outputCSV = computed(() => unparse(output.value))
 <template>
   <div class="h-screen flex flex-col">
     <!-- Home page with file upload -->
-    <div v-if="!inputFiles?.length" class="flex-1">
+    <template v-if="!inputFiles?.length" class="flex-1">
       <FileUpload
         :is-loading="isLoadingInputFile"
         :error="inputError"
@@ -257,68 +241,18 @@ const outputCSV = computed(() => unparse(output.value))
           />
         </template>
       </FileUpload>
-    </div>
+    </template>
 
     <!-- Main stepper interface -->
     <div v-else class="flex-1 flex flex-col h-full">
-      <!-- Header with logo and step indicators -->
-      <AppHeader>
-        <div class="px-6 py-3 border-t">
-          <div class="flex items-center justify-center max-w-2xl mx-auto">
-            <Stepper
-              v-model:step="step"
-              class="flex items-center space-x-8"
-            >
-              <StepperItem
-                v-for="stepNum in [1, 2, 3]"
-                :key="stepNum"
-                :step="stepNum"
-                class="flex items-center space-x-3"
-              >
-                <StepperTrigger
-                  @click="stepNum <= maxStep && (step = stepNum)"
-                  :disabled="stepNum > maxStep"
-                  class="flex items-center space-x-3"
-                  :class="[
-                    step === stepNum
-                      ? 'text-primary'
-                      : stepNum <= maxStep
-                        ? 'text-muted-foreground hover:text-foreground'
-                        : 'text-muted-foreground/50',
-                  ]"
-                >
-                  <StepperIndicator
-                    class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-200 aspect-square"
-                    :class="[
-                      step === stepNum
-                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
-                        : stepNum <= maxStep
-                          ? 'bg-secondary text-secondary-foreground border-2 border-border hover:border-primary/50'
-                          : 'bg-muted/50 text-muted-foreground/50 border border-border',
-                    ]"
-                  >
-                    {{ stepNum }}
-                  </StepperIndicator>
-                  <div class="text-left">
-                    <StepperTitle class="font-semibold text-base">
-                      {{ stepNum === 1 ? 'Input' : stepNum === 2 ? 'Group' : 'Export' }}
-                    </StepperTitle>
-                    <StepperDescription class="text-sm text-muted-foreground">
-                      {{
-                        stepNum === 1
-                          ? 'Load and map CSV data'
-                          : stepNum === 2
-                            ? 'Review age group partitions'
-                            : 'Configure and download results'
-                      }}
-                    </StepperDescription>
-                  </div>
-                </StepperTrigger>
-              </StepperItem>
-            </Stepper>
-          </div>
-        </div>
-      </AppHeader>
+      <!-- Header with compact stepper -->
+      <AppHeader
+        :show-stepper="true"
+        :step="step"
+        :max-step="maxStep"
+        @step-change="step = $event"
+        @home-click="inputFiles = undefined"
+      />
 
       <!-- Step content -->
       <div class="flex-1 overflow-hidden h-full">

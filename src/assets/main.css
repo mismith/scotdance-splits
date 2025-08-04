@@ -6,11 +6,11 @@
   }
 
   html {
-    @apply font-sans;
+    @apply font-sans overflow-hidden;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground overflow-hidden;
   }
 
   * {
@@ -25,4 +25,6 @@
   --color-foreground: light-dark(#000, #fff);
   --color-border: color-mix(in srgb, var(--color-foreground), transparent 80%);
   --color-ring: #ffd323;
+  --color-muted: color-mix(in srgb, var(--color-foreground), transparent 92%);
+  --color-muted-foreground: color-mix(in srgb, var(--color-foreground), transparent 8%);
 }

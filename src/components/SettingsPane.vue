@@ -1,10 +1,8 @@
 <template>
-  <div class="flex h-full bg-background">
+  <div class="flex flex-1 h-full overflow-hidden">
     <!-- Data display area -->
-    <div class="flex-1 overflow-auto bg-card">
-      <div class="data-table-container min-h-[400px] h-full">
-        <slot />
-      </div>
+    <div class="flex-1 overflow-auto min-h-[400px] h-full">
+      <slot />
     </div>
 
     <!-- Settings sidebar -->
