@@ -1,58 +1,60 @@
 <template>
   <div
     ref="dropZoneRef"
-    class="flex flex-col justify-center items-center h-full relative gap-4 p-8"
+    class="h-full w-full relative transition-colors duration-200"
+    :class="{ 'bg-primary/5': isOverDropZone }"
   >
     <!-- Drop zone overlay -->
-    <svg
+    <div
       v-show="isOverDropZone"
-      preserveAspectRatio="none"
-      class="absolute inset-8 w-[calc(100%-4rem)] h-[calc(100%-4rem)] pointer-events-none"
+      class="absolute inset-4 border-2 border-dashed border-primary rounded-lg pointer-events-none z-10"
     >
-      <rect width="100%" height="100%" class="fill-none stroke-black stroke-[0.25rem] stroke-dashed animate-pulse" />
-    </svg>
-
-    <!-- Content -->
-    <div class="flex-1 flex flex-col justify-center text-center space-y-4">
-      <div class="text-lg">
-        Take your list of dancers/registrations and automatically group them into age categories with assigned bib numbers.
-        You can then export for upload into ScotDance.app or use them in your own paper program.
+      <div class="w-full h-full flex items-center justify-center">
+        <div class="text-2xl font-semibold text-primary animate-pulse">
+          Drop your CSV file here
+        </div>
       </div>
-      <ul class="text-left space-y-2 max-w-2xl">
-        <li>• input = spreadsheet of registered dancers (e.g. from eventry.net or HDComps.com)</li>
-        <li>• automatically split dancers in age groups - take away the guess work and the math, let this algorithm do the work for you</li>
-        <li>• assign bib numbers to dancers based on reverse registration order</li>
-        <li>• output = spreadsheet you can upload into ScotDance.app, or use for you paper programs</li>
-      </ul>
     </div>
 
-    <!-- Upload area -->
-    <div class="flex-1 flex flex-col justify-center items-center text-center space-y-2">
-      <div class="text-xl">Drag your CSV file here</div>
-      <small class="text-muted-foreground">or</small>
-      <Button 
-        :disabled="isLoading"
-        @click="fileInputRef?.click()"
-        class="relative"
-      >
-        <span v-if="isLoading">Loading...</span>
-        <span v-else>Choose file</span>
-        <input
-          ref="fileInputRef"
-          type="file"
-          :accept="accept"
-          @change="handleFileChange"
-          class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-        />
-      </Button>
-    </div>
+    <!-- Content slot -->
+    <slot :choose-file="() => fileInputRef?.click()">
+      <!-- Default upload content if no slot provided -->
+      <div class="h-full flex items-center justify-center">
+        <div class="text-center space-y-4 max-w-md">
+          <div class="text-2xl font-semibold text-foreground">Ready to get started?</div>
+          <div class="text-muted-foreground">Drag your CSV file here or click to browse</div>
+          
+          <Button 
+            size="lg"
+            :disabled="isLoading"
+            @click="fileInputRef?.click()"
+            class="relative px-8 py-3 text-lg"
+          >
+            <span v-if="isLoading" class="flex items-center gap-2">
+              <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+              Processing...
+            </span>
+            <span v-else>Choose CSV File</span>
+          </Button>
+        </div>
+      </div>
+    </slot>
+
+    <!-- Hidden file input -->
+    <input
+      ref="fileInputRef"
+      type="file"
+      :accept="accept"
+      @change="handleFileChange"
+      class="hidden"
+    />
 
     <!-- Error display -->
-    <div v-if="error" class="fixed bottom-4 right-4 bg-destructive text-destructive-foreground p-4 rounded-md shadow-lg max-w-md">
+    <div v-if="error" class="absolute bottom-4 right-4 p-4 bg-destructive text-destructive-foreground rounded-md shadow-lg max-w-md z-20">
       <div class="flex items-center gap-2">
         <span class="text-sm">⚠️</span>
-        <span>{{ error }}</span>
-        <button @click="$emit('error-dismiss')" class="ml-auto text-lg">&times;</button>
+        <span class="text-sm">{{ error }}</span>
+        <button @click="$emit('error-dismiss')" class="ml-auto text-lg hover:opacity-70">&times;</button>
       </div>
     </div>
   </div>

@@ -7,6 +7,7 @@ import HotTable from "@/components/HotTable.vue";
 import CategoryCard from "@/components/CategoryCard.vue";
 import SettingsPane from "@/components/SettingsPane.vue";
 import SettingsGroup from "@/components/SettingsGroup.vue";
+import HomePage from "@/components/HomePage.vue";
 import FileUpload from "@/components/FileUpload.vue";
 
 // Using custom stepper implementation instead of shadcn stepper
@@ -15,6 +16,10 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useDarkMode } from "@/composables/useDarkMode";
+
+// Dark mode
+const { isDark, toggle: toggleDarkMode } = useDarkMode();
 
 // Step management
 const step = ref(1);
@@ -199,57 +204,90 @@ const outputCSV = computed(() => unparse(output.value));
 
 <template>
   <div class="h-screen flex flex-col">
-    <!-- File upload screen -->
+    <!-- Home page with file upload -->
     <div v-if="!inputFiles?.length" class="flex-1">
       <FileUpload
-        :accept="INPUT_FILE_ACCEPT"
         :is-loading="isLoadingInputFile"
         :error="inputError"
         @file-selected="handleFileSelected"
         @error-dismiss="handleErrorDismiss"
-      />
+      >
+        <template #default="{ chooseFile }">
+          <HomePage
+            :is-loading-input-file="isLoadingInputFile"
+            :input-error="inputError"
+            @file-selected="handleFileSelected"
+            @error-dismiss="handleErrorDismiss"
+            @choose-file="chooseFile"
+          />
+        </template>
+      </FileUpload>
     </div>
 
     <!-- Main stepper interface -->
     <div v-else class="flex-1 flex flex-col">
-      <!-- Step indicators -->
-      <div class="flex items-center justify-between p-4 border-b bg-background">
-        <div class="flex items-center space-x-8">
-          <button
-            v-for="stepNum in [1, 2, 3]"
-            :key="stepNum"
-            @click="stepNum <= maxStep && (step = stepNum)"
-            :disabled="stepNum > maxStep"
-            class="flex items-center space-x-3 transition-colors"
-            :class="[
-              step === stepNum ? 'text-primary' : stepNum <= maxStep ? 'text-muted-foreground hover:text-foreground' : 'text-muted-foreground/50'
-            ]"
-          >
-            <div 
-              class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors"
-              :class="[
-                step === stepNum 
-                  ? 'bg-primary text-primary-foreground' 
-                  : stepNum <= maxStep 
-                    ? 'bg-muted text-muted-foreground border' 
-                    : 'bg-muted/50 text-muted-foreground/50'
-              ]"
+      <!-- Header with app title and step indicators -->
+      <div class="border-b bg-card shadow-sm">
+        <div class="px-6 py-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <h1 class="text-2xl font-bold text-foreground">Splits</h1>
+              <span class="text-muted-foreground">Highland Dance Competition Organizer</span>
+            </div>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              @click="toggleDarkMode"
+              class="w-9 h-9 p-0"
+              :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
             >
-              {{ stepNum }}
+              <span v-if="isDark" class="text-lg">☀️</span>
+              <span v-else class="text-lg">🌙</span>
+            </Button>
+          </div>
+        </div>
+        
+        <div class="px-6 py-3 border-t">
+          <div class="flex items-center justify-center max-w-2xl mx-auto">
+            <div class="flex items-center space-x-8">
+              <button
+                v-for="stepNum in [1, 2, 3]"
+                :key="stepNum"
+                @click="stepNum <= maxStep && (step = stepNum)"
+                :disabled="stepNum > maxStep"
+                class="flex items-center space-x-3 step-indicator"
+                :class="[
+                  step === stepNum ? 'text-primary' : stepNum <= maxStep ? 'text-muted-foreground hover:text-foreground' : 'text-muted-foreground/50'
+                ]"
+              >
+                <div 
+                  class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-200"
+                  :class="[
+                    step === stepNum 
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25' 
+                      : stepNum <= maxStep 
+                        ? 'bg-secondary text-secondary-foreground border-2 border-border hover:border-primary/50' 
+                        : 'bg-muted/50 text-muted-foreground/50 border border-border'
+                  ]"
+                >
+                  {{ stepNum }}
+                </div>
+                <div class="text-left">
+                  <div class="font-semibold text-base">
+                    {{ stepNum === 1 ? 'Input' : stepNum === 2 ? 'Group' : 'Export' }}
+                  </div>
+                  <div class="text-sm text-muted-foreground">
+                    {{ 
+                      stepNum === 1 ? 'Upload and map CSV data' : 
+                      stepNum === 2 ? 'Review age group partitions' : 
+                      'Configure and download results' 
+                    }}
+                  </div>
+                </div>
+              </button>
             </div>
-            <div>
-              <div class="font-medium text-sm">
-                {{ stepNum === 1 ? 'Input' : stepNum === 2 ? 'Group' : 'Export' }}
-              </div>
-              <div class="text-xs text-muted-foreground">
-                {{ 
-                  stepNum === 1 ? 'Upload and map CSV data' : 
-                  stepNum === 2 ? 'Review age group partitions' : 
-                  'Configure and download results' 
-                }}
-              </div>
-            </div>
-          </button>
+          </div>
         </div>
       </div>
 

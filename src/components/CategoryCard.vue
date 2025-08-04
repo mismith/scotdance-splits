@@ -1,52 +1,57 @@
 <template>
-  <Card class="w-full">
-    <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-      <div class="flex items-center space-x-2">
-        <CardTitle>{{ name }}</CardTitle>
+  <Card class="category-card">
+    <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-4">
+      <div class="flex items-center space-x-3">
+        <CardTitle class="text-xl font-bold">{{ name }}</CardTitle>
         <DancerCount :count="totalDancers" />
       </div>
-      <div class="flex items-center space-x-2">
-        <span class="text-sm text-muted-foreground">Split into:</span>
+      <div class="flex items-center space-x-3">
+        <span class="text-sm font-medium text-muted-foreground">Split into:</span>
         <Input
           type="number"
           v-model.number="numAgeGroups"
           :min="1"
           :max="ageCountsArray.length"
-          class="w-20"
+          class="w-20 text-center"
           @blur="!numAgeGroups && (numAgeGroups = getDefaultNumAgeGroups())"
           @keyup.enter="($event.target as HTMLInputElement).blur()"
         />
+        <span class="text-sm text-muted-foreground">groups</span>
       </div>
     </CardHeader>
     <CardContent>
       <div class="cols-container">
         <div ref="colsRef" class="cols">
           <!-- Left side: Individual ages -->
-          <div class="space-y-1">
+          <div class="space-y-2">
+            <div class="text-sm font-medium text-muted-foreground mb-2">Individual Ages</div>
             <div
               v-for="[age, count] in ageCountsArray"
               :key="age"
               ref="leftSideRef"
-              class="flex items-center justify-between p-2 text-sm bg-muted/30 rounded"
+              class="flex items-center justify-between p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-colors"
             >
-              <span>Age {{ age }}</span>
+              <span class="font-medium">Age {{ age }}</span>
               <DancerCount :count="count" :total="totalDancers" size="x-small" />
             </div>
           </div>
           
-          <!-- Spacer -->
-          <div class="w-8"></div>
+          <!-- Spacer with arrow -->
+          <div class="w-12 flex items-center justify-center">
+            <div class="text-2xl text-muted-foreground">→</div>
+          </div>
           
           <!-- Right side: Partitioned groups -->
-          <div class="space-y-1">
+          <div class="space-y-2">
+            <div class="text-sm font-medium text-muted-foreground mb-2">Age Groups</div>
             <div
               v-for="([[minAge, maxAge], count], index) in partitionedAgeCountsArray"
               :key="index"
               ref="rightSideRef"
-              :style="{ height: `${Math.max(20, (count / totalDancers) * 200)}px` }"
-              class="flex items-center justify-between p-2 text-sm bg-primary/10 border border-primary/20 rounded"
+              :style="{ minHeight: `${Math.max(48, (count / totalDancers) * 120 + 24)}px` }"
+              class="flex items-center justify-between p-3 text-sm bg-primary/10 border-2 border-primary/30 rounded-md hover:bg-primary/15 transition-colors"
             >
-              <span class="font-medium">{{ getAgeGroupName(minAge, maxAge, isPrintingYears) }}</span>
+              <span class="font-semibold text-primary-foreground">{{ getAgeGroupName(minAge, maxAge, isPrintingYears) }}</span>
               <DancerCount :count="count" :total="totalDancers" size="x-small" />
             </div>
           </div>
