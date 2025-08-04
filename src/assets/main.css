@@ -23,6 +23,6 @@
   --color-primary-foreground: #000;
   --color-background: light-dark(#fff, #000);
   --color-foreground: light-dark(#000, #fff);
-  --color-border: light-dark(#ddd, #222);
+  --color-border: color-mix(in srgb, var(--color-foreground), transparent 80%);
   --color-ring: #ffd323;
 }

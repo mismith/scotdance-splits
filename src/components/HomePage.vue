@@ -1,117 +1,285 @@
 <template>
   <div class="h-full flex flex-col">
-    <!-- Header with logo and dark mode toggle -->
-    <div class="border-b bg-primary text-primary-foreground shadow-sm">
-      <div class="px-6 py-4">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <img src="/touchicon.png" alt="Splits Logo" class="w-8 h-8" />
-            <h1 class="text-2xl font-bold text-primary-foreground">Splits</h1>
-          </div>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            @click="toggleDarkMode"
-            class="w-9 h-9 p-0 hover:bg-primary-foreground/10"
-            :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-          >
-            <Sun v-if="isDark" class="h-4 w-4" />
-            <Moon v-else class="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
+    <AppHeader />
 
     <!-- Main content using SettingsPane layout -->
     <div class="flex-1">
       <SettingsPane>
         <!-- Main content area - visual preview -->
         <div class="flex flex-col h-full p-6">
-          <!-- Intro line -->
-          <p class="text-muted-foreground text-center mb-6">
-            This free online tool splits dance competition registrations into groups with bib
-            numbers so you don't have to figure it out manually.
-          </p>
+          <!-- Stylish intro -->
+          <div class="text-center mb-8">
+            <p class="text-xl md:text-2xl font-light text-foreground">
+              This <span class="font-semibold text-primary">free online tool</span> splits dance
+              competition registrations into <strong class="font-bold">age groups</strong> with
+              <strong class="font-bold">bib numbers</strong>
+              <br />
+              <span class="text-base text-muted-foreground font-normal mt-1 inline-block"
+                >(so you don't have to figure it out manually).</span
+              >
+            </p>
+          </div>
 
           <!-- Two-column preview with more data -->
           <div class="flex-1 flex">
             <div class="flex gap-4 max-w-6xl mx-auto flex-wrap">
               <!-- Input preview -->
               <div class="space-y-4">
-                <h3 class="text-lg font-semibold text-foreground">Input</h3>
+                <h3
+                  class="text-lg text-center pr-12 font-semibold text-foreground animate-fade-in-up opacity-0 [animation-delay:200ms]!"
+                >
+                  Input
+                </h3>
                 <div class="flex-1 flex items-center gap-4">
-                  <div class="bg-card border rounded-lg p-4 min-w-max">
-                    <div class="text-sm font-medium text-muted-foreground mb-3">Your CSV file</div>
+                  <div
+                    class="bg-card border rounded-lg p-4 min-w-max animate-fade-in-up opacity-0 [animation-delay:100ms]!"
+                  >
+                    <div
+                      class="text-sm font-medium text-muted-foreground mb-3 animate-fade-in-up opacity-0 [animation-delay:300ms]!"
+                    >
+                      Your CSV file
+                    </div>
                     <div class="grid grid-cols-5 gap-1 text-xs min-w-max">
-                      <div class="bg-muted px-2 py-1 rounded font-medium whitespace-nowrap">
+                      <div
+                        class="bg-muted px-2 py-1 rounded font-medium whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:400ms]!"
+                      >
                         First Name
                       </div>
-                      <div class="bg-muted px-2 py-1 rounded font-medium whitespace-nowrap">
+                      <div
+                        class="bg-muted px-2 py-1 rounded font-medium whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:400ms]!"
+                      >
                         Last Name
                       </div>
-                      <div class="bg-muted px-2 py-1 rounded font-medium whitespace-nowrap">
+                      <div
+                        class="bg-muted px-2 py-1 rounded font-medium whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:400ms]!"
+                      >
                         Code
                       </div>
-                      <div class="bg-muted px-2 py-1 rounded font-medium whitespace-nowrap">
+                      <div
+                        class="bg-muted px-2 py-1 rounded font-medium whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:400ms]!"
+                      >
                         Location
                       </div>
-                      <div class="bg-muted px-2 py-1 rounded font-medium whitespace-nowrap">
+                      <div
+                        class="bg-muted px-2 py-1 rounded font-medium whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:400ms]!"
+                      >
                         Registered
                       </div>
 
-                      <div class="px-2 whitespace-nowrap">Emma</div>
-                      <div class="px-2 whitespace-nowrap">MacDonald</div>
-                      <div class="px-2 whitespace-nowrap">X08</div>
-                      <div class="px-2 whitespace-nowrap">Glasgow</div>
-                      <div class="px-2 whitespace-nowrap">Jan 15</div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:500ms]!"
+                      >
+                        Emma
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:500ms]!"
+                      >
+                        MacDonald
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:500ms]!"
+                      >
+                        X08
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:500ms]!"
+                      >
+                        Glasgow
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:500ms]!"
+                      >
+                        Jan 15
+                      </div>
 
-                      <div class="px-2 whitespace-nowrap">James</div>
-                      <div class="px-2 whitespace-nowrap">Campbell</div>
-                      <div class="px-2 whitespace-nowrap">X10</div>
-                      <div class="px-2 whitespace-nowrap">Toronto</div>
-                      <div class="px-2 whitespace-nowrap">Jan 22</div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:600ms]!"
+                      >
+                        James
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:600ms]!"
+                      >
+                        Campbell
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:600ms]!"
+                      >
+                        X10
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:600ms]!"
+                      >
+                        Toronto
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:600ms]!"
+                      >
+                        Jan 22
+                      </div>
 
-                      <div class="px-2 whitespace-nowrap">Isla</div>
-                      <div class="px-2 whitespace-nowrap">Fraser</div>
-                      <div class="px-2 whitespace-nowrap">X09</div>
-                      <div class="px-2 whitespace-nowrap">Melbourne</div>
-                      <div class="px-2 whitespace-nowrap">Feb 03</div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:700ms]!"
+                      >
+                        Isla
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:700ms]!"
+                      >
+                        Fraser
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:700ms]!"
+                      >
+                        X09
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:700ms]!"
+                      >
+                        Melbourne
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:700ms]!"
+                      >
+                        Feb 03
+                      </div>
 
-                      <div class="px-2 whitespace-nowrap">Connor</div>
-                      <div class="px-2 whitespace-nowrap">McLeod</div>
-                      <div class="px-2 whitespace-nowrap">X11</div>
-                      <div class="px-2 whitespace-nowrap">Edinburgh</div>
-                      <div class="px-2 whitespace-nowrap">Feb 12</div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:800ms]!"
+                      >
+                        Connor
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:800ms]!"
+                      >
+                        McLeod
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:800ms]!"
+                      >
+                        X11
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:800ms]!"
+                      >
+                        Edinburgh
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:800ms]!"
+                      >
+                        Feb 12
+                      </div>
 
-                      <div class="px-2 whitespace-nowrap">Sophie</div>
-                      <div class="px-2 whitespace-nowrap">Stewart</div>
-                      <div class="px-2 whitespace-nowrap">X12</div>
-                      <div class="px-2 whitespace-nowrap">Vancouver</div>
-                      <div class="px-2 whitespace-nowrap">Feb 18</div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:900ms]!"
+                      >
+                        Sophie
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:900ms]!"
+                      >
+                        Stewart
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:900ms]!"
+                      >
+                        X12
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:900ms]!"
+                      >
+                        Vancouver
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:900ms]!"
+                      >
+                        Feb 18
+                      </div>
 
-                      <div class="px-2 whitespace-nowrap">Hamish</div>
-                      <div class="px-2 whitespace-nowrap">Murray</div>
-                      <div class="px-2 whitespace-nowrap">X07</div>
-                      <div class="px-2 whitespace-nowrap">Sydney</div>
-                      <div class="px-2 whitespace-nowrap">Mar 05</div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1000ms]!"
+                      >
+                        Hamish
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1000ms]!"
+                      >
+                        Murray
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1000ms]!"
+                      >
+                        X07
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1000ms]!"
+                      >
+                        Sydney
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1000ms]!"
+                      >
+                        Mar 05
+                      </div>
 
-                      <div class="px-2 whitespace-nowrap">Fiona</div>
-                      <div class="px-2 whitespace-nowrap">Sinclair</div>
-                      <div class="px-2 whitespace-nowrap">X13</div>
-                      <div class="px-2 whitespace-nowrap">Aberdeen</div>
-                      <div class="px-2 whitespace-nowrap">Mar 14</div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1100ms]!"
+                      >
+                        Fiona
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1100ms]!"
+                      >
+                        Sinclair
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1100ms]!"
+                      >
+                        X13
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1100ms]!"
+                      >
+                        Aberdeen
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1100ms]!"
+                      >
+                        Mar 14
+                      </div>
 
-                      <div class="px-2 whitespace-nowrap">Liam</div>
-                      <div class="px-2 whitespace-nowrap">Robertson</div>
-                      <div class="px-2 whitespace-nowrap">X06</div>
-                      <div class="px-2 whitespace-nowrap">Calgary</div>
-                      <div class="px-2 whitespace-nowrap">Mar 20</div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1200ms]!"
+                      >
+                        Liam
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1200ms]!"
+                      >
+                        Robertson
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1200ms]!"
+                      >
+                        X06
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1200ms]!"
+                      >
+                        Calgary
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1200ms]!"
+                      >
+                        Mar 20
+                      </div>
                     </div>
                   </div>
 
                   <!-- Arrow -->
-                  <div class="flex-shrink-0 text-muted-foreground">
+                  <div
+                    class="flex-shrink-0 text-muted-foreground animate-slide-in-left opacity-0 [animation-delay:1800ms]!"
+                  >
                     <ChevronRight class="h-8 w-8" />
                   </div>
                 </div>
@@ -119,106 +287,210 @@
 
               <!-- Output preview -->
               <div class="space-y-4">
-                <h3 class="text-lg font-semibold text-foreground">Output</h3>
-                <div class="bg-card border rounded-lg p-4 space-y-4 min-w-max">
-                  <div class="text-sm font-medium text-muted-foreground">
+                <h3
+                  class="text-lg text-center font-semibold text-foreground animate-fade-in-up opacity-0 [animation-delay:2100ms]!"
+                >
+                  Output
+                </h3>
+                <div
+                  class="bg-card border rounded-lg p-4 space-y-4 min-w-max transform hover:scale-105 transition-all duration-300 hover:shadow-lg animate-fade-in-up opacity-0 [animation-delay:2000ms]!"
+                >
+                  <div
+                    class="text-sm font-medium text-muted-foreground animate-fade-in-up opacity-0 [animation-delay:2200ms]!"
+                  >
                     Organized by age groups with bib numbers
                   </div>
 
                   <!-- Premier 6-8 Years -->
                   <div class="space-y-2">
                     <div
-                      class="px-3 py-0.5 bg-primary/20 text-primary font-bold text-sm rounded-md inline-block"
+                      class="px-3 py-0.5 bg-primary/20 text-primary font-bold text-sm rounded-md inline-block animate-fade-in-up opacity-0 [animation-delay:2300ms]!"
                     >
                       Premier 6-8 Years
                     </div>
                     <div class="grid grid-cols-4 gap-1 text-xs min-w-max">
                       <div
-                        class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap"
+                        class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2400ms]!"
                       >
                         101
                       </div>
-                      <div class="px-2 whitespace-nowrap">Liam</div>
-                      <div class="px-2 whitespace-nowrap">Robertson</div>
-                      <div class="px-2 whitespace-nowrap">Calgary</div>
                       <div
-                        class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap"
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2400ms]!"
+                      >
+                        Liam
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2400ms]!"
+                      >
+                        Robertson
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2400ms]!"
+                      >
+                        Calgary
+                      </div>
+                      <div
+                        class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2500ms]!"
                       >
                         103
                       </div>
-                      <div class="px-2 whitespace-nowrap">Hamish</div>
-                      <div class="px-2 whitespace-nowrap">Murray</div>
-                      <div class="px-2 whitespace-nowrap">Sydney</div>
                       <div
-                        class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap"
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2500ms]!"
+                      >
+                        Hamish
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2500ms]!"
+                      >
+                        Murray
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2500ms]!"
+                      >
+                        Sydney
+                      </div>
+                      <div
+                        class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2600ms]!"
                       >
                         108
                       </div>
-                      <div class="px-2 whitespace-nowrap">Emma</div>
-                      <div class="px-2 whitespace-nowrap">MacDonald</div>
-                      <div class="px-2 whitespace-nowrap">Glasgow</div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2600ms]!"
+                      >
+                        Emma
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2600ms]!"
+                      >
+                        MacDonald
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2600ms]!"
+                      >
+                        Glasgow
+                      </div>
                     </div>
                   </div>
 
                   <!-- Premier 9-11 Years -->
                   <div class="space-y-2">
                     <div
-                      class="px-3 py-0.5 bg-primary/20 text-primary font-bold text-sm rounded-md inline-block"
+                      class="px-3 py-0.5 bg-primary/20 text-primary font-bold text-sm rounded-md inline-block animate-fade-in-up opacity-0 [animation-delay:2900ms]!"
                     >
                       Premier 9-11 Years
                     </div>
                     <div class="grid grid-cols-4 gap-1 text-xs min-w-max">
                       <div
-                        class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap"
+                        class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3000ms]!"
                       >
                         105
                       </div>
-                      <div class="px-2 whitespace-nowrap">Connor</div>
-                      <div class="px-2 whitespace-nowrap">McLeod</div>
-                      <div class="px-2 whitespace-nowrap">Edinburgh</div>
                       <div
-                        class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap"
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3000ms]!"
+                      >
+                        Connor
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3000ms]!"
+                      >
+                        McLeod
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3000ms]!"
+                      >
+                        Edinburgh
+                      </div>
+                      <div
+                        class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3100ms]!"
                       >
                         106
                       </div>
-                      <div class="px-2 whitespace-nowrap">Isla</div>
-                      <div class="px-2 whitespace-nowrap">Fraser</div>
-                      <div class="px-2 whitespace-nowrap">Melbourne</div>
                       <div
-                        class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap"
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3100ms]!"
+                      >
+                        Isla
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3100ms]!"
+                      >
+                        Fraser
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3100ms]!"
+                      >
+                        Melbourne
+                      </div>
+                      <div
+                        class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3200ms]!"
                       >
                         107
                       </div>
-                      <div class="px-2 whitespace-nowrap">James</div>
-                      <div class="px-2 whitespace-nowrap">Campbell</div>
-                      <div class="px-2 whitespace-nowrap">Toronto</div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3200ms]!"
+                      >
+                        James
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3200ms]!"
+                      >
+                        Campbell
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3200ms]!"
+                      >
+                        Toronto
+                      </div>
                     </div>
                   </div>
 
                   <!-- Premier 12-13 Years -->
                   <div class="space-y-2">
                     <div
-                      class="px-3 py-0.5 bg-primary/20 text-primary font-bold text-sm rounded-md inline-block"
+                      class="px-3 py-0.5 bg-primary/20 text-primary font-bold text-sm rounded-md inline-block animate-fade-in-up opacity-0 [animation-delay:3500ms]!"
                     >
                       Premier 12-13 Years
                     </div>
                     <div class="grid grid-cols-4 gap-1 text-xs min-w-max">
                       <div
-                        class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap"
+                        class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3600ms]!"
                       >
                         102
                       </div>
-                      <div class="px-2 whitespace-nowrap">Fiona</div>
-                      <div class="px-2 whitespace-nowrap">Sinclair</div>
-                      <div class="px-2 whitespace-nowrap">Aberdeen</div>
                       <div
-                        class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap"
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3600ms]!"
+                      >
+                        Fiona
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3600ms]!"
+                      >
+                        Sinclair
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3600ms]!"
+                      >
+                        Aberdeen
+                      </div>
+                      <div
+                        class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3700ms]!"
                       >
                         104
                       </div>
-                      <div class="px-2 whitespace-nowrap">Sophie</div>
-                      <div class="px-2 whitespace-nowrap">Stewart</div>
-                      <div class="px-2 whitespace-nowrap">Vancouver</div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3700ms]!"
+                      >
+                        Sophie
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3700ms]!"
+                      >
+                        Stewart
+                      </div>
+                      <div
+                        class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3700ms]!"
+                      >
+                        Vancouver
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -256,7 +528,7 @@
                     <p class="font-bold text-sidebar-foreground">You input spreadsheets</p>
                     <div class="text-sm text-sidebar-foreground/70 space-y-1">
                       <p>
-                        Choose CSV file exported from:
+                        Choose a CSV file exported from:
                         <a
                           href="http://eventry.net"
                           target="_blank"
@@ -289,8 +561,8 @@
                   <div>
                     <p class="font-bold text-sidebar-foreground">It groups automatically</p>
                     <p class="text-sm text-sidebar-foreground/70">
-                      Algorithm splits dancers into optimal age groups, which can you adjust if
-                      needed
+                      The algorithm splits dancers into optimal age groups, which can you customize
+                      if needed
                     </p>
                   </div>
                 </div>
@@ -304,8 +576,7 @@
                   <div>
                     <p class="font-bold text-sidebar-foreground">It numbers bibs</p>
                     <p class="text-sm text-sidebar-foreground/70">
-                      Reverse registration order numbering with automatic and customizable number
-                      assignment
+                      Uses reverse-registration-order with automatic and adjustable numbering
                     </p>
                   </div>
                 </div>
@@ -319,7 +590,14 @@
                   <div>
                     <p class="font-bold text-sidebar-foreground">You export results</p>
                     <p class="text-sm text-sidebar-foreground/70">
-                      Ready for ScotDance.app or paper programs
+                      Ready for <a
+                        href="https://scotdance.app"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-flex items-center font-bold gap-1 text-primary hover:text-primary/80 transition-colors"
+                      >
+                        ScotDance.app <ExternalLink class="h-3 w-3" />
+                      </a> or paper programs
                     </p>
                   </div>
                 </div>
@@ -357,8 +635,8 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
 import SettingsPane from '@/components/SettingsPane.vue'
-import { useDarkMode } from '@/composables/useDarkMode'
-import { Sun, Moon, Shield, ChevronRight, ExternalLink } from 'lucide-vue-next'
+import AppHeader from '@/components/AppHeader.vue'
+import { Shield, ChevronRight, ExternalLink } from 'lucide-vue-next'
 
 interface Props {
   isLoadingInputFile?: boolean
@@ -372,14 +650,50 @@ const emit = defineEmits<{
   'error-dismiss': []
   'choose-file': []
 }>()
+</script>
 
-// Dark mode
-const { isDark, toggle } = useDarkMode()
-function toggleDarkMode() {
-  console.log('Toggling dark mode')
-  toggle()
+<style scoped>
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-// Constants
-const INPUT_FILE_ACCEPT = 'text/csv'
-</script>
+@keyframes bounce-x {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(10px);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
+}
+
+.animate-bounce-x {
+  animation: bounce-x 2s ease-in-out infinite;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.8s ease-out forwards;
+}
+</style>
