@@ -8,14 +8,14 @@
       <div class="flex flex-col p-6 min-h-full">
         <!-- Stylish intro -->
         <div class="text-center mt-6 mb-12 max-w-lg mx-auto">
-          <p class="text-xl md:text-2xl font-light text-foreground">
+          <div class="text-xl md:text-2xl font-light text-foreground">
             This <span class="font-semibold text-primary">free online tool</span> splits dance
             competition registrations into <strong class="font-bold">age groups</strong> with
             <strong class="font-bold">bib numbers</strong>
             <div class="text-base text-muted-foreground font-normal mt-1">
               (so you don't have to figure it out manually).
             </div>
-          </p>
+          </div>
         </div>
 
         <!-- Two-column preview with more data -->
@@ -29,13 +29,15 @@
                 <span class="text-muted-foreground text-xs uppercase">From:</span>
                 Input
               </h3>
-              <div class="bg-card border rounded-lg p-4 min-w-max animate-fade-in-up opacity-0 [animation-delay:100ms]!">
+              <div
+                class="bg-card border rounded-lg p-4 min-w-max animate-fade-in-up opacity-0 [animation-delay:100ms]!"
+              >
                 <div
                   class="text-sm font-medium text-muted-foreground mb-3 animate-fade-in-up opacity-0 [animation-delay:300ms]!"
                 >
                   Your CSV file:
                 </div>
-                <div class="grid grid-cols-5 gap-1 text-xs min-w-max  -mx-2">
+                <div class="grid grid-cols-5 gap-1 text-xs min-w-max -mx-2">
                   <div
                     class="px-2 py-1 rounded font-medium whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:400ms]!"
                   >
@@ -273,17 +275,23 @@
               </div>
 
               <!-- Help tip moved outside the card -->
-              <div class="flex items-start text-xs gap-2 mt-4 p-2 bg-muted text-muted-foreground rounded-md animate-fade-in-up opacity-0 [animation-delay:1400ms]!">
+              <div
+                class="flex items-start text-xs gap-2 mt-4 p-2 bg-muted text-muted-foreground rounded-md animate-fade-in-up opacity-0 [animation-delay:1400ms]!"
+              >
                 <Info class="h-3 w-3 shrink-0 mt-0.5" />
-                  You can have different columns, in any order,<br />
-                  and it can parse many different formats.
+                You can have different columns, in any order,<br />
+                and it can parse many different formats.
               </div>
             </div>
 
             <!-- Arrow - responsive direction -->
             <div class="arrow-section">
-              <ChevronRight class="h-8 w-8 hidden xl:block animate-slide-in-left opacity-0 [animation-delay:1800ms]!" />
-              <ChevronDown class="h-8 w-8 block xl:hidden animate-slide-in-down opacity-0 [animation-delay:1800ms]!" />
+              <ChevronRight
+                class="h-8 w-8 hidden xl:block animate-slide-in-left opacity-0 [animation-delay:1800ms]!"
+              />
+              <ChevronDown
+                class="h-8 w-8 block xl:hidden animate-slide-in-down opacity-0 [animation-delay:1800ms]!"
+              />
             </div>
 
             <!-- Output preview -->
@@ -716,9 +724,9 @@ defineEmits<{
   grid-template-columns: 1fr;
   grid-template-rows: auto auto auto;
   grid-template-areas:
-    "input"
-    "arrow"
-    "output";
+    'input'
+    'arrow'
+    'output';
 }
 
 /* Desktop: horizontal layout with precise positioning */
@@ -726,7 +734,7 @@ defineEmits<{
   .preview-grid {
     grid-template-columns: auto auto auto;
     grid-template-rows: auto;
-    grid-template-areas: "input arrow output";
+    grid-template-areas: 'input arrow output';
     align-items: start;
     gap: 1rem;
     justify-content: center;
