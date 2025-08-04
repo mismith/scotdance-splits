@@ -26,5 +26,5 @@
   --color-border: color-mix(in srgb, var(--color-foreground), transparent 80%);
   --color-ring: #ffd323;
   --color-muted: color-mix(in srgb, var(--color-foreground), transparent 92%);
-  --color-muted-foreground: color-mix(in srgb, var(--color-foreground), transparent 8%);
+  --color-muted-foreground: color-mix(in srgb, var(--color-foreground), transparent 40%);
 }
