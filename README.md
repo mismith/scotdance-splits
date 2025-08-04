@@ -1,39 +1,11 @@
-# scotdance-splits
+# Splits
 
-This template should help get you started developing with Vue 3 in Vite.
+Free online tool that splits highland dance competition registrations into age groups with bib numbers.
 
-## Recommended IDE Setup
+## Features
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
-```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
+- **CSV Import**: Upload files from eventry.net, HDComps.com, or any registration system
+- **Auto-grouping**: Algorithm splits dancers into balanced age groups
+- **Bib numbering**: Reverse-registration-order with customizable starting numbers
+- **Privacy-first**: All processing happens locally, data never leaves your computer
+- **Export ready**: Output formatted for ScotDance.app or paper programs
