@@ -8,6 +8,7 @@ import CategoryCard from '@/components/CategoryCard.vue'
 import SettingsPane from '@/components/SettingsPane.vue'
 import SettingsGroup from '@/components/SettingsGroup.vue'
 import AppHeader from '@/components/AppHeader.vue'
+import HelpText from '@/components/HelpText.vue'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,6 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Accordion } from '@/components/ui/accordion'
+import { Columns } from 'lucide-vue-next'
 
 interface Props {
   inputFiles?: File[]
@@ -45,7 +48,7 @@ watch(step, () => {
   }
 })
 
-// CSV data processing  
+// CSV data processing
 const inputCSV = computed(() => props.inputCsv)
 
 watch(inputCSV, () => {
@@ -87,6 +90,12 @@ watch(inputHeaders, (headers) => {
   INPUT_COLUMNS.forEach((col) => {
     colIndexes[col.id] = headers.findIndex((header) => col.regex.test(header))
   })
+})
+
+// Column mapping validation
+const columnMappingIsValid = computed(() => {
+  const requiredColumns = INPUT_COLUMNS.filter((col) => col.required)
+  return requiredColumns.every((col) => colIndexes[col.id] >= 0)
 })
 
 // Bib number assignment
@@ -239,31 +248,28 @@ function handleStepChange(newStep: number) {
           />
 
           <template #settings>
-            <div class="space-y-4">
-              <p class="text-sm text-muted-foreground">
-                The page shows your input data. In order to do grouping automatically, you need to
-                map the columns to the correct fields. If there are extra rows, remove them in the
-                spreadsheet file first then try again.
-              </p>
+            <HelpText>
+              The table shows your input data. In order to do grouping automatically, you need to
+              map the columns to the correct fields. If there are extra rows, remove them in the
+              spreadsheet file first then try again.
+            </HelpText>
 
-              <SettingsGroup title="Input file">
-                <Button variant="outline" @click="handleHomeClick">
-                  Choose different file
-                </Button>
-              </SettingsGroup>
-
-              <SettingsGroup title="Column mapping">
+            <Accordion
+              type="multiple"
+              :default-value="columnMappingIsValid === false ? ['Column mapping'] : []"
+            >
+              <SettingsGroup
+                title="Column mapping"
+                :icon="Columns"
+                :is-valid="columnMappingIsValid"
+              >
                 <div class="space-y-4">
                   <div class="flex items-center space-x-2">
                     <Switch id="header-row" v-model:checked="hasHeaderRow" />
                     <Label for="header-row">Header row</Label>
                   </div>
 
-                  <div
-                    v-for="{ id, name, required } in INPUT_COLUMNS"
-                    :key="id"
-                    class="space-y-2"
-                  >
+                  <div v-for="{ id, name, required } in INPUT_COLUMNS" :key="id" class="space-y-2">
                     <Label :for="id">{{ name }}{{ required ? ' *' : '' }}</Label>
                     <Select
                       :model-value="inputHeaders[colIndexes[id]]"
@@ -271,8 +277,12 @@ function handleStepChange(newStep: number) {
                         (value) => (colIndexes[id] = inputHeaders.indexOf(value as string))
                       "
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select column..." />
+                      <SelectTrigger class="w-full">
+                        <SelectValue
+                          :placeholder="
+                            colIndexes[id] >= 0 ? inputHeaders[colIndexes[id]] : 'Select column...'
+                          "
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem v-for="header in inputHeaders" :key="header" :value="header">
@@ -283,7 +293,7 @@ function handleStepChange(newStep: number) {
                   </div>
                 </div>
               </SettingsGroup>
-            </div>
+            </Accordion>
           </template>
 
           <template #footer>
@@ -309,9 +319,9 @@ function handleStepChange(newStep: number) {
           </div>
 
           <template #settings>
-            <p class="text-sm text-muted-foreground">
+            <HelpText>
               Ensure the categories are split appropriately, or adjust them as needed.
-            </p>
+            </HelpText>
           </template>
 
           <template #footer>
@@ -335,30 +345,32 @@ function handleStepChange(newStep: number) {
 
           <template #settings>
             <div class="space-y-4">
-              <p class="text-sm text-muted-foreground">
-                Bib numbers are assigned based on reverse order of registration. You can adjust
-                the highest bib number to start from.
-              </p>
+              <HelpText>
+                Bib numbers are assigned based on reverse order of registration. You can adjust the
+                highest bib number to start from.
+              </HelpText>
 
-              <SettingsGroup title="Bib numbers">
-                <div class="space-y-2">
-                  <Label for="max-bib">Highest bib number</Label>
-                  <Input
-                    id="max-bib"
-                    type="number"
-                    v-model.number="maxBibNumber"
-                    :min="1"
-                    @blur="!maxBibNumber && (maxBibNumber = defaultMaxBibNumber)"
-                  />
-                </div>
-              </SettingsGroup>
+              <Accordion type="multiple">
+                <SettingsGroup title="Bib numbers">
+                  <div class="space-y-2">
+                    <Label for="max-bib">Highest bib number</Label>
+                    <Input
+                      id="max-bib"
+                      type="number"
+                      v-model.number="maxBibNumber"
+                      :min="1"
+                      @blur="!maxBibNumber && (maxBibNumber = defaultMaxBibNumber)"
+                    />
+                  </div>
+                </SettingsGroup>
 
-              <SettingsGroup title="CSV output">
-                <div class="flex items-center space-x-2">
-                  <Switch id="print-years" v-model:checked="isPrintingYears" />
-                  <Label for="print-years">Print 'Years' in age group names</Label>
-                </div>
-              </SettingsGroup>
+                <SettingsGroup title="CSV output">
+                  <div class="flex items-center space-x-2">
+                    <Switch id="print-years" v-model:checked="isPrintingYears" />
+                    <Label for="print-years">Print 'Years' in age group names</Label>
+                  </div>
+                </SettingsGroup>
+              </Accordion>
             </div>
           </template>
 

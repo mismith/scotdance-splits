@@ -275,12 +275,11 @@
               </div>
 
               <!-- Help tip moved outside the card -->
-              <div
-                class="flex items-start text-xs gap-2 mt-4 p-2 bg-muted text-muted-foreground rounded-md animate-fade-in-up opacity-0 [animation-delay:1400ms]!"
-              >
-                <Info class="h-3 w-3 shrink-0 mt-0.5" />
-                You can have different columns, in any order,<br />
-                and it can parse many different formats.
+              <div class="mt-4 animate-fade-in-up opacity-0 [animation-delay:1400ms]!">
+                <HelpText>
+                  You can have different columns, in any order,<br />
+                  and it can parse many different formats.
+                </HelpText>
               </div>
             </div>
 
@@ -547,7 +546,7 @@
                         href="http://eventry.net"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="inline-flex items-center font-bold gap-1 text-primary hover:text-primary/80 transition-colors"
+                        class="inline-flex items-center font-bold gap-0.5 text-primary hover:text-primary/80 transition-colors"
                       >
                         eventry.net <ExternalLink class="h-3 w-3" />
                       </a>
@@ -556,7 +555,7 @@
                         href="https://hdcomps.com"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="inline-flex items-center font-bold gap-1 text-primary hover:text-primary/80 transition-colors"
+                        class="inline-flex items-center font-bold gap-0.5 text-primary hover:text-primary/80 transition-colors"
                       >
                         HDComps.com <ExternalLink class="h-3 w-3" />
                       </a>
@@ -597,7 +596,7 @@
                       href="https://scotdance.app"
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="inline-flex items-center font-bold gap-1 text-primary hover:text-primary/80 transition-colors"
+                      class="inline-flex items-center font-bold gap-0.5 text-primary hover:text-primary/80 transition-colors"
                     >
                       ScotDance.app <ExternalLink class="h-3 w-3" />
                     </a>
@@ -639,7 +638,8 @@
 import { Button } from '@/components/ui/button'
 import SettingsPane from '@/components/SettingsPane.vue'
 import AppHeader from '@/components/AppHeader.vue'
-import { Shield, ChevronRight, ChevronDown, ExternalLink, Info } from 'lucide-vue-next'
+import HelpText from '@/components/HelpText.vue'
+import { Shield, ChevronRight, ChevronDown, ExternalLink } from 'lucide-vue-next'
 
 interface Props {
   isLoadingInputFile?: boolean
