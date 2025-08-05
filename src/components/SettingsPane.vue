@@ -6,13 +6,17 @@
     </div>
 
     <!-- Settings sidebar -->
-    <div class="w-full lg:w-80 settings-sidebar flex flex-col border-t lg:border-t-0 lg:border-l border-border bg-sidebar">
-      <div class="flex-1 overflow-auto p-6 space-y-6">
+    <div
+      class="w-full lg:w-80 settings-sidebar flex flex-col border-t lg:border-t-0 lg:border-l border-border bg-sidebar"
+    >
+      <div class="flex-1 overflow-auto p-4 space-y-4">
         <slot name="settings" />
       </div>
 
       <!-- Footer with action buttons in sidebar - sticky on mobile -->
-      <div class="sticky bottom-0 lg:static border-t border-sidebar-border p-4 bg-sidebar shadow-sm empty:hidden">
+      <div
+        class="sticky bottom-0 lg:static border-t border-sidebar-border p-4 bg-sidebar shadow-sm empty:hidden"
+      >
         <slot name="footer" />
       </div>
     </div>

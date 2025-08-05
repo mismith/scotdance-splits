@@ -539,7 +539,7 @@
                   <span class="text-primary font-bold text-sm">1</span>
                 </div>
                 <div>
-                  <p class="font-bold text-sidebar-foreground">You input spreadsheets</p>
+                  <p class="font-semibold text-sidebar-foreground">You input spreadsheets</p>
                   <div class="text-sm text-sidebar-foreground/70 space-y-1">
                     <p>
                       Choose a CSV file exported from:
@@ -573,7 +573,7 @@
                   <span class="text-primary font-bold text-sm">2</span>
                 </div>
                 <div>
-                  <p class="font-bold text-sidebar-foreground">
+                  <p class="font-semibold text-sidebar-foreground">
                     It groups and numbers automatically
                   </p>
                   <p class="text-sm text-sidebar-foreground/70">
@@ -590,7 +590,7 @@
                   <span class="text-primary font-bold text-sm">3</span>
                 </div>
                 <div>
-                  <p class="font-bold text-sidebar-foreground">You export results</p>
+                  <p class="font-semibold text-sidebar-foreground">You export results</p>
                   <p class="text-sm text-sidebar-foreground/70">
                     Ready for
                     <a
