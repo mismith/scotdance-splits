@@ -1,6 +1,6 @@
 <template>
   <AccordionItem :value="title">
-    <AccordionTrigger class="py-3 hover:no-underline">
+    <AccordionTrigger>
       <div class="flex items-center gap-2">
         <component
           v-if="icon"
@@ -26,11 +26,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion'
+import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { AlertCircle } from 'lucide-vue-next'
 import type { Component } from 'vue'
 
