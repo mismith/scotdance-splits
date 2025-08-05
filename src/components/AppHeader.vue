@@ -1,8 +1,11 @@
 <template>
-  <div class="bg-primary text-primary-foreground shadow-sm">
+  <div class="bg-primary text-primary-foreground shadow-sm sticky top-0 z-30">
     <div class="px-6 py-4">
       <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity" @click="$emit('home-click')">
+        <div
+          class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+          @click="$emit('home-click')"
+        >
           <img src="/touchicon.png" alt="Splits Logo" class="w-8 h-8" />
           <h1 class="text-2xl font-bold text-primary-foreground">Splits</h1>
         </div>

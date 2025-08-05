@@ -6,11 +6,11 @@
   }
 
   html {
-    @apply font-sans overflow-hidden;
+    @apply font-sans lg:overflow-hidden;
   }
 
   body {
-    @apply bg-background text-foreground overflow-hidden;
+    @apply bg-background text-foreground;
   }
 
   * {

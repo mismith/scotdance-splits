@@ -44,7 +44,7 @@ function handleHomeClick() {
 </script>
 
 <template>
-  <div class="h-screen flex flex-col">
+  <div class="lg:h-screen flex flex-col">
     <!-- Home page with file upload -->
     <FileUpload
       v-if="!inputFiles?.length"
