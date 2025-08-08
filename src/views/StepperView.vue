@@ -79,23 +79,45 @@ const inputData = computed(() => {
 const colIndexes = reactive(
   INPUT_COLUMNS.reduce(
     (acc, col) => {
-      acc[col.id] = 0
+      acc[col.id] = undefined
       return acc
     },
     {} as Record<string, number>,
   ),
 )
 
-watch(inputHeaders, (headers) => {
-  INPUT_COLUMNS.forEach((col) => {
-    colIndexes[col.id] = headers.findIndex((header) => col.regex.test(header))
-  })
-})
+watch(
+  inputHeaders,
+  (headers) => {
+    INPUT_COLUMNS.forEach((col) => {
+      colIndexes[col.id] = headers.findIndex((header) => col.regex.test(header))
+    })
+  },
+  { immediate: true },
+)
 
 // Column mapping validation
 const columnMappingIsValid = computed(() => {
   const requiredColumns = INPUT_COLUMNS.filter((col) => col.required)
   return requiredColumns.every((col) => colIndexes[col.id] >= 0)
+})
+
+// Individual field validation
+const isFieldValid = computed(() => (fieldId: string) => {
+  const column = INPUT_COLUMNS.find((col) => col.id === fieldId)
+  if (column?.required) {
+    return colIndexes[fieldId] >= 0
+  }
+  return true // optional fields are always considered valid
+})
+
+// Step 3 validation
+const bibNumbersIsValid = computed(() => {
+  return maxBibNumber.value != null && maxBibNumber.value > 0
+})
+
+const csvOutputIsValid = computed(() => {
+  return isPrintingYears.value != null // This is always valid since it has a default
 })
 
 // Bib number assignment
@@ -110,7 +132,7 @@ watch(inputData, (v) => {
     maxBibNumber.value = defaultValue
   }
   defaultMaxBibNumber.value = defaultValue
-})
+}, { immediate: true })
 
 const numberedCSV = computed(() => {
   const output = inputData.value
@@ -270,12 +292,19 @@ function handleStepChange(newStep: number) {
                       class="border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-full items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
                     >
                       <span>Present</span>
-                      <Switch id="header-row" v-model:checked="hasHeaderRow" />
+                      <Switch id="header-row" v-model="hasHeaderRow" />
                     </label>
                   </div>
 
                   <div v-for="{ id, name, required } in INPUT_COLUMNS" :key="id" class="space-y-2">
-                    <Label :for="id">{{ name }}{{ required ? ' *' : '' }}</Label>
+                    <Label 
+                      :for="id" 
+                      :class="{
+                        'text-destructive': required && !isFieldValid(id)
+                      }"
+                    >
+                      {{ name }}{{ required ? ' *' : '' }}
+                    </Label>
                     <Select
                       :model-value="inputHeaders[colIndexes[id]]"
                       @update:model-value="
@@ -283,11 +312,7 @@ function handleStepChange(newStep: number) {
                       "
                     >
                       <SelectTrigger class="w-full">
-                        <SelectValue
-                          :placeholder="
-                            colIndexes[id] >= 0 ? inputHeaders[colIndexes[id]] : 'Select column...'
-                          "
-                        />
+                        <SelectValue placeholder="Select column..." />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem v-for="header in inputHeaders" :key="header" :value="header">
@@ -356,7 +381,7 @@ function handleStepChange(newStep: number) {
               </HelpText>
 
               <Accordion type="multiple">
-                <SettingsGroup title="Bib numbers">
+                <SettingsGroup title="Bib numbers" :is-valid="bibNumbersIsValid">
                   <div class="space-y-2">
                     <Label for="max-bib">Highest bib number</Label>
                     <Input
@@ -369,14 +394,14 @@ function handleStepChange(newStep: number) {
                   </div>
                 </SettingsGroup>
 
-                <SettingsGroup title="CSV output">
+                <SettingsGroup title="CSV output" :is-valid="csvOutputIsValid">
                   <div class="space-y-2">
                     <Label for="print-years">Age group names</Label>
                     <label
                       class="border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-full items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
                     >
                       <span>Print "Years"</span>
-                      <Switch id="print-years" v-model:checked="isPrintingYears" />
+                      <Switch id="print-years" v-model="isPrintingYears" />
                     </label>
                   </div>
                 </SettingsGroup>

@@ -1,21 +1,31 @@
 <template>
   <AccordionItem :value="title">
     <AccordionTrigger>
-      <div class="flex items-center gap-2">
-        <component
-          v-if="icon"
-          :is="icon"
-          class="h-4 w-4 shrink-0"
-          :class="{
-            'text-destructive': isValid === false,
-            'text-muted-foreground': isValid !== false,
-          }"
-        />
-        <span class="font-medium">{{ title }}</span>
-        <AlertCircle v-if="isValid === false" class="h-4 w-4 text-destructive ml-auto mr-2" />
+      <div class="flex items-center w-full gap-2">
+        <span class="font-medium mr-auto">{{ title }}</span>
+        <TooltipProvider v-if="isValid">
+          <Tooltip>
+            <TooltipTrigger>
+              <CheckIcon class="size-5 text-green-500" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>All fields in this section are valid</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <TooltipProvider v-else>
+          <Tooltip>
+            <TooltipTrigger>
+              <XIcon class="size-5 text-destructive" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>This section has validation issues that need to be fixed</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </AccordionTrigger>
-    <AccordionContent>
+    <AccordionContent class="pl-6">
       <div v-if="description" class="text-sm text-muted-foreground mb-3">
         {{ description }}
       </div>
@@ -27,7 +37,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { AlertCircle } from 'lucide-vue-next'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { CheckIcon, XIcon } from 'lucide-vue-next'
 import type { Component } from 'vue'
 
 interface Props {
