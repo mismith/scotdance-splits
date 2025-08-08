@@ -124,6 +124,10 @@ const csvOutputIsValid = computed(() => {
   return isPrintingYears.value != null // This is always valid since it has a default
 })
 
+const isCountryColumnMapped = computed(() => {
+  return colIndexes.country >= 0
+})
+
 const rowFilteringIsValid = computed(() => {
   return true // Row filtering is always valid since it's optional
 })
@@ -216,6 +220,7 @@ const filteredOutRowIndexes = computed(() => filteredInputData.value.excludedInd
 const maxBibNumber = ref<number>()
 const defaultMaxBibNumber = ref<number>()
 const isPrintingYears = ref(true)
+const includeCountry = ref(false)
 provide('isPrintingYears', isPrintingYears)
 
 watch(inputData, (v) => {
@@ -311,14 +316,21 @@ const output = computed(() => {
         numberedCSV.value?.filter((row) => row.find((value) => partition.codes.includes(value))) ||
         []
       data.push(
-        ...rows.map((row) => [
-          row[row.length - 1],
-          row[colIndexes.firstName] || (!row[colIndexes.lastName] && row[colIndexes.fullName]),
-          row[colIndexes.lastName],
-          [row[colIndexes.location], row[colIndexes.region], row[colIndexes.country]]
-            .filter(Boolean)
-            .join(', '),
-        ]),
+        ...rows.map((row) => {
+          // Build location column based on includeCountry setting
+          const locationParts = [row[colIndexes.location], row[colIndexes.region]]
+          
+          if (includeCountry.value && isCountryColumnMapped.value && row[colIndexes.country]) {
+            locationParts.push(row[colIndexes.country])
+          }
+          
+          return [
+            row[row.length - 1],
+            row[colIndexes.firstName] || (!row[colIndexes.lastName] && row[colIndexes.fullName]),
+            row[colIndexes.lastName],
+            locationParts.filter(Boolean).join(', '),
+          ]
+        }),
       )
     })
   return data
@@ -502,14 +514,33 @@ function handleFiltersChanged(config: { enabled: boolean; showDimmed: boolean; f
                 </SettingsGroup>
 
                 <SettingsGroup title="CSV output" :is-valid="csvOutputIsValid">
-                  <div class="space-y-2">
-                    <Label for="print-years">Age group names</Label>
-                    <label
-                      class="border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-full items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-                    >
-                      <span>Print "Years"</span>
-                      <Switch id="print-years" v-model="isPrintingYears" />
-                    </label>
+                  <div class="space-y-4">
+                    <div class="space-y-2">
+                      <Label for="print-years">Age group names</Label>
+                      <label
+                        class="border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-full items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+                      >
+                        <span>Print "Years"</span>
+                        <Switch id="print-years" v-model="isPrintingYears" />
+                      </label>
+                    </div>
+                    
+                    <div class="space-y-2">
+                      <Label for="include-country">Location</Label>
+                      <label
+                        :class="[
+                          'border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*=\'text-\'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-full items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=\'size-\'])]:size-4',
+                          !isCountryColumnMapped && 'cursor-not-allowed opacity-50'
+                        ]"
+                      >
+                        <span>Include country</span>
+                        <Switch 
+                          id="include-country" 
+                          v-model="includeCountry" 
+                          :disabled="!isCountryColumnMapped"
+                        />
+                      </label>
+                    </div>
                   </div>
                 </SettingsGroup>
               </Accordion>
