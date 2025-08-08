@@ -19,6 +19,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
@@ -415,13 +416,15 @@ function handleFiltersChanged(config: { enabled: boolean; showDimmed: boolean; f
                     <Select
                       :model-value="inputHeaders[colIndexes[id]]"
                       @update:model-value="
-                        (value) => (colIndexes[id] = inputHeaders.indexOf(value as string))
+                        (value) => (colIndexes[id] = value === 'none' ? -1 : inputHeaders.indexOf(value as string))
                       "
                     >
                       <SelectTrigger class="w-full">
                         <SelectValue placeholder="Select column..." />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectSeparator />
                         <SelectItem v-for="header in inputHeaders" :key="header" :value="header">
                           {{ header }}
                         </SelectItem>
