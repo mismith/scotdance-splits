@@ -23,47 +23,49 @@
       <div class="cols-container">
         <div ref="colsRef" class="cols">
           <!-- Left side: Individual ages -->
-          <div class="space-y-2">
+          <div class="flex flex-col">
             <div class="text-sm font-medium text-muted-foreground mb-2">Individual Ages</div>
-            <div
-              v-for="[age, count] in ageCountsArray"
-              :key="age"
-              ref="leftSideRef"
-              class="flex items-center justify-between p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-colors"
-            >
-              <span class="font-medium">Age {{ age }}</span>
-              <DancerCount :count="count" :total="totalDancers" size="x-small" />
+            <div class="flex flex-col flex-1 gap-2">
+              <div
+                v-for="[age, count] in ageCountsArray"
+                :key="age"
+                ref="leftSideRef"
+                class="flex items-center justify-between p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-colors min-h-[48px]"
+              >
+                <span class="font-medium">Age {{ age }}</span>
+                <DancerCount :count="count" :total="totalDancers" size="x-small" />
+              </div>
             </div>
           </div>
           
-          <!-- Spacer with arrow -->
-          <div class="w-12 flex items-center justify-center">
-            <div class="text-2xl text-muted-foreground">→</div>
-          </div>
+          <!-- Spacer -->
+          <div class="flex-1"></div>
           
           <!-- Right side: Partitioned groups -->
-          <div class="space-y-2">
+          <div class="flex flex-col">
             <div class="text-sm font-medium text-muted-foreground mb-2">Age Groups</div>
-            <div
-              v-for="([[minAge, maxAge], count], index) in partitionedAgeCountsArray"
-              :key="index"
-              ref="rightSideRef"
-              :style="{ minHeight: `${Math.max(48, (count / totalDancers) * 120 + 24)}px` }"
-              class="flex items-center justify-between p-3 text-sm bg-primary/10 border-2 border-primary/30 rounded-md hover:bg-primary/15 transition-colors"
-            >
-              <span class="font-semibold text-primary-foreground">{{ getAgeGroupName(minAge, maxAge, isPrintingYears) }}</span>
-              <DancerCount :count="count" :total="totalDancers" size="x-small" />
+            <div class="flex flex-col flex-1 gap-2">
+              <div
+                v-for="([[minAge, maxAge], count], index) in partitionedAgeCountsArray"
+                :key="index"
+                ref="rightSideRef"
+                :style="{ flex: `${count} 1 0` }"
+                class="flex items-center justify-between p-3 text-sm bg-primary/10 border-2 border-primary/30 rounded-md hover:bg-primary/15 transition-colors min-h-[48px]"
+              >
+                <span class="font-semibold text-foreground">{{ getAgeGroupName(minAge, maxAge, isPrintingYears) }}</span>
+                <DancerCount :count="count" :total="totalDancers" size="x-small" />
+              </div>
             </div>
           </div>
         </div>
         
         <!-- SVG connections -->
-        <svg v-if="rightSideRef?.length > 1" class="absolute inset-0 w-full h-full pointer-events-none">
+        <svg v-if="rightSideRef?.length > 1" class="absolute inset-0 w-full h-full pointer-events-none" style="overflow: visible;">
           <path
             v-for="(el, index) in rightSideRef.slice(0, rightSideRef.length - 1)"
-            :key="index"
+            :key="`${index}-${changeTracker}`"
             :d="getCurvePath(el, index)"
-            class="stroke-muted-foreground/25 fill-none stroke-1"
+            class="stroke-muted-foreground/40 fill-none stroke-2"
           />
         </svg>
       </div>
@@ -72,7 +74,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, inject, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, inject, onMounted, onUnmounted, nextTick } from 'vue'
 import partition from 'linear-partitioning'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -188,32 +190,55 @@ function getCurvePath(rightSide: HTMLElement, rightSideIndex: number) {
   const left = leftSide.getBoundingClientRect()
   const right = rightSide.getBoundingClientRect()
   
-  return `
-    M ${left.left - root.left} ${left.top - root.top + left.height}
-    L ${left.left - root.left + left.width} ${left.top - root.top + left.height}
-    C ${root.left + root.width / 2} ${left.top - root.top + left.height},
-      ${root.left + root.width / 2} ${right.top - root.top + right.height},
-      ${right.left - root.left} ${right.top - root.top + right.height}
-    L ${right.left - root.left + right.width} ${right.top - root.top + right.height}`
+  // Get the next right element to calculate gap position
+  const nextRightSide = rightSideRef.value[rightSideIndex + 1]
+  const nextLeftSide = leftSideRef.value[leftSideIndex + 1]
+  
+  if (!nextRightSide) return ''
+  
+  const nextRight = nextRightSide.getBoundingClientRect()
+  
+  // Calculate positions for lines in the middle of gaps between cards
+  const leftX = -12 // Extend beyond left edge
+  const rightX = root.width + 12 // Extend beyond right edge
+  const leftCardEndX = left.left - root.left + left.width
+  const rightCardStartX = right.left - root.left
+  const midX = (leftCardEndX + rightCardStartX) / 2
+  
+  // Position left line in the middle of gap between left cards (if next exists, otherwise bottom)
+  const leftY = nextLeftSide 
+    ? left.top - root.top + left.height + (nextLeftSide.getBoundingClientRect().top - left.top - left.height) / 2
+    : left.top - root.top + left.height
+  
+  // Position right line in the middle of the gap between current and next right card
+  const rightY = right.top - root.top + right.height + (nextRight.top - right.top - right.height) / 2
+  
+  // Create path: straight line from left edge to end of left card, curve in middle, straight line to right edge
+  return `M ${leftX} ${leftY} L ${leftCardEndX} ${leftY} C ${midX} ${leftY}, ${midX} ${rightY}, ${rightCardStartX} ${rightY} L ${rightX} ${rightY}`
 }
 
-function refresh() {
+async function refresh() {
+  await nextTick()
   changeTracker.value = !changeTracker.value
 }
 
 defineExpose({ refresh })
 
 const resizeObserver = new ResizeObserver(() => refresh())
-onMounted(() => {
+onMounted(async () => {
   if (colsRef.value) {
     resizeObserver.observe(colsRef.value)
   }
+  // Initial refresh to draw curves after mount
+  await nextTick()
+  refresh()
 })
 onUnmounted(() => {
   resizeObserver.disconnect()
 })
 
 const emit = defineEmits(['partition'])
+
 watch(
   partitionedAgeCountsArray,
   (partitions) => {
@@ -221,9 +246,16 @@ watch(
       'partition',
       partitions.map(([ageRange]) => ageRange),
     )
+    // Refresh curves after partition changes
+    setTimeout(() => refresh(), 50)
   },
   { immediate: true },
 )
+
+// Watch for changes in refs to trigger curve updates
+watch([leftSideRef, rightSideRef], () => {
+  setTimeout(() => refresh(), 10)
+}, { deep: true })
 </script>
 
 <style scoped>
