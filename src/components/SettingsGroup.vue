@@ -25,7 +25,7 @@
         </TooltipProvider>
       </div>
     </AccordionTrigger>
-    <AccordionContent class="pl-6">
+    <AccordionContent>
       <div v-if="description" class="text-sm text-muted-foreground mb-3">
         {{ description }}
       </div>

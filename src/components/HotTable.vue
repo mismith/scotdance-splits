@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted, type PropType } from 'vue'
 import { HotTable } from '@handsontable/vue3'
 import { registerAllModules } from 'handsontable/registry'
 import 'handsontable/styles/handsontable.css'
@@ -13,7 +13,17 @@ import 'handsontable/styles/ht-theme-main.css'
 import { useDarkMode } from '@/composables/useDarkMode'
 
 registerAllModules()
-const props = defineProps(HotTable.props)
+interface Props {
+  dimmedRows?: number[]
+}
+
+const props = defineProps({
+  ...HotTable.props,
+  dimmedRows: {
+    type: Array as PropType<number[]>,
+    default: () => []
+  }
+})
 
 const hotData = computed(() => {
   return [...(props.settings?.data || Array.from(props.data) || [])]
@@ -44,6 +54,23 @@ const hotSettings = computed(() => {
   return {
     ...defaultSettings,
     ...settings,
+    afterRenderer: (td: HTMLTableCellElement, row: number, col: number, prop: string | number, value: any, cellProperties: any) => {
+      // Apply default renderer first
+      if (settings.afterRenderer) {
+        settings.afterRenderer(td, row, col, prop, value, cellProperties)
+      }
+      
+      // Apply dimming if this row should be dimmed
+      if (props.dimmedRows?.includes(row)) {
+        td.style.opacity = '0.4'
+        td.style.color = 'var(--color-muted-foreground)'
+        td.classList.add('dimmed-row')
+      } else {
+        td.style.opacity = ''
+        td.style.color = ''
+        td.classList.remove('dimmed-row')
+      }
+    }
   }
 })
 

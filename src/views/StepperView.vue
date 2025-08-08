@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, reactive, watch, provide, nextTick } from 'vue'
-import { parse, unparse } from 'papaparse'
+import { unparse } from 'papaparse'
 
 import { getAgeGroupName, CATEGORY_CODE_NAMES, INPUT_COLUMNS, downloadCSV } from '@/lib/helpers'
 import HotTable from '@/components/HotTable.vue'
@@ -9,6 +9,7 @@ import SettingsPane from '@/components/SettingsPane.vue'
 import SettingsGroup from '@/components/SettingsGroup.vue'
 import AppHeader from '@/components/AppHeader.vue'
 import HelpText from '@/components/HelpText.vue'
+import RowFilters from '@/components/RowFilters.vue'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -73,13 +74,16 @@ const inputHeaders = computed<string[]>(() => {
 })
 
 const inputData = computed(() => {
+  if (rowFilteringConfig.value.enabled) {
+    return filteredInputData.value.filtered
+  }
   return inputCSV.value?.slice(hasHeaderRow.value ? 1 : 0)
 })
 
 const colIndexes = reactive(
   INPUT_COLUMNS.reduce(
     (acc, col) => {
-      acc[col.id] = undefined
+      acc[col.id] = -1
       return acc
     },
     {} as Record<string, number>,
@@ -119,6 +123,94 @@ const bibNumbersIsValid = computed(() => {
 const csvOutputIsValid = computed(() => {
   return isPrintingYears.value != null // This is always valid since it has a default
 })
+
+const rowFilteringIsValid = computed(() => {
+  return true // Row filtering is always valid since it's optional
+})
+
+// Row filtering
+interface FilterConfig {
+  id: string
+  mode: 'include' | 'exclude'
+  column: 'all' | string
+  term: string
+  caseSensitive: boolean
+}
+
+const rowFilteringConfig = ref<{
+  enabled: boolean
+  showDimmed: boolean
+  filters: FilterConfig[]
+}>({
+  enabled: false,
+  showDimmed: true,
+  filters: []
+})
+
+// Apply row filtering logic
+function applyFilters(data: string[][], headers: string[]): { filtered: string[][]; excludedIndexes: number[] } {
+  if (!rowFilteringConfig.value.enabled || rowFilteringConfig.value.filters.length === 0) {
+    return { filtered: data, excludedIndexes: [] }
+  }
+
+  const activeFilters = rowFilteringConfig.value.filters.filter(f => f.term.trim())
+  if (activeFilters.length === 0) {
+    return { filtered: data, excludedIndexes: [] }
+  }
+
+  const excludedIndexes: number[] = []
+  const filteredData = data.filter((row, index) => {
+    let include = true
+
+    // Process include filters (must match ALL)
+    const includeFilters = activeFilters.filter(f => f.mode === 'include')
+    if (includeFilters.length > 0) {
+      include = includeFilters.every(filter => matchesFilter(row, headers, filter))
+    }
+
+    // Process exclude filters (must NOT match ANY)
+    if (include) {
+      const excludeFilters = activeFilters.filter(f => f.mode === 'exclude')
+      if (excludeFilters.some(filter => matchesFilter(row, headers, filter))) {
+        include = false
+      }
+    }
+
+    if (!include) {
+      excludedIndexes.push(index)
+    }
+
+    return include
+  })
+
+  return { filtered: filteredData, excludedIndexes }
+}
+
+function matchesFilter(row: string[], headers: string[], filter: FilterConfig): boolean {
+  const term = filter.caseSensitive ? filter.term : filter.term.toLowerCase()
+  
+  if (filter.column === 'all') {
+    return row.some(cell => {
+      const cellValue = filter.caseSensitive ? (cell || '') : (cell || '').toLowerCase()
+      return cellValue.includes(term)
+    })
+  } else {
+    const columnIndex = headers.indexOf(filter.column)
+    if (columnIndex === -1) return false
+    
+    const cellValue = filter.caseSensitive ? (row[columnIndex] || '') : (row[columnIndex] || '').toLowerCase()
+    return cellValue.includes(term)
+  }
+}
+
+const filteredInputData = computed(() => {
+  if (!inputCSV.value) return { filtered: [], excludedIndexes: [] }
+  
+  const rawData = hasHeaderRow.value ? inputCSV.value.slice(1) : inputCSV.value
+  return applyFilters(rawData, inputHeaders.value)
+})
+
+const filteredOutRowIndexes = computed(() => filteredInputData.value.excludedIndexes)
 
 // Bib number assignment
 const maxBibNumber = ref<number>()
@@ -241,6 +333,10 @@ function handleHomeClick() {
 function handleStepChange(newStep: number) {
   step.value = newStep
 }
+
+function handleFiltersChanged(config: { enabled: boolean; showDimmed: boolean; filters: FilterConfig[] }) {
+  rowFilteringConfig.value = config
+}
 </script>
 
 <template>
@@ -262,7 +358,8 @@ function handleStepChange(newStep: number) {
           <HotTable
             v-if="inputData"
             ref="inputHotRef"
-            :data="inputData"
+            :data="rowFilteringConfig.showDimmed && rowFilteringConfig.enabled ? (inputCSV?.slice(hasHeaderRow ? 1 : 0) || []) : inputData"
+            :dimmed-rows="rowFilteringConfig.showDimmed && rowFilteringConfig.enabled ? filteredOutRowIndexes : []"
             :settings="{
               colHeaders: hasHeaderRow ? inputHeaders : true,
               readOnly: true,
@@ -271,9 +368,7 @@ function handleStepChange(newStep: number) {
 
           <template #settings>
             <HelpText>
-              The table shows your input data. In order to do grouping automatically, you need to
-              map the columns to the correct fields. If there are extra rows, remove them in the
-              spreadsheet file first then try again.
+              Map the columns to the correct fields for automatic grouping. 
             </HelpText>
 
             <Accordion
@@ -322,6 +417,18 @@ function handleStepChange(newStep: number) {
                     </Select>
                   </div>
                 </div>
+              </SettingsGroup>
+
+              <SettingsGroup
+                title="Row filtering"
+                :is-valid="rowFilteringIsValid"
+              >
+                <RowFilters 
+                  :input-headers="inputHeaders"
+                  :filters="rowFilteringConfig.filters"
+                  :show-dimmed="rowFilteringConfig.showDimmed"
+                  @filters-changed="handleFiltersChanged"
+                />
               </SettingsGroup>
             </Accordion>
           </template>
