@@ -6,14 +6,16 @@
     <SettingsPane>
       <!-- Main content area - visual preview -->
       <div class="flex flex-col p-6 min-h-full">
+        <div class="flex-1 mt-4" />
+
         <!-- Stylish intro -->
-        <div class="text-center mt-6 mb-12 max-w-lg mx-auto">
+        <div class="text-center mb-12 max-w-lg mx-auto">
           <div class="text-xl md:text-2xl font-light text-foreground">
             This <span class="font-semibold text-primary">free online tool</span> splits dance
             competition registrations into <strong class="font-bold">age groups</strong> with
             <strong class="font-bold">bib numbers</strong>
             <div class="text-base text-muted-foreground font-normal mt-1">
-              (so you don't have to figure it out manually).
+              (so you don't have to).
             </div>
           </div>
         </div>
@@ -273,14 +275,6 @@
                   </div>
                 </div>
               </div>
-
-              <!-- Help tip moved outside the card -->
-              <div class="mt-4 animate-fade-in-up opacity-0 [animation-delay:1400ms]!">
-                <HelpText>
-                  You can have different columns, in any order,<br />
-                  and it can parse many different formats.
-                </HelpText>
-              </div>
             </div>
 
             <!-- Arrow - responsive direction -->
@@ -507,102 +501,106 @@
           </div>
         </div>
 
-        <div class="flex-1" />
-
-        <!-- Privacy banner at bottom -->
-        <div
-          class="lg:sticky bottom-6 max-w-4xl w-full mx-auto backdrop-blur-md mt-8 p-4 bg-primary/10 border border-primary/20 rounded-lg animate-fade-in-up opacity-0 [animation-delay:4200ms]!"
-        >
-          <div class="flex items-start gap-3">
-            <Shield class="h-5 w-5 text-primary shrink-0" />
-            <div>
-              <h4 class="font-semibold text-foreground text-sm mb-1">Privacy First</h4>
-              <p class="text-sm text-muted-foreground">
-                All processing happens locally. Your data never leaves your computer. It is never
-                sent or shared in any capacity.
-              </p>
-            </div>
-          </div>
-        </div>
+        <div class="flex-1 mb-6" />
       </div>
 
       <template #settings>
-        <div class="space-y-6">
-          <div>
-            <h3 class="text-lg font-semibold text-sidebar-foreground mb-4">How it works</h3>
-            <div class="space-y-4">
-              <div class="flex items-start gap-3">
-                <div
-                  class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5"
-                >
-                  <span class="text-primary font-bold text-sm">1</span>
+        <div class="flex flex-col h-full">
+          <div class="space-y-6 flex-1">
+            <div>
+              <h3 class="text-lg font-semibold text-sidebar-foreground mb-4">How it works</h3>
+              <div class="space-y-4">
+                <div class="flex items-start gap-3">
+                  <div
+                    class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5"
+                  >
+                    <span class="text-primary font-bold text-sm">1</span>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-sidebar-foreground">You input spreadsheets</p>
+                    <div class="text-sm text-sidebar-foreground/70 space-y-1">
+                      <p>
+                        Choose a CSV file exported from:
+                        <a
+                          href="http://eventry.net"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="inline-flex items-center font-bold gap-0.5 text-primary hover:text-primary/80 transition-colors"
+                        >
+                          eventry.net <ExternalLink class="h-3 w-3" />
+                        </a>
+                        or
+                        <a
+                          href="https://hdcomps.com"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="inline-flex items-center font-bold gap-0.5 text-primary hover:text-primary/80 transition-colors"
+                        >
+                          HDComps.com <ExternalLink class="h-3 w-3" />
+                        </a>
+                        or any other dancer registration system.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p class="font-semibold text-sidebar-foreground">You input spreadsheets</p>
-                  <div class="text-sm text-sidebar-foreground/70 space-y-1">
-                    <p>
-                      Choose a CSV file exported from:
+
+                <div class="flex items-start gap-3">
+                  <div
+                    class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5"
+                  >
+                    <span class="text-primary font-bold text-sm">2</span>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-sidebar-foreground">
+                      It does some magic
+                      <WandSparklesIcon class="inline-block size-4 text-primary" />
+                    </p>
+                    <p class="text-sm text-sidebar-foreground/70">
+                      The algorithm splits dancers into as evenly-balanced age groups as possible
+                      and assigns bib numbers using reverse-registration-order.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                  <div
+                    class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5"
+                  >
+                    <span class="text-primary font-bold text-sm">3</span>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-sidebar-foreground">You export results</p>
+                    <p class="text-sm text-sidebar-foreground/70">
+                      Download a spreadsheet ready for
                       <a
-                        href="http://eventry.net"
+                        href="https://scotdance.app"
                         target="_blank"
                         rel="noopener noreferrer"
                         class="inline-flex items-center font-bold gap-0.5 text-primary hover:text-primary/80 transition-colors"
                       >
-                        eventry.net <ExternalLink class="h-3 w-3" />
+                        ScotDance.app <ExternalLink class="h-3 w-3" />
                       </a>
-                      or
-                      <a
-                        href="https://hdcomps.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="inline-flex items-center font-bold gap-0.5 text-primary hover:text-primary/80 transition-colors"
-                      >
-                        HDComps.com <ExternalLink class="h-3 w-3" />
-                      </a>
-                      or any other dancer registration system.
+                      or paper programs.
                     </p>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <div class="flex items-start gap-3">
-                <div
-                  class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5"
-                >
-                  <span class="text-primary font-bold text-sm">2</span>
-                </div>
-                <div>
-                  <p class="font-semibold text-sidebar-foreground">
-                    It groups and numbers automatically
-                  </p>
-                  <p class="text-sm text-sidebar-foreground/70">
-                    The algorithm splits dancers into balanced age groups and assigns bib numbers
-                    using reverse-registration-order. You can customize both if needed.
-                  </p>
-                </div>
-              </div>
-
-              <div class="flex items-start gap-3">
-                <div
-                  class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5"
-                >
-                  <span class="text-primary font-bold text-sm">3</span>
-                </div>
-                <div>
-                  <p class="font-semibold text-sidebar-foreground">You export results</p>
-                  <p class="text-sm text-sidebar-foreground/70">
-                    Ready for
-                    <a
-                      href="https://scotdance.app"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="inline-flex items-center font-bold gap-0.5 text-primary hover:text-primary/80 transition-colors"
-                    >
-                      ScotDance.app <ExternalLink class="h-3 w-3" />
-                    </a>
-                    or paper programs.
-                  </p>
-                </div>
+          <!-- Privacy banner - sticky at bottom -->
+          <div
+            class="sticky bottom-0 mt-12 p-3 bg-primary/10 backdrop-blur-md border border-primary/20 rounded-lg"
+          >
+            <div class="flex items-start gap-2">
+              <Shield class="h-4 w-4 text-primary shrink-0" />
+              <div>
+                <h4 class="font-semibold text-sidebar-foreground text-sm -mt-0.5 mb-1">
+                  Privacy Matters!
+                </h4>
+                <p class="text-xs text-sidebar-foreground/70">
+                  This tool is fully browser-based, so your data is never sent or stored in any way.
+                </p>
               </div>
             </div>
           </div>
@@ -639,7 +637,18 @@ import { Button } from '@/components/ui/button'
 import SettingsPane from '@/components/SettingsPane.vue'
 import AppHeader from '@/components/AppHeader.vue'
 import HelpText from '@/components/HelpText.vue'
-import { Shield, ChevronRight, ChevronDown, ExternalLink } from 'lucide-vue-next'
+import {
+  Shield,
+  ChevronRight,
+  ChevronDown,
+  ExternalLink,
+  SparkleIcon,
+  SparklesIcon,
+  WandIcon,
+  Wand2Icon,
+  WandSparkles,
+  WandSparklesIcon,
+} from 'lucide-vue-next'
 
 interface Props {
   isLoadingInputFile?: boolean
@@ -735,7 +744,7 @@ defineEmits<{
     grid-template-columns: auto auto auto;
     grid-template-rows: auto;
     grid-template-areas: 'input arrow output';
-    align-items: start;
+    align-items: center;
     gap: 1rem;
     justify-content: center;
   }
