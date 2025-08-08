@@ -1,6 +1,6 @@
 <template>
   <Card class="category-card">
-    <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-4">
+    <CardHeader class="flex flex-wrap items-center justify-between space-y-0 pb-4">
       <div class="flex items-center space-x-3">
         <CardTitle class="text-xl font-bold">{{ name }}</CardTitle>
         <DancerCount :count="totalDancers" />
@@ -20,10 +20,10 @@
       </div>
     </CardHeader>
     <CardContent>
-      <div class="cols-container">
-        <div ref="colsRef" class="cols">
+      <div class="relative">
+        <div ref="colsRef" class="flex gap-4">
           <!-- Left side: Individual ages -->
-          <div class="flex flex-col">
+          <div class="flex flex-col flex-3 lg:flex-1">
             <div class="text-sm font-medium text-muted-foreground mb-2">Individual Ages</div>
             <div class="flex flex-col flex-1 gap-2">
               <div
@@ -37,12 +37,12 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Spacer -->
           <div class="flex-1"></div>
-          
+
           <!-- Right side: Partitioned groups -->
-          <div class="flex flex-col">
+          <div class="flex flex-col flex-3 lg:flex-1">
             <div class="text-sm font-medium text-muted-foreground mb-2">Age Groups</div>
             <div class="flex flex-col flex-1 gap-2">
               <div
@@ -50,22 +50,29 @@
                 :key="index"
                 ref="rightSideRef"
                 :style="{ flex: `${count} 1 0` }"
-                class="flex items-center justify-between p-3 text-sm bg-primary/10 border-2 border-primary/30 rounded-md hover:bg-primary/15 transition-colors min-h-[48px]"
+                class="flex items-center justify-between p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-colors min-h-[48px]"
               >
-                <span class="font-semibold text-foreground">{{ getAgeGroupName(minAge, maxAge, isPrintingYears) }}</span>
+                <span class="font-semibold text-foreground">{{
+                  getAgeGroupName(minAge, maxAge, isPrintingYears)
+                }}</span>
                 <DancerCount :count="count" :total="totalDancers" size="x-small" />
               </div>
             </div>
           </div>
         </div>
-        
+
         <!-- SVG connections -->
-        <svg v-if="rightSideRef?.length > 1" class="absolute inset-0 w-full h-full pointer-events-none" style="overflow: visible;">
+        <svg
+          v-if="rightSideRef?.length > 1"
+          class="absolute inset-0 w-full h-full pointer-events-none"
+          style="overflow: visible"
+        >
           <path
             v-for="(el, index) in rightSideRef.slice(0, rightSideRef.length - 1)"
             :key="`${index}-${changeTracker}`"
             :d="getCurvePath(el, index)"
-            class="stroke-muted-foreground/40 fill-none stroke-2"
+            class="stroke-primary fill-none stroke-2"
+            stroke-linecap="round"
           />
         </svg>
       </div>
@@ -182,40 +189,46 @@ const changeTracker = ref(false)
 function getCurvePath(rightSide: HTMLElement, rightSideIndex: number) {
   const maxAge = partitionedAgeCountsArray.value[rightSideIndex]?.[0]?.[1]
   const leftSideIndex = ageCountsArray.value.findIndex(([age]) => age === maxAge)
-  const leftSide = leftSideRef.value[leftSideIndex === -1 ? leftSideRef.value.length - 1 : leftSideIndex]
-  
+  const leftSide =
+    leftSideRef.value[leftSideIndex === -1 ? leftSideRef.value.length - 1 : leftSideIndex]
+
   if (!colsRef.value || !leftSide || !rightSide) return ''
-  
+
   const root = colsRef.value.getBoundingClientRect()
   const left = leftSide.getBoundingClientRect()
   const right = rightSide.getBoundingClientRect()
-  
+
   // Get the next right element to calculate gap position
   const nextRightSide = rightSideRef.value[rightSideIndex + 1]
   const nextLeftSide = leftSideRef.value[leftSideIndex + 1]
-  
+
   if (!nextRightSide) return ''
-  
+
   const nextRight = nextRightSide.getBoundingClientRect()
-  
-  // Calculate positions for lines in the middle of gaps between cards
-  const leftX = -12 // Extend beyond left edge
-  const rightX = root.width + 12 // Extend beyond right edge
+
+  // Calculate positions for lines extending 12px from edges  
+  const leftX = -12 // Extend 12px beyond left edge
+  const rightX = root.width + 12 // Extend 12px beyond right edge
   const leftCardEndX = left.left - root.left + left.width
   const rightCardStartX = right.left - root.left
   const midX = (leftCardEndX + rightCardStartX) / 2
-  
+
   // Position left line in the middle of gap between left cards (if next exists, otherwise bottom)
-  const leftY = nextLeftSide 
-    ? left.top - root.top + left.height + (nextLeftSide.getBoundingClientRect().top - left.top - left.height) / 2
+  const leftY = nextLeftSide
+    ? left.top -
+      root.top +
+      left.height +
+      (nextLeftSide.getBoundingClientRect().top - left.top - left.height) / 2
     : left.top - root.top + left.height
-  
+
   // Position right line in the middle of the gap between current and next right card
-  const rightY = right.top - root.top + right.height + (nextRight.top - right.top - right.height) / 2
-  
+  const rightY =
+    right.top - root.top + right.height + (nextRight.top - right.top - right.height) / 2
+
   // Create path: straight line from left edge to end of left card, curve in middle, straight line to right edge
   return `M ${leftX} ${leftY} L ${leftCardEndX} ${leftY} C ${midX} ${leftY}, ${midX} ${rightY}, ${rightCardStartX} ${rightY} L ${rightX} ${rightY}`
 }
+
 
 async function refresh() {
   await nextTick()
@@ -253,23 +266,11 @@ watch(
 )
 
 // Watch for changes in refs to trigger curve updates
-watch([leftSideRef, rightSideRef], () => {
-  setTimeout(() => refresh(), 10)
-}, { deep: true })
+watch(
+  [leftSideRef, rightSideRef],
+  () => {
+    setTimeout(() => refresh(), 10)
+  },
+  { deep: true },
+)
 </script>
-
-<style scoped>
-.cols-container {
-  position: relative;
-}
-
-.cols {
-  display: flex;
-  gap: 1rem;
-}
-
-.cols > div:first-child,
-.cols > div:last-child {
-  flex: 1;
-}
-</style>
