@@ -21,8 +21,8 @@ const props = defineProps({
   ...HotTable.props,
   dimmedRows: {
     type: Array as PropType<number[]>,
-    default: () => []
-  }
+    default: () => [],
+  },
 })
 
 const hotData = computed(() => {
@@ -45,7 +45,7 @@ const defaultSettings = {
   colHeaders: true,
   rowHeaders: true,
   stretchH: 'all',
-  height: 400,
+  height: 'auto',
   modifyColWidth: (w: number) => Math.min(w, window.innerWidth / 2), // prevent super-wide cells
 }
 
@@ -54,12 +54,19 @@ const hotSettings = computed(() => {
   return {
     ...defaultSettings,
     ...settings,
-    afterRenderer: (td: HTMLTableCellElement, row: number, col: number, prop: string | number, value: any, cellProperties: any) => {
+    afterRenderer: (
+      td: HTMLTableCellElement,
+      row: number,
+      col: number,
+      prop: string | number,
+      value: any,
+      cellProperties: any,
+    ) => {
       // Apply default renderer first
       if (settings.afterRenderer) {
         settings.afterRenderer(td, row, col, prop, value, cellProperties)
       }
-      
+
       // Apply dimming if this row should be dimmed
       if (props.dimmedRows?.includes(row)) {
         td.style.opacity = '0.4'
@@ -70,7 +77,7 @@ const hotSettings = computed(() => {
         td.style.color = ''
         td.classList.remove('dimmed-row')
       }
-    }
+    },
   }
 })
 

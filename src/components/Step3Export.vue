@@ -59,7 +59,6 @@ function handleExport() {
         :settings="{
           readOnly: true,
           columns: new Array(outputNumColumns),
-          height: 600,
         }"
       />
 
