@@ -636,19 +636,7 @@
 import { Button } from '@/components/ui/button'
 import SettingsPane from '@/components/SettingsPane.vue'
 import AppHeader from '@/components/AppHeader.vue'
-import HelpText from '@/components/HelpText.vue'
-import {
-  Shield,
-  ChevronRight,
-  ChevronDown,
-  ExternalLink,
-  SparkleIcon,
-  SparklesIcon,
-  WandIcon,
-  Wand2Icon,
-  WandSparkles,
-  WandSparklesIcon,
-} from 'lucide-vue-next'
+import { Shield, ChevronRight, ChevronDown, ExternalLink, WandSparklesIcon } from 'lucide-vue-next'
 
 interface Props {
   isLoadingInputFile?: boolean
