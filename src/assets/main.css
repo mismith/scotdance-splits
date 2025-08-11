@@ -9,7 +9,7 @@
   }
 
   html {
-    @apply font-sans lg:overflow-hidden;
+    @apply font-sans;
   }
 
   body {

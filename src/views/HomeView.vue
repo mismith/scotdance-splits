@@ -172,17 +172,14 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
 import { parse } from 'papaparse'
 import { useAppStore } from '@/stores/app'
 import { Button } from '@/components/ui/button'
 import DarkModeToggle from '@/components/DarkModeToggle.vue'
 import FileUpload from '@/components/FileUpload.vue'
 import { Globe, Trophy, BarChart3 } from 'lucide-vue-next'
-import { detectColumnMapping, categorizeData, autoPartitionCategories } from '@/lib/dataProcessing'
-import { INPUT_COLUMNS } from '@/lib/helpers'
+import { detectColumnMapping, categorizeData, autoPartitionCategories, INPUT_COLUMNS } from '@/lib/data'
 
-const router = useRouter()
 const store = useAppStore()
 
 async function handleFileSelected(file: File) {
@@ -234,8 +231,7 @@ async function handleFileSelected(file: File) {
     const defaultMaxBib = Math.round((dataRows.length + 50) / 100) * 100 + 100
     store.updateExportSettings({ maxBibNumber: defaultMaxBib })
 
-    // Navigate to splits view
-    router.push('/splits')
+    // Data is now processed and hasData will be true, causing SplitsView to show
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to parse CSV file'
     store.setError(errorMessage)
