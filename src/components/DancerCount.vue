@@ -30,7 +30,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -40,7 +39,7 @@ interface Props {
   size?: 'small' | 'default' | 'x-small';
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   size: 'default',
 });
 

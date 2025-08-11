@@ -13,9 +13,6 @@ import 'handsontable/styles/ht-theme-main.css'
 import { useDarkMode } from '@/composables/useDarkMode'
 
 registerAllModules()
-interface Props {
-  dimmedRows?: number[]
-}
 
 const props = defineProps({
   ...HotTable.props,
@@ -50,7 +47,7 @@ const defaultSettings = {
 }
 
 const hotSettings = computed(() => {
-  const { data, ...settings } = props.settings || {}
+  const { ...settings } = props.settings || {}
   return {
     ...defaultSettings,
     ...settings,
@@ -59,8 +56,8 @@ const hotSettings = computed(() => {
       row: number,
       col: number,
       prop: string | number,
-      value: any,
-      cellProperties: any,
+      value: unknown,
+      cellProperties: unknown,
     ) => {
       // Apply default renderer first
       if (settings.afterRenderer) {

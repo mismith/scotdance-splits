@@ -1,768 +1,250 @@
 <template>
-  <div class="h-full flex flex-col">
-    <AppHeader />
-
-    <!-- Main content using SettingsPane layout -->
-    <SettingsPane>
-      <!-- Main content area - visual preview -->
-      <div class="flex flex-col p-6 min-h-full">
-        <div class="flex-1 mt-4" />
-
-        <!-- Stylish intro -->
-        <div class="text-center mb-12 max-w-lg mx-auto">
-          <div class="text-xl md:text-2xl font-light text-foreground">
-            This <span class="font-semibold text-primary">free online tool</span> splits dance
-            competition registrations into <strong class="font-bold">age groups</strong> with
-            <strong class="font-bold">bib numbers</strong>
-            <div class="text-base text-muted-foreground font-normal mt-1">
-              (so you don't have to).
-            </div>
-          </div>
-        </div>
-
-        <!-- Two-column preview with more data -->
-        <div class="flex min-h-0 justify-center">
-          <div class="preview-grid">
-            <!-- Input preview -->
-            <div class="input-section">
-              <h3
-                class="text-lg text-center font-semibold text-foreground animate-fade-in-up opacity-0 [animation-delay:200ms]! mb-4"
-              >
-                <span class="text-muted-foreground text-xs uppercase">From:</span>
-                Input
-              </h3>
-              <div
-                class="bg-card border rounded-lg p-4 min-w-max animate-fade-in-up opacity-0 [animation-delay:100ms]!"
-              >
-                <div
-                  class="text-sm font-medium text-muted-foreground mb-3 animate-fade-in-up opacity-0 [animation-delay:300ms]!"
-                >
-                  Your CSV file:
-                </div>
-                <div class="grid grid-cols-5 gap-1 text-xs min-w-max -mx-2">
-                  <div
-                    class="px-2 py-1 rounded font-medium whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:400ms]!"
-                  >
-                    First Name
-                  </div>
-                  <div
-                    class="px-2 py-1 rounded font-medium whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:400ms]!"
-                  >
-                    Last Name
-                  </div>
-                  <div
-                    class="px-2 py-1 rounded font-medium whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:400ms]!"
-                  >
-                    Code
-                  </div>
-                  <div
-                    class="px-2 py-1 rounded font-medium whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:400ms]!"
-                  >
-                    Location
-                  </div>
-                  <div
-                    class="px-2 py-1 rounded font-medium whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:400ms]!"
-                  >
-                    Registered
-                  </div>
-
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:500ms]!"
-                  >
-                    Emma
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:500ms]!"
-                  >
-                    MacDonald
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:500ms]!"
-                  >
-                    X08
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:500ms]!"
-                  >
-                    Glasgow
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:500ms]!"
-                  >
-                    Jan 15
-                  </div>
-
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:600ms]!"
-                  >
-                    James
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:600ms]!"
-                  >
-                    Campbell
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:600ms]!"
-                  >
-                    X10
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:600ms]!"
-                  >
-                    Toronto
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:600ms]!"
-                  >
-                    Jan 22
-                  </div>
-
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:700ms]!"
-                  >
-                    Isla
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:700ms]!"
-                  >
-                    Fraser
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:700ms]!"
-                  >
-                    X09
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:700ms]!"
-                  >
-                    Melbourne
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:700ms]!"
-                  >
-                    Feb 03
-                  </div>
-
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:800ms]!"
-                  >
-                    Connor
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:800ms]!"
-                  >
-                    McLeod
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:800ms]!"
-                  >
-                    X11
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:800ms]!"
-                  >
-                    Edinburgh
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:800ms]!"
-                  >
-                    Feb 12
-                  </div>
-
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:900ms]!"
-                  >
-                    Sophie
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:900ms]!"
-                  >
-                    Stewart
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:900ms]!"
-                  >
-                    X12
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:900ms]!"
-                  >
-                    Vancouver
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:900ms]!"
-                  >
-                    Feb 18
-                  </div>
-
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1000ms]!"
-                  >
-                    Hamish
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1000ms]!"
-                  >
-                    Murray
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1000ms]!"
-                  >
-                    X07
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1000ms]!"
-                  >
-                    Sydney
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1000ms]!"
-                  >
-                    Mar 05
-                  </div>
-
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1100ms]!"
-                  >
-                    Fiona
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1100ms]!"
-                  >
-                    Sinclair
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1100ms]!"
-                  >
-                    X13
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1100ms]!"
-                  >
-                    Aberdeen
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1100ms]!"
-                  >
-                    Mar 14
-                  </div>
-
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1200ms]!"
-                  >
-                    Liam
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1200ms]!"
-                  >
-                    Robertson
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1200ms]!"
-                  >
-                    X06
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1200ms]!"
-                  >
-                    Calgary
-                  </div>
-                  <div
-                    class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:1200ms]!"
-                  >
-                    Mar 20
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Arrow - responsive direction -->
-            <div class="arrow-section">
-              <ChevronRight
-                class="h-8 w-8 hidden xl:block animate-slide-in-left opacity-0 [animation-delay:1800ms]!"
-              />
-              <ChevronDown
-                class="h-8 w-8 block xl:hidden animate-slide-in-down opacity-0 [animation-delay:1800ms]!"
-              />
-            </div>
-
-            <!-- Output preview -->
-            <div class="output-section">
-              <h3
-                class="text-lg text-center font-semibold text-foreground animate-fade-in-up opacity-0 [animation-delay:2100ms]! mb-4"
-              >
-                <span class="text-muted-foreground text-xs uppercase">To:</span>
-                Output
-              </h3>
-              <div
-                class="bg-card border rounded-lg p-4 space-y-4 min-w-max animate-fade-in-up opacity-0 [animation-delay:2000ms]!"
-              >
-                <div
-                  class="text-sm font-medium text-muted-foreground animate-fade-in-up opacity-0 [animation-delay:2200ms]!"
-                >
-                  Organized by age groups with bib numbers:
-                </div>
-
-                <!-- Premier 6-8 Years -->
-                <div class="space-y-2">
-                  <div
-                    class="px-3 py-0.5 bg-primary/20 text-primary font-bold text-sm rounded-md inline-block animate-fade-in-up opacity-0 [animation-delay:2300ms]!"
-                  >
-                    Premier 6-8 Years
-                  </div>
-                  <div class="grid grid-cols-4 gap-1 text-xs min-w-max">
-                    <div
-                      class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2400ms]!"
-                    >
-                      101
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2400ms]!"
-                    >
-                      Liam
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2400ms]!"
-                    >
-                      Robertson
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2400ms]!"
-                    >
-                      Calgary
-                    </div>
-                    <div
-                      class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2500ms]!"
-                    >
-                      103
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2500ms]!"
-                    >
-                      Hamish
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2500ms]!"
-                    >
-                      Murray
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2500ms]!"
-                    >
-                      Sydney
-                    </div>
-                    <div
-                      class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2600ms]!"
-                    >
-                      108
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2600ms]!"
-                    >
-                      Emma
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2600ms]!"
-                    >
-                      MacDonald
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:2600ms]!"
-                    >
-                      Glasgow
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Premier 9-11 Years -->
-                <div class="space-y-2">
-                  <div
-                    class="px-3 py-0.5 bg-primary/20 text-primary font-bold text-sm rounded-md inline-block animate-fade-in-up opacity-0 [animation-delay:2900ms]!"
-                  >
-                    Premier 9-11 Years
-                  </div>
-                  <div class="grid grid-cols-4 gap-1 text-xs min-w-max">
-                    <div
-                      class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3000ms]!"
-                    >
-                      105
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3000ms]!"
-                    >
-                      Connor
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3000ms]!"
-                    >
-                      McLeod
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3000ms]!"
-                    >
-                      Edinburgh
-                    </div>
-                    <div
-                      class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3100ms]!"
-                    >
-                      106
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3100ms]!"
-                    >
-                      Isla
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3100ms]!"
-                    >
-                      Fraser
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3100ms]!"
-                    >
-                      Melbourne
-                    </div>
-                    <div
-                      class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3200ms]!"
-                    >
-                      107
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3200ms]!"
-                    >
-                      James
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3200ms]!"
-                    >
-                      Campbell
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3200ms]!"
-                    >
-                      Toronto
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Premier 12-13 Years -->
-                <div class="space-y-2">
-                  <div
-                    class="px-3 py-0.5 bg-primary/20 text-primary font-bold text-sm rounded-md inline-block animate-fade-in-up opacity-0 [animation-delay:3500ms]!"
-                  >
-                    Premier 12-13 Years
-                  </div>
-                  <div class="grid grid-cols-4 gap-1 text-xs min-w-max">
-                    <div
-                      class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3600ms]!"
-                    >
-                      102
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3600ms]!"
-                    >
-                      Fiona
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3600ms]!"
-                    >
-                      Sinclair
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3600ms]!"
-                    >
-                      Aberdeen
-                    </div>
-                    <div
-                      class="px-2 py-0.5 bg-primary/20 text-primary font-bold rounded whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3700ms]!"
-                    >
-                      104
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3700ms]!"
-                    >
-                      Sophie
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3700ms]!"
-                    >
-                      Stewart
-                    </div>
-                    <div
-                      class="px-2 whitespace-nowrap animate-fade-in-up opacity-0 [animation-delay:3700ms]!"
-                    >
-                      Vancouver
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex-1 mb-6" />
+  <FileUpload
+    :is-loading="store.isLoadingInputFile"
+    :error="store.inputError"
+    @file-selected="handleFileSelected"
+    @error-dismiss="handleErrorDismiss"
+  >
+    <template #default="{ chooseFile }">
+      <div class="flex flex-col">
+    <!-- Header - Center-aligned logo -->
+    <header class="py-8 text-center relative">
+      <!-- Dark mode toggle -->
+      <div class="absolute top-8 right-8">
+        <DarkModeToggle />
       </div>
+      
+      <div class="flex items-center justify-center gap-3 mb-2">
+        <img src="/touchicon.png" alt="Splits Logo" class="w-12 h-12" />
+        <h1 class="text-4xl font-light text-foreground">
+          <span class="font-semibold text-primary">Splits</span>
+        </h1>
+      </div>
+      <p class="text-lg text-muted-foreground">
+        Stop manually sorting dance competition entries
+      </p>
+    </header>
 
-      <template #settings>
-        <div class="flex flex-col h-full">
-          <div class="space-y-6 flex-1">
-            <div>
-              <h3 class="text-lg font-semibold text-sidebar-foreground mb-4">How it works</h3>
-              <div class="space-y-4">
-                <div class="flex items-start gap-3">
-                  <div
-                    class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5"
-                  >
-                    <span class="text-primary font-bold text-sm">1</span>
-                  </div>
-                  <div>
-                    <p class="font-semibold text-sidebar-foreground">You input spreadsheets</p>
-                    <div class="text-sm text-sidebar-foreground/70 space-y-1">
-                      <p>
-                        Choose a CSV file exported from:
-                        <a
-                          href="http://eventry.net"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="inline-flex items-center font-bold gap-0.5 text-primary hover:text-primary/80 transition-colors"
-                        >
-                          eventry.net <ExternalLink class="h-3 w-3" />
-                        </a>
-                        or
-                        <a
-                          href="https://hdcomps.com"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="inline-flex items-center font-bold gap-0.5 text-primary hover:text-primary/80 transition-colors"
-                        >
-                          HDComps.com <ExternalLink class="h-3 w-3" />
-                        </a>
-                        or any other dancer registration system.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+    <!-- Main content -->
+    <main class="flex-1 max-w-6xl mx-auto px-6">
+      <!-- Value proposition -->
+      <section class="text-center mb-16">
+        <p class="text-xl text-muted-foreground mb-8">
+          Upload your registration CSV, get organized age groups with bib numbers—<br>
+          ready for competition programs and scoring systems.
+        </p>
+        
+        <!-- Tool ecosystem context -->
+        <div class="flex justify-center items-center gap-8 text-sm text-muted-foreground mb-12">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+              <Globe class="h-4 w-4" />
+            </div>
+            <span>eventry.net</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+              <Trophy class="h-4 w-4" />
+            </div>
+            <span>hdcomps.com</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600">
+              <BarChart3 class="h-4 w-4" />
+            </div>
+            <span>Any registration system</span>
+          </div>
+        </div>
+      </section>
 
-                <div class="flex items-start gap-3">
-                  <div
-                    class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5"
-                  >
-                    <span class="text-primary font-bold text-sm">2</span>
-                  </div>
-                  <div>
-                    <p class="font-semibold text-sidebar-foreground">
-                      It does some magic
-                      <WandSparklesIcon class="inline-block size-4 text-primary" />
-                    </p>
-                    <p class="text-sm text-sidebar-foreground/70">
-                      The algorithm splits dancers into as evenly-balanced age groups as possible
-                      and assigns bib numbers using reverse-registration-order.
-                    </p>
-                  </div>
-                </div>
-
-                <div class="flex items-start gap-3">
-                  <div
-                    class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5"
-                  >
-                    <span class="text-primary font-bold text-sm">3</span>
-                  </div>
-                  <div>
-                    <p class="font-semibold text-sidebar-foreground">You export results</p>
-                    <p class="text-sm text-sidebar-foreground/70">
-                      Download a spreadsheet ready for
-                      <a
-                        href="https://scotdance.app"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="inline-flex items-center font-bold gap-0.5 text-primary hover:text-primary/80 transition-colors"
-                      >
-                        ScotDance.app <ExternalLink class="h-3 w-3" />
-                      </a>
-                      or paper programs.
-                    </p>
-                  </div>
-                </div>
+      <!-- Before/After Example -->
+      <section class="mb-16">
+        <div class="grid lg:grid-cols-2 gap-12">
+          <!-- Before: The Pain -->
+          <div class="space-y-6">
+            <h3 class="text-xl font-semibold text-red-600 mb-4">Before: Hours of manual work</h3>
+            <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+              <div class="text-sm font-mono text-red-800 space-y-1 mb-4">
+                <div>Emma MacDonald, X08, Glasgow, Jan 15</div>
+                <div>James Campbell, X10, Toronto, Jan 22</div>
+                <div>Isla Fraser, X09, Melbourne, Feb 03</div>
+                <div>Connor McLeod, X11, Edinburgh, Feb 12</div>
+                <div class="text-red-600 font-sans">...43 more dancers to sort by age...</div>
+              </div>
+              <div class="space-y-1 text-sm text-red-600">
+                <div>❌ Manual age calculation</div>
+                <div>❌ Uneven group sizes</div>
+                <div>❌ Bib numbering mistakes</div>
               </div>
             </div>
           </div>
 
-          <!-- Privacy banner - sticky at bottom -->
-          <div
-            class="sticky bottom-0 mt-12 p-3 bg-primary/10 backdrop-blur-md border border-primary/20 rounded-lg"
-          >
-            <div class="flex items-start gap-2">
-              <Shield class="h-4 w-4 text-primary shrink-0" />
-              <div>
-                <h4 class="font-semibold text-sidebar-foreground text-sm -mt-0.5 mb-1">
-                  Privacy Matters!
-                </h4>
-                <p class="text-xs text-sidebar-foreground/70">
-                  This tool is fully browser-based, so your data is never sent or stored in any way.
-                </p>
+          <!-- After: The Solution -->
+          <div class="space-y-6">
+            <h3 class="text-xl font-semibold text-green-600 mb-4">After: Organized in seconds</h3>
+            <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+              <div class="space-y-4 text-sm">
+                <div>
+                  <div class="font-semibold text-green-700 mb-2">Premier 6-8 Years (16 dancers)</div>
+                  <div class="font-mono text-xs text-green-800 space-y-0.5 ml-4">
+                    <div>101 - Liam Robertson, Calgary</div>
+                    <div>103 - Emma MacDonald, Glasgow</div>
+                    <div>108 - Hamish Murray, Sydney</div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div class="font-semibold text-green-700 mb-2">Premier 9-11 Years (15 dancers)</div>
+                  <div class="font-mono text-xs text-green-800 space-y-0.5 ml-4">
+                    <div>105 - Connor McLeod, Edinburgh</div>
+                    <div>106 - Isla Fraser, Melbourne</div>
+                    <div>107 - James Campbell, Toronto</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="space-y-1 text-sm text-green-600 mt-4">
+                <div>✅ Automatic age grouping</div>
+                <div>✅ Balanced group sizes</div>
+                <div>✅ Perfect bib numbering</div>
               </div>
             </div>
           </div>
         </div>
-      </template>
+      </section>
 
-      <template #footer>
-        <div class="space-y-3">
-          <div class="text-center text-sm text-sidebar-foreground/70">
+      <!-- Output compatibility -->
+      <section class="text-center mb-16">
+        <h3 class="text-lg font-semibold mb-8">Ready for your competition tools</h3>
+        <div class="flex justify-center items-center gap-12">
+          <div class="text-center">
+            <div class="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mb-3 mx-auto">
+              <span class="text-2xl">📱</span>
+            </div>
+            <p class="font-medium">ScotDance.app</p>
+            <p class="text-xs text-muted-foreground">Direct import</p>
+          </div>
+          <div class="text-center">
+            <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-3 mx-auto">
+              <span class="text-2xl">📄</span>
+            </div>
+            <p class="font-medium">Paper programs</p>
+            <p class="text-xs text-muted-foreground">Print-ready format</p>
+          </div>
+          <div class="text-center">
+            <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mb-3 mx-auto">
+              <span class="text-2xl">⚙️</span>
+            </div>
+            <p class="font-medium">Other systems</p>
+            <p class="text-xs text-muted-foreground">Standard CSV</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Sticky floating CTA -->
+    <div class="sticky bottom-0 z-50 mt-8 pb-8">
+      <div class="bg-card border border-border shadow-lg rounded-xl p-6 max-w-md mx-auto">
+        <div class="text-center mb-4">
+          <p class="text-sm text-muted-foreground">
             Drag & drop your CSV file anywhere or
-          </div>
-          <Button
-            size="lg"
-            :disabled="isLoadingInputFile"
-            @click="$emit('choose-file')"
-            class="w-full"
-          >
-            <span v-if="isLoadingInputFile" class="flex items-center gap-2">
-              <div
-                class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
-              ></div>
-              Processing...
-            </span>
-            <span v-else>Choose CSV File</span>
-          </Button>
+          </p>
         </div>
-      </template>
-    </SettingsPane>
-  </div>
+        <Button
+          size="lg"
+          :disabled="store.isLoadingInputFile"
+          @click="chooseFile"
+          class="w-full"
+        >
+          <span v-if="store.isLoadingInputFile" class="flex items-center gap-2">
+            <div
+              class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
+            ></div>
+            Processing...
+          </span>
+          <span v-else>Choose CSV File</span>
+        </Button>
+      </div>
+    </div>
+      </div>
+    </template>
+  </FileUpload>
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+import { parse } from 'papaparse'
+import { useAppStore } from '@/stores/app'
 import { Button } from '@/components/ui/button'
-import SettingsPane from '@/components/SettingsPane.vue'
-import AppHeader from '@/components/AppHeader.vue'
-import { Shield, ChevronRight, ChevronDown, ExternalLink, WandSparklesIcon } from 'lucide-vue-next'
+import DarkModeToggle from '@/components/DarkModeToggle.vue'
+import FileUpload from '@/components/FileUpload.vue'
+import { Globe, Trophy, BarChart3 } from 'lucide-vue-next'
+import { detectColumnMapping, categorizeData, autoPartitionCategories } from '@/lib/dataProcessing'
+import { INPUT_COLUMNS } from '@/lib/helpers'
 
-interface Props {
-  isLoadingInputFile?: boolean
-  inputError?: string
+const router = useRouter()
+const store = useAppStore()
+
+async function handleFileSelected(file: File) {
+  store.clearError()
+  store.setLoading(true)
+
+  try {
+    const results = await new Promise<{ data: string[][] }>((resolve, reject) => {
+      parse(file, {
+        worker: true,
+        complete: resolve,
+        error: reject,
+      })
+    })
+
+    const csvData = results.data as string[][]
+    if (!csvData || csvData.length === 0) {
+      throw new Error('CSV file is empty')
+    }
+
+    // Set basic input data
+    store.setInputData([file], csvData)
+
+    // Detect if first row is headers
+    const potentialHeaders = csvData[0]
+    const hasHeaders = potentialHeaders.some((header) =>
+      INPUT_COLUMNS.some((col) => col.regex.test(header))
+    )
+    store.hasHeaderRow = hasHeaders
+
+    // Auto-detect column mappings
+    const headers = hasHeaders ? potentialHeaders : []
+    const colIndexes = detectColumnMapping(headers)
+    store.updateColIndexes(colIndexes)
+
+    // Extract data rows (skip headers if present)
+    const dataRows = hasHeaders ? csvData.slice(1) : csvData
+
+    // Process data into categories
+    const categories = categorizeData(dataRows, colIndexes)
+
+    // Auto-partition categories into age groups
+    const partitionedCategories = autoPartitionCategories(categories)
+
+    // Update store with processed data
+    store.setProcessedData(categories, partitionedCategories)
+
+    // Calculate default max bib number
+    const defaultMaxBib = Math.round((dataRows.length + 50) / 100) * 100 + 100
+    store.updateExportSettings({ maxBibNumber: defaultMaxBib })
+
+    // Navigate to splits view
+    router.push('/splits')
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to parse CSV file'
+    store.setError(errorMessage)
+  } finally {
+    store.setLoading(false)
+  }
 }
 
-defineProps<Props>()
-
-defineEmits<{
-  'file-selected': [file: File]
-  'error-dismiss': []
-  'choose-file': []
-}>()
+function handleErrorDismiss() {
+  store.clearError()
+}
 </script>
-
-<style scoped>
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes bounce-x {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(10px);
-  }
-}
-
-@keyframes slide-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slide-in-down {
-  from {
-    opacity: 0;
-    transform: translateY(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in-up {
-  animation: fade-in-up 0.8s ease-out forwards;
-}
-
-.animate-bounce-x {
-  animation: bounce-x 2s ease-in-out infinite;
-}
-
-.animate-slide-in-left {
-  animation: slide-in-left 0.8s ease-out forwards;
-}
-
-.animate-slide-in-down {
-  animation: slide-in-down 0.8s ease-out forwards;
-}
-
-/* CSS Grid layout for preview sections */
-.preview-grid {
-  display: grid;
-  gap: 1.5rem;
-  place-items: center;
-  /* Mobile/tablet: vertical stack */
-  grid-template-columns: 1fr;
-  grid-template-rows: auto auto auto;
-  grid-template-areas:
-    'input'
-    'arrow'
-    'output';
-}
-
-/* Desktop: horizontal layout with precise positioning */
-@media (min-width: 1280px) {
-  .preview-grid {
-    grid-template-columns: auto auto auto;
-    grid-template-rows: auto;
-    grid-template-areas: 'input arrow output';
-    align-items: center;
-    gap: 1rem;
-    justify-content: center;
-  }
-
-  .arrow-section {
-    /* Center the arrow based on the shorter table height */
-    align-self: center;
-    margin-top: 2.5rem; /* Offset for headers */
-  }
-}
-
-.input-section {
-  grid-area: input;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.arrow-section {
-  grid-area: arrow;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: rgb(var(--color-muted-foreground));
-}
-
-.output-section {
-  grid-area: output;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-</style>

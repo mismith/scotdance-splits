@@ -59,6 +59,35 @@
               </div>
             </div>
           </div>
+
+          <!-- Third column: Preview Dancers -->
+          <div v-if="showPreviewDancers" class="flex flex-col flex-3 lg:flex-1 ml-4">
+            <div class="text-sm font-medium text-muted-foreground mb-2">Preview Dancers</div>
+            <div class="flex flex-col flex-1 gap-2">
+              <div
+                v-for="([, count], index) in partitionedAgeCountsArray"
+                :key="`preview-${index}`"
+                :style="{ minHeight: `${Math.max(48, Math.min(count, 8) * 20 + 24)}px` }"
+                class="p-3 text-sm bg-muted/30 border border-border/50 rounded-md flex flex-col justify-center"
+              >
+                <div class="space-y-1">
+                  <div 
+                    v-for="dancer in getMockDancersForAgeGroup(count, Math.min(count, 8))"
+                    :key="dancer.bibNumber"
+                    class="flex items-center gap-2 text-xs text-muted-foreground"
+                  >
+                    <span class="bg-primary/20 text-primary px-1.5 py-0.5 rounded text-[10px] font-bold min-w-[2rem] text-center">
+                      {{ dancer.bibNumber }}
+                    </span>
+                    <span class="truncate">{{ dancer.firstName }} {{ dancer.lastName }}</span>
+                  </div>
+                  <div v-if="count > 8" class="text-[10px] text-muted-foreground/70 text-center pt-1">
+                    +{{ count - 8 }} more
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- SVG connections -->
@@ -100,6 +129,7 @@ const props = defineProps({
 })
 
 const isPrintingYears = inject<boolean>('isPrintingYears')
+const showPreviewDancers = inject('showPreviewDancers', ref(false))
 
 const ageCountsArray = computed(() => {
   return Object.entries(props.ages)
@@ -180,6 +210,18 @@ const numAgeGroups = ref(getDefaultNumAgeGroups())
 const partitionedAgeCountsArray = computed(() => {
   return getPartitionedAgeCounts(ageCountsArray.value, numAgeGroups.value)
 })
+
+// Mock dancers function for preview
+function getMockDancersForAgeGroup(_totalCount: number, displayCount: number) {
+  const mockNames = ['Emma', 'James', 'Isla', 'Connor', 'Sophie', 'Hamish', 'Fiona', 'Liam', 'Morag', 'Duncan']
+  const mockSurnames = ['MacDonald', 'Campbell', 'Fraser', 'McLeod', 'Stewart', 'Murray', 'Sinclair', 'Robertson', 'MacLeod', 'Morrison']
+  
+  return Array.from({ length: Math.min(displayCount, 15) }, (_, i) => ({
+    firstName: mockNames[i % mockNames.length],
+    lastName: mockSurnames[i % mockSurnames.length],
+    bibNumber: 100 + i
+  }))
+}
 
 const colsRef = ref()
 const leftSideRef = ref<HTMLElement[]>([])
