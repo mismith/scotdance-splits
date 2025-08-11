@@ -69,7 +69,7 @@
 
           <!-- Row 2: Content columns -->
           <!-- Individual ages column -->
-          <div class="flex flex-col gap-2">
+          <div class="flex flex-col gap-2 self-start sticky top-12 will-change-transform">
             <div
               v-for="[age, count] in ageCountsArray"
               :key="age"
@@ -134,17 +134,10 @@
         <!-- SVG connections -->
         <svg
           v-if="rightSideRef?.length > 1"
-          class="absolute inset-0 w-full h-full pointer-events-none"
+          ref="svgRef"
+          class="absolute inset-0 w-full h-full pointer-events-none will-change-auto"
           style="overflow: visible"
-        >
-          <path
-            v-for="(el, index) in rightSideRef.slice(0, rightSideRef.length - 1)"
-            :key="`${index}-${changeTracker}`"
-            :d="getCurvePath(el, index)"
-            class="stroke-primary fill-none stroke-2"
-            stroke-linecap="round"
-          />
-        </svg>
+        ></svg>
       </div>
     </CardContent>
   </Card>
@@ -279,7 +272,7 @@ function getRealDancersForAgeGroup(ageGroupIndex: number) {
 
   // First, create a global sorted list of all valid dancers for bib number calculation
   const allValidDancers = inputData
-    .filter(row => {
+    .filter((row) => {
       const codeCol = store.colIndexes.code || -1
       if (codeCol === -1) return false
       const code = String(row[codeCol] || '')
@@ -306,9 +299,10 @@ function getRealDancersForAgeGroup(ageGroupIndex: number) {
 
         // Check if this row matches our category and age range
         // Find the Highland Scrutineer code that matches our category name
-        const expectedCode = Object.keys(CATEGORY_CODE_NAMES).find(code => 
-          CATEGORY_CODE_NAMES[code] === props.name
-        ) || props.name.charAt(0)
+        const expectedCode =
+          Object.keys(CATEGORY_CODE_NAMES).find(
+            (code) => CATEGORY_CODE_NAMES[code] === props.name,
+          ) || props.name.charAt(0)
         return age >= minAge && age <= maxAge && categoryCode === expectedCode
       }
 
@@ -334,10 +328,14 @@ function getRealDancersForAgeGroup(ageGroupIndex: number) {
       }
 
       // Find this dancer's position in the overall sorted list to calculate bib number
-      const globalIndex = allValidDancers.findIndex(r => 
-        String(r[store.colIndexes.timestamp || 0] || '') === String(row[store.colIndexes.timestamp || 0] || '') &&
-        String(r[store.colIndexes.firstName || 0] || '') === String(row[store.colIndexes.firstName || 0] || '') &&
-        String(r[store.colIndexes.lastName || 0] || '') === String(row[store.colIndexes.lastName || 0] || '')
+      const globalIndex = allValidDancers.findIndex(
+        (r) =>
+          String(r[store.colIndexes.timestamp || 0] || '') ===
+            String(row[store.colIndexes.timestamp || 0] || '') &&
+          String(r[store.colIndexes.firstName || 0] || '') ===
+            String(row[store.colIndexes.firstName || 0] || '') &&
+          String(r[store.colIndexes.lastName || 0] || '') ===
+            String(row[store.colIndexes.lastName || 0] || ''),
       )
 
       return {
@@ -354,7 +352,7 @@ function getRealDancersForAgeGroup(ageGroupIndex: number) {
 const colsRef = ref()
 const leftSideRef = ref<HTMLElement[]>([])
 const rightSideRef = ref<HTMLElement[]>([])
-const changeTracker = ref(false)
+const svgRef = ref<SVGElement>()
 const groupsInputRef = ref<HTMLInputElement>()
 
 // Function to select the input text when clicking the label
@@ -407,28 +405,58 @@ function getCurvePath(rightSide: HTMLElement, rightSideIndex: number) {
   return `M ${leftX} ${leftY} L ${leftCardEndX} ${leftY} C ${midX} ${leftY}, ${midX} ${rightY}, ${rightCardStartX} ${rightY} L ${rightX} ${rightY}`
 }
 
-async function refresh() {
-  await nextTick()
-  changeTracker.value = !changeTracker.value
+// Direct DOM manipulation - no Vue reactivity needed
+let rafId: number | null = null
+let isActive = false
+
+function updateCurvesDirectly() {
+  if (!isActive || !rightSideRef.value?.length || !svgRef.value) {
+    rafId = requestAnimationFrame(updateCurvesDirectly)
+    return
+  }
+
+  const svg = svgRef.value
+  const curvesToRender = rightSideRef.value.slice(0, -1)
+
+  // Ensure we have the right number of path elements
+  while (svg.children.length < curvesToRender.length) {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+    path.setAttribute('class', 'stroke-primary fill-none stroke-2')
+    path.setAttribute('stroke-linecap', 'round')
+    svg.appendChild(path)
+  }
+
+  // Remove extra path elements if needed
+  while (svg.children.length > curvesToRender.length) {
+    svg.removeChild(svg.lastChild!)
+  }
+
+  // Update each path directly
+  curvesToRender.forEach((el, index) => {
+    const pathElement = svg.children[index] as SVGPathElement
+    const newPath = getCurvePath(el, index)
+    if (pathElement.getAttribute('d') !== newPath) {
+      pathElement.setAttribute('d', newPath)
+    }
+  })
+
+  rafId = requestAnimationFrame(updateCurvesDirectly)
 }
 
-defineExpose({ refresh })
-
-const resizeObserver = new ResizeObserver(() => refresh())
 onMounted(async () => {
-  if (colsRef.value) {
-    resizeObserver.observe(colsRef.value)
-  }
-  // Initial refresh to draw curves after mount
-  await nextTick()
-  refresh()
+  // Start continuous RAF loop for direct DOM updates
+  await nextTick() // Wait for SVG ref to be available
+  isActive = true
+  rafId = requestAnimationFrame(updateCurvesDirectly)
 })
 onUnmounted(() => {
-  resizeObserver.disconnect()
+  isActive = false
+  if (rafId) {
+    cancelAnimationFrame(rafId)
+  }
 })
 
 const emit = defineEmits(['partition'])
-
 watch(
   partitionedAgeCountsArray,
   (partitions) => {
@@ -436,18 +464,7 @@ watch(
       'partition',
       partitions.map(([ageRange]) => ageRange),
     )
-    // Refresh curves after partition changes
-    setTimeout(() => refresh(), 50)
   },
   { immediate: true },
-)
-
-// Watch for changes in refs to trigger curve updates
-watch(
-  [leftSideRef, rightSideRef],
-  () => {
-    setTimeout(() => refresh(), 10)
-  },
-  { deep: true },
 )
 </script>
