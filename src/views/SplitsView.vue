@@ -26,6 +26,23 @@
 
       <!-- Right side -->
       <div class="flex items-center gap-1">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                @click="showDancers = !showDancers"
+                class="w-8 h-8 p-0"
+              >
+                <PersonStanding class="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{{ showDancers ? 'Hide Dancers' : 'Show Dancers' }}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <DarkModeToggle />
       </div>
     </header>
@@ -312,7 +329,7 @@
 import { ref, computed, provide } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { Button } from '@/components/ui/button'
-import { Table, Settings, Download, X, AlertTriangle } from 'lucide-vue-next'
+import { Table, Settings, Download, X, AlertTriangle, PersonStanding } from 'lucide-vue-next'
 import DarkModeToggle from '@/components/DarkModeToggle.vue'
 import SettingsSheet from '@/components/SettingsSheet.vue'
 import { unparse } from 'papaparse'
@@ -329,6 +346,7 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Input } from '@/components/ui/input'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import CategoryCard from '@/components/CategoryCard.vue'
 
 const store = useAppStore()
@@ -337,6 +355,7 @@ const categoryCardRef = ref<(typeof CategoryCard)[]>()
 const showColumnMappingSheet = ref(false)
 const showExportSettingsSheet = ref(false)
 const validationDismissed = ref(false)
+const showDancers = ref(true)
 
 // Data quality status
 const dataStatus = computed(() => {
@@ -391,6 +410,7 @@ provide(
   'isPrintingYears',
   computed(() => store.isPrintingYears),
 )
+provide('showDancers', showDancers)
 
 // Navigation functions
 function goToHome() {

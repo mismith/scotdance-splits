@@ -3,7 +3,10 @@
     <CardContent class="px-6">
       <div class="relative">
         <!-- 4-column CSS Grid Layout -->
-        <div ref="colsRef" class="grid grid-cols-[1fr_80px_1fr_1fr] gap-4">
+        <div
+          ref="colsRef"
+          :class="`grid gap-4 ${showDancers ? 'grid-cols-[1fr_80px_1fr_1fr]' : 'grid-cols-[1fr_80px_1fr]'}`"
+        >
           <!-- Row 1: Header with title and controls -->
           <div class="flex items-center space-x-3">
             <CardTitle class="text-xl font-bold">{{ name }}</CardTitle>
@@ -64,7 +67,7 @@
             </Button>
           </div>
 
-          <div></div>
+          <div v-if="showDancers"></div>
           <!-- Empty spacer for dancers column -->
 
           <!-- Row 2: Content columns -->
@@ -101,7 +104,7 @@
           </div>
 
           <!-- Preview Dancers column -->
-          <div class="flex flex-col gap-2">
+          <div v-if="showDancers" class="flex flex-col gap-2">
             <div
               v-for="([, count], index) in partitionedAgeCountsArray"
               :key="`preview-${index}`"
@@ -168,6 +171,7 @@ const props = defineProps({
 
 const store = useAppStore()
 const isPrintingYears = inject<boolean>('isPrintingYears')
+const showDancers = inject('showDancers', ref(true))
 
 const ageCountsArray = computed(() => {
   return Object.entries(props.ages)
