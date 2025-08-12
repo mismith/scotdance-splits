@@ -1,5 +1,5 @@
 <template>
-  <Card class="category-card">
+  <Card class="category-card" v-view-transition-name="`CategoryCard-${id}`">
     <CardContent class="px-6">
       <div class="relative">
         <!-- 4-column CSS Grid Layout -->
@@ -27,7 +27,10 @@
           <div></div>
           <!-- Empty spacer for curved lines column -->
 
-          <div class="flex items-center gap-2 justify-center">
+          <div
+            class="flex items-center gap-2 justify-center"
+            v-view-transition-name="`CategoryCard-${id}-AgeGroupHeader`"
+          >
             <div class="flex items-center gap-2">
               <input
                 ref="groupsInputRef"
@@ -77,6 +80,7 @@
               v-for="[age, count] in ageCountsArray"
               :key="age"
               ref="leftSideRef"
+              v-view-transition-name="`CategoryCard-${id}-Age-${age}`"
               class="flex items-center justify-between p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-colors"
             >
               <span class="font-medium">Age {{ age }}</span>
@@ -93,6 +97,7 @@
               v-for="([[minAge, maxAge], count], index) in partitionedAgeCountsArray"
               :key="index"
               ref="rightSideRef"
+              v-view-transition-name="`CategoryCard-${id}-AgeGroup-${index}`"
               :style="{ flex: `${count} 1 0` }"
               class="flex items-center justify-between p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-colors"
             >
@@ -147,7 +152,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, inject, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, inject, onMounted, onUnmounted, nextTick, useId } from 'vue'
 import partition from 'linear-partitioning'
 import { useAppStore } from '@/stores/app'
 import { Card, CardContent, CardTitle } from '@/components/ui/card'
@@ -166,6 +171,10 @@ const props = defineProps({
   ages: {
     type: Object,
     required: true,
+  },
+  id: {
+    type: String,
+    default: () => useId(),
   },
 })
 

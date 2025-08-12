@@ -218,7 +218,7 @@
         </main>
 
         <!-- Sticky floating CTA -->
-        <div class="sticky bottom-0 z-40 mt-12 pb-8" v-view-transition-name="'floating-footer'">
+        <div class="sticky bottom-0 z-40 mt-12 pb-8" v-view-transition-name="'FloatingFooter'">
           <div
             class="bg-card/95 backdrop-blur-lg border border-border/50 shadow-2xl rounded-2xl p-8 max-w-lg mx-auto"
           >

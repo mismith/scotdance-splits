@@ -1,8 +1,9 @@
 <template>
-  <div>
+  <div class="flex flex-col min-h-screen">
     <!-- Fixed Toolbar -->
     <header
       class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-3 py-1.5 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-12"
+      v-view-transition-name="'Header'"
     >
       <!-- Left side -->
       <div class="flex items-center gap-1">
@@ -44,7 +45,7 @@
     </header>
 
     <!-- Main content with top padding to account for fixed header -->
-    <main class="pt-12">
+    <main class="pt-12 flex-auto">
       <div
         v-if="!store.hasData"
         class="flex items-center justify-center py-20 text-muted-foreground"
@@ -71,7 +72,7 @@
     </main>
 
     <!-- Sticky Footer - Status/Export -->
-    <div class="sticky bottom-0 z-50 mt-8 pb-8" v-view-transition-name="'floating-footer'">
+    <div class="sticky bottom-0 z-40 mt-8 pb-8" v-view-transition-name="'FloatingFooter'">
       <!-- Status Problems -->
       <div
         v-if="dataStatus.status === 'error' && !validationDismissed"
