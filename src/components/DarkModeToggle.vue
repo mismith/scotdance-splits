@@ -2,7 +2,13 @@
   <TooltipProvider>
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button variant="ghost" size="sm" @click="toggleDarkMode" class="w-9 h-9 p-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          v-view-transition-name="'DarkModeToggle'"
+          @click="toggleDarkMode"
+          class="w-9 h-9 p-0"
+        >
           <Sun v-if="isDark" class="h-4 w-4" />
           <Moon v-else class="h-4 w-4" />
         </Button>
@@ -19,9 +25,12 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useDarkMode } from '@/composables/useDarkMode'
 import { Sun, Moon } from 'lucide-vue-next'
+import { startViewTransition } from 'vue-view-transitions'
 
 const { isDark, toggle } = useDarkMode()
-function toggleDarkMode() {
+async function toggleDarkMode() {
+  const viewTransition = startViewTransition()
+  await viewTransition.captured
   toggle()
 }
 </script>

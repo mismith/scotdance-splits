@@ -11,17 +11,18 @@
 
       <!-- Center - Logo -->
       <div class="flex-1 flex justify-center">
-        <div class="flex items-center gap-3">
-          <img src="/touchicon.png" alt="Splits Logo" class="w-4 h-4" />
-          <button
-            @click="goToHome"
-            class="text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
-          >
-            Splits
-          </button>
-          <div class="w-3"></div>
-          <!-- Spacer -->
-        </div>
+        <button
+          class="will-change-transform flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+          @click="goToHome"
+        >
+          <img
+            src="/touchicon.png"
+            alt="Splits Logo"
+            class="size-4"
+            v-view-transition-name="'splits-logo'"
+          />
+          <span v-view-transition-name="'splits-name'">Splits</span>
+        </button>
       </div>
 
       <!-- Right side -->
@@ -29,12 +30,7 @@
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                @click="showDancers = !showDancers"
-                class="w-8 h-8 p-0"
-              >
+              <Button variant="ghost" size="sm" @click="toggleDancers" class="w-8 h-8 p-0">
                 <PersonStanding class="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -75,7 +71,7 @@
     </main>
 
     <!-- Sticky Footer - Status/Export -->
-    <div class="sticky bottom-0 z-50 mt-8 pb-8">
+    <div class="sticky bottom-0 z-50 mt-8 pb-8" v-view-transition-name="'floating-footer'">
       <!-- Status Problems -->
       <div
         v-if="dataStatus.status === 'error' && !validationDismissed"
@@ -139,11 +135,9 @@
           v-if="dataStatus.status === 'success'"
           class="flex items-center justify-center gap-2 mb-4"
         >
-          <div
-            class="w-5 h-5 flex items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50"
-          >
+          <div class="w-5 h-5 flex items-center justify-center rounded-full bg-green-500/25">
             <svg
-              class="w-3 h-3 text-green-600 dark:text-green-400"
+              class="w-3 h-3 text-green-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -156,9 +150,7 @@
               ></path>
             </svg>
           </div>
-          <p class="text-sm font-medium text-green-700 dark:text-green-300">
-            Age groups organized and ready to export
-          </p>
+          <p class="text-sm font-medium text-green-500">Ready to export</p>
         </div>
 
         <!-- Error warning when validation was dismissed - directly above button -->
@@ -188,8 +180,8 @@
         <div class="flex rounded-lg overflow-hidden border">
           <Button size="lg" @click="handleExportDownload" class="flex-1 rounded-r-none border-r-0">
             <span class="flex items-center gap-2">
-              <Download class="h-4 w-4" />
-              Export CSV
+              <Share class="h-4 w-4" />
+              Export
             </span>
           </Button>
           <Button
@@ -327,9 +319,10 @@
 
 <script setup lang="ts">
 import { ref, computed, provide } from 'vue'
+import { startViewTransition } from 'vue-view-transitions'
 import { useAppStore } from '@/stores/app'
 import { Button } from '@/components/ui/button'
-import { Table, Settings, Download, X, AlertTriangle, PersonStanding } from 'lucide-vue-next'
+import { Table, Settings, Download, X, AlertTriangle, PersonStanding, Share } from 'lucide-vue-next'
 import DarkModeToggle from '@/components/DarkModeToggle.vue'
 import SettingsSheet from '@/components/SettingsSheet.vue'
 import { unparse } from 'papaparse'
@@ -411,6 +404,11 @@ provide(
   computed(() => store.isPrintingYears),
 )
 provide('showDancers', showDancers)
+async function toggleDancers() {
+  const viewTransition = startViewTransition()
+  await viewTransition.captured
+  showDancers.value = !showDancers.value
+}
 
 // Navigation functions
 function goToHome() {
@@ -521,7 +519,7 @@ function handleExportDownload() {
         ...rows.map((row) => {
           // Build location column based on includeCountry setting
           const locationParts: string[] = []
-          
+
           if (store.colIndexes.location !== -1 && row[store.colIndexes.location]) {
             locationParts.push(String(row[store.colIndexes.location]))
           }
