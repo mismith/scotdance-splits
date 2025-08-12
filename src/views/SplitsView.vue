@@ -2,16 +2,16 @@
   <div class="flex flex-col min-h-screen">
     <!-- Fixed Toolbar -->
     <header
-      class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-3 py-1.5 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-12"
+      class="fixed top-0 left-0 right-0 z-50 grid grid-cols-[1fr_auto_1fr] items-center px-3 py-1.5 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-12"
       v-view-transition-name="'Header'"
     >
       <!-- Left side -->
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1 justify-self-start">
         <!-- Status moved to footer -->
       </div>
 
       <!-- Center - Logo -->
-      <div class="flex-1 flex justify-center">
+      <div class="justify-self-center">
         <button
           class="will-change-transform flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
           @click="goToHome"
@@ -27,7 +27,7 @@
       </div>
 
       <!-- Right side -->
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1 justify-self-end">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
