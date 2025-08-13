@@ -27,7 +27,7 @@
             <span v-view-transition-name="'splits-name'">Splits</span>
           </a>
           <p class="text-lg text-muted-foreground mt-4">
-            Split registrants into groups with bib numbers
+            Automatically split dancer registrations into balanced age groups with bib numbers
           </p>
         </header>
 
@@ -72,7 +72,7 @@
                     class="w-full h-full object-contain"
                   />
                 </div>
-                <span class="font-semibold text-foreground text-center">HDComps</span>
+                <span class="font-semibold text-foreground text-center">HD Comps</span>
               </div>
               <div
                 :ref="(el) => setInputSourceRef(el as HTMLElement, 2)"
