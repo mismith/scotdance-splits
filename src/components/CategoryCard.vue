@@ -160,7 +160,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import DancerCount from '@/components/DancerCount.vue'
 import { pluralize } from '@/lib/helpers'
-import { getAgeGroupName, CATEGORY_CODE_NAMES } from '@/lib/data'
+import { getAgeGroupName, CATEGORY_CODE_NAMES } from '@/lib/input'
 import { Minus, Plus } from 'lucide-vue-next'
 
 const props = defineProps({

@@ -184,3 +184,82 @@ export function autoPartitionCategories(categories: Record<string, Record<string
   
   return partitionedCategories
 }
+
+// Create partitions from processed data
+export function createPartitions(
+  categories: Record<string, Record<string, number>>,
+  partitionedCategories: Record<string, [number, number][]>,
+): Record<string, Partition[]> {
+  const partitions: Record<string, Partition[]> = {}
+
+  Object.keys(categories).forEach((categoryCode) => {
+    const partitionedAgeRanges = partitionedCategories[categoryCode] || []
+    const partitioned = partitionedAgeRanges.map(([minAge, maxAge]: [number, number]) => ({
+      categoryCode,
+      ageRange: [minAge, maxAge] as [number, number],
+      codes: [] as string[],
+    }))
+
+    Object.keys(categories[categoryCode]).forEach((ageCode) => {
+      const age = Number(ageCode)
+      partitionedAgeRanges.forEach(([minAge, maxAge]: [number, number], index: number) => {
+        if (minAge <= age && age <= maxAge) {
+          const code = `${categoryCode}${ageCode}`
+          partitioned[index].codes.push(code)
+        }
+      })
+    })
+
+    partitions[categoryCode] = partitioned
+  })
+
+  return partitions
+}
+
+// Partition interface for structured age group data
+export interface Partition {
+  categoryCode: string
+  ageRange: [number, number]
+  codes: string[]
+}
+
+// Data processing result interface
+export interface ProcessedData {
+  categories: Record<string, Record<string, number>>
+  partitionedCategories: Record<string, [number, number][]>
+  colIndexes: Record<string, number>
+  hasHeaderRow: boolean
+}
+
+// Process raw CSV data into categories and partitions
+export function processCSVData(csvData: string[][]): ProcessedData {
+  if (!csvData || csvData.length === 0) {
+    throw new Error('CSV file is empty')
+  }
+
+  // Detect if first row is headers
+  const potentialHeaders = csvData[0]
+  const hasHeaderRow = potentialHeaders.some((header) =>
+    INPUT_COLUMNS.some((col: InputColumn) => col.regex.test(header)),
+  )
+
+  // Auto-detect column mappings
+  const headers = hasHeaderRow ? potentialHeaders : []
+  const colIndexes = detectColumnMapping(headers)
+
+  // Extract data rows (skip headers if present)
+  const dataRows = hasHeaderRow ? csvData.slice(1) : csvData
+
+  // Process data into categories
+  const categories = categorizeData(dataRows, colIndexes)
+
+  // Auto-partition categories into age groups
+  const partitionedCategories = autoPartitionCategories(categories)
+
+  return {
+    categories,
+    partitionedCategories,
+    colIndexes,
+    hasHeaderRow,
+  }
+}

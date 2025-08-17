@@ -101,26 +101,26 @@
                     </p>
                   </div>
                   <div class="h-80 w-full rounded-lg overflow-hidden border border-border/50">
-                    <HotTable :settings="inputTableSettings" />
+                    <InputDataTable :data="mockInputDataRows" :headers="mockInputHeaders" :height="320" />
                   </div>
                   <div class="grid grid-cols-2 gap-4 mt-6 text-sm">
                     <div class="space-y-2">
                       <div class="flex items-center gap-2 text-muted-foreground">
-                        <X class="h-4 w-4 text-destructive" />
-                        <span>Manual age calculation</span>
+                        <X class="h-4 w-4 text-destructive shrink-0" />
+                        <span>Manual grouping logic</span>
                       </div>
                       <div class="flex items-center gap-2 text-muted-foreground">
-                        <X class="h-4 w-4 text-destructive" />
-                        <span>Unorganized data</span>
+                        <X class="h-4 w-4 text-destructive shrink-0" />
+                        <span>Manual dancer ordering</span>
                       </div>
                     </div>
                     <div class="space-y-2">
                       <div class="flex items-center gap-2 text-muted-foreground">
-                        <X class="h-4 w-4 text-destructive" />
-                        <span>Hours of manual work</span>
+                        <X class="h-4 w-4 text-destructive shrink-0" />
+                        <span>Time-consuming endeavour</span>
                       </div>
                       <div class="flex items-center gap-2 text-muted-foreground">
-                        <X class="h-4 w-4 text-destructive" />
+                        <X class="h-4 w-4 text-destructive shrink-0" />
                         <span>Error-prone process</span>
                       </div>
                     </div>
@@ -136,27 +136,27 @@
                     <p class="text-sm text-primary/80">Groups balanced and bib numbers assigned</p>
                   </div>
                   <div class="h-80 w-full rounded-lg overflow-hidden border border-primary/20">
-                    <HotTable :settings="outputTableSettings" />
+                    <OutputDataTable :data="realOutputData" :height="320" />
                   </div>
                   <div class="grid grid-cols-2 gap-4 mt-6 text-sm">
                     <div class="space-y-2">
                       <div class="flex items-center gap-2 text-primary">
-                        <Check class="h-4 w-4" />
-                        <span>Automatic age grouping</span>
+                        <Check class="h-4 w-4 shrink-0" />
+                        <span>Age groups optimized for similar number of dancers</span>
                       </div>
                       <div class="flex items-center gap-2 text-primary">
-                        <Check class="h-4 w-4" />
-                        <span>Perfect bib numbering</span>
+                        <Check class="h-4 w-4 shrink-0" />
+                        <span>Bib numbers based on reverse registration order</span>
                       </div>
                     </div>
                     <div class="space-y-2">
                       <div class="flex items-center gap-2 text-primary">
-                        <Check class="h-4 w-4" />
-                        <span>Organized in seconds</span>
+                        <Check class="h-4 w-4 shrink-0" />
+                        <span>Instant results with simple customizations</span>
                       </div>
                       <div class="flex items-center gap-2 text-primary">
-                        <Check class="h-4 w-4" />
-                        <span>Ready to export</span>
+                        <Check class="h-4 w-4 shrink-0" />
+                        <span>Ready to import into ScotDance.app</span>
                       </div>
                     </div>
                   </div>
@@ -248,544 +248,127 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { parse } from 'papaparse'
 import { useAppStore } from '@/stores/app'
 import { Button } from '@/components/ui/button'
 import DarkModeToggle from '@/components/DarkModeToggle.vue'
 import FileUpload from '@/components/FileUpload.vue'
-import HotTable from '@/components/HotTable.vue'
+import InputDataTable from '@/components/InputDataTable.vue'
+import OutputDataTable from '@/components/OutputDataTable.vue'
 import { X, Check, TextCursorInput } from 'lucide-vue-next'
 import {
+  INPUT_COLUMNS,
   detectColumnMapping,
   categorizeData,
   autoPartitionCategories,
-  INPUT_COLUMNS,
-} from '@/lib/data'
+  processCSVData,
+  createPartitions,
+} from '@/lib/input'
+import {
+  generateExportData,
+  calculateDefaultMaxBib,
+  type ExportSettings,
+} from '@/lib/output'
 
-// Mock data for table previews
-const mockInputHeaders = [
-  'Status',
-  'Type',
-  'PaymentMethod',
-  'EntrantId',
-  'FirstName',
-  'LastName',
-  'Sex',
-  'Age',
-  'Year',
-  'Month',
-  'Day',
-  'Email',
-  'ParticipantStatus',
-  'MealChoice',
-  'FoodAllergies',
-  'Address',
-]
+// Dynamic mock data loaded from CSV
+const mockInputData = ref<string[][]>([])
+const mockInputHeaders = ref<string[]>([])
+const isLoadingMockData = ref(true)
 
-const mockInputData = [
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4611',
-    'John',
-    'Velasco',
-    'M',
-    '32',
-    '0000',
-    '00',
-    '00',
-    'johnvelasco@gmail.com',
-    'Dancer (Premier Only)',
-    'Salmon',
-    '',
-    '3454 Union St.',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4603',
-    'Leslie',
-    'Stewart',
-    'F',
-    '',
-    '0000',
-    '00',
-    '00',
-    'lesvegas@cox.net',
-    'Parent or Organizer',
-    'Chicken',
-    '',
-    '2483 Bench Reef Pl',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4599',
-    'Joyce',
-    'Kite',
-    'F',
-    '',
-    '0000',
-    '00',
-    '00',
-    'joyce@scottishdance.com',
-    'Professional (Including Teacher or SOBHD Adjudicator)',
-    'Salmon',
-    '',
-    '7 Ashwood Crescent',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4597',
-    'Medina',
-    'Skinner',
-    'F',
-    '',
-    '0000',
-    '00',
-    '00',
-    'aberdeena_mum@yahoo.ca',
-    'Parent or Organizer',
-    'Chicken',
-    '',
-    '9684 Maurice Street',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4596',
-    'Aberdeem',
-    'Skinner',
-    'F',
-    '12',
-    '0000',
-    '00',
-    '00',
-    'aberdeena_mum@yahoo.ca',
-    'Dancer (Premier Only)',
-    'Chicken',
-    '',
-    '9684 Maurice Street',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4595',
-    'Jessica',
-    'Imeson',
-    'F',
-    '',
-    '0000',
-    '00',
-    '00',
-    'imesontghland@gmail.com',
-    'Professional (Including Teacher or SOBHD Adjudicator)',
-    'Chicken',
-    '',
-    '#93 Sundown Grove',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4594',
-    'Sylvia',
-    'Calder',
-    'F',
-    '',
-    '0000',
-    '00',
-    '00',
-    'sylviacalder08@gmail.com',
-    'Professional (Including Teacher or SOBHD Adjudicator)',
-    'Salmon',
-    '',
-    '18 Calle Pelicano',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4593',
-    'Isabella',
-    'Connolly',
-    'F',
-    '18',
-    '0000',
-    '00',
-    '00',
-    'aberdeendance@shaw.ca',
-    'Dancer (Premier Only)',
-    'Chicken',
-    '',
-    '42792 Janzen Road',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4592',
-    'Reave',
-    'Macleod',
-    'F',
-    '',
-    '0000',
-    '00',
-    '00',
-    'hurleod@telus.net',
-    'Parent or Organizer',
-    'Salmon',
-    '',
-    '13 Juniper Ridge',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4591',
-    'Viamle',
-    'Ring-Connolly',
-    'F',
-    '',
-    '0000',
-    '00',
-    '00',
-    'aberdeendance@shaw.ca',
-    'Professional (Including Teacher or SOBHD Adjudicator)',
-    'Salmon',
-    '',
-    '42792 Janzen Road',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4590',
-    'Jennifer',
-    'Seaman',
-    'F',
-    '',
-    '0000',
-    '00',
-    '00',
-    'seamandj@hotmail.com',
-    'Professional (Including Teacher or SOBHD Adjudicator)',
-    'Salmon',
-    '',
-    '2635 Garnet Street',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4577',
-    'Heather',
-    'Donehoo',
-    'F',
-    '',
-    '0000',
-    '00',
-    '00',
-    'h.donehoo@comcast.net',
-    'Professional (Including Teacher or SOBHD Adjudicator)',
-    'Chicken',
-    '',
-    '12722 S. Verona Creek Way',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4571',
-    'Kelly',
-    'MacArthur',
-    'F',
-    '',
-    '0000',
-    '00',
-    '00',
-    'kelly@macarthurdance.com',
-    'Professional (Including Teacher or SOBHD Adjudicator)',
-    'Chicken',
-    '',
-    '251 Kings Road',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4564',
-    'Suzanne',
-    'Burgoyne',
-    'F',
-    '',
-    '0000',
-    '00',
-    '00',
-    'sueburg1@gmail.com',
-    'Professional (Including Teacher or SOBHD Adjudicator)',
-    'Chicken',
-    '',
-    '2/2 Hulme Place, McLaren Park',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4554',
-    'Veronica',
-    'Paskulin',
-    'F',
-    '17',
-    '0000',
-    '00',
-    '00',
-    'veronicapaskulin18@gmail.com',
-    'Dancer (Premier Only)',
-    'Chicken',
-    '',
-    '3005 Martyn St.',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4529',
-    'Christine',
-    'Van Der Klink',
-    'F',
-    '',
-    '0000',
-    '00',
-    '00',
-    'cvdklink@hotmail.com',
-    'Non-Participant (Meals Only)',
-    'Salmon',
-    '',
-    '47385 McGuire Road',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4473',
-    'Lorna',
-    'Grant',
-    'F',
-    '',
-    '0000',
-    '00',
-    '00',
-    'rn4mykids@yahoo.com',
-    'Non-Participant (Meals Only)',
-    'Chicken',
-    '',
-    '46347 Portage Ave',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4472',
-    'Eilidh',
-    'Deakin',
-    'F',
-    '13',
-    '0000',
-    '00',
-    '00',
-    'rn4mykids@yahoo.com',
-    'Dancer (Premier Only)',
-    'Beef',
-    '',
-    '46347 Portage Ave',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4460',
-    'Evelyn',
-    'Hall',
-    'F',
-    '',
-    '0000',
-    '00',
-    '00',
-    'hilandmom@gmail.com',
-    'Parent or Organizer',
-    'Salmon',
-    '',
-    '21983 21st Place W.',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4456',
-    'Elizabeth',
-    'Constantine',
-    'F',
-    '',
-    '0000',
-    '00',
-    '00',
-    'tampabayhighlanddancers@gmail.com',
-    'Professional (Including Teacher or SOBHD Adjudicator)',
-    'Beef',
-    '',
-    '718 1/2 Louden',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4455',
-    'Emma',
-    'MacDougall',
-    'F',
-    '8',
-    '0000',
-    '00',
-    '00',
-    'kmacdougall@shaw.ca',
-    'Dancer (Premier Only)',
-    'Chicken',
-    '',
-    '1442 Riverside Dr.',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4454',
-    'Caoimhe',
-    'Stewart',
-    'F',
-    '11',
-    '0000',
-    '00',
-    '00',
-    'kmacdougall@shaw.ca',
-    'Dancer (Premier Only)',
-    'Salmon',
-    '',
-    '1442 Riverside Dr.',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4453',
-    'Fiona',
-    'MacDougall',
-    'F',
-    '15',
-    '0000',
-    '00',
-    '00',
-    'kmacdougall@shaw.ca',
-    'Dancer (Premier Only)',
-    'Beef',
-    '',
-    '1442 Riverside Dr.',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4452',
-    'Isla',
-    'Campbell',
-    'F',
-    '9',
-    '0000',
-    '00',
-    '00',
-    'campbells@highland.net',
-    'Dancer (Premier Only)',
-    'Chicken',
-    '',
-    '892 Glen Valley Road',
-  ],
-  [
-    'Completed',
-    'Conference',
-    'Paypal',
-    '4451',
-    'Connor',
-    'MacLeod',
-    'M',
-    '14',
-    '0000',
-    '00',
-    '00',
-    'macleods@edinburgh.ac.uk',
-    'Dancer (Premier Only)',
-    'Salmon',
-    '',
-    '45 Princes Street, Edinburgh',
-  ],
-]
+// Load mock data from CSV file
+async function loadMockData() {
+  try {
+    const response = await fetch('/mock-data.csv')
+    const csvText = await response.text()
+    
+    const results = await new Promise<{ data: string[][] }>((resolve, reject) => {
+      parse(csvText, {
+        worker: true,
+        complete: resolve,
+        error: reject,
+      })
+    })
 
-const mockOutputHeaders = ['Group/Dancer', 'Bib', 'Age', 'Location']
-
-const mockOutputData = [
-  ['Premier 6-8 Years', '', '', ''],
-  ['  Emma MacDougall', '101', '8', 'Calgary'],
-  ['', '', '', ''],
-  ['Premier 9-11 Years', '', '', ''],
-  ['  Isla Campbell', '102', '9', 'Glasgow'],
-  ['  Caoimhe Stewart', '103', '11', 'Edinburgh'],
-  ['', '', '', ''],
-  ['Premier 12-14 Years', '', '', ''],
-  ['  Aberdeem Skinner', '104', '12', 'Toronto'],
-  ['  Eilidh Deakin', '105', '13', 'Melbourne'],
-  ['  Connor MacLeod', '106', '14', 'Sydney'],
-  ['', '', '', ''],
-  ['Premier 15-17 Years', '', '', ''],
-  ['  Fiona MacDougall', '107', '15', 'Vancouver'],
-  ['  Veronica Paskulin', '108', '17', 'Auckland'],
-  ['', '', '', ''],
-  ['Premier 18+ Years', '', '', ''],
-  ['  Isabella Connolly', '109', '18', 'Dublin'],
-  ['  John Velasco', '110', '32', 'Wellington'],
-]
-
-// Hot table settings for previews
-const inputTableSettings = {
-  data: mockInputData,
-  colHeaders: mockInputHeaders,
-  rowHeaders: true,
-  width: '100%',
-  height: 300,
-  stretchH: 'all',
-  columnSorting: false,
-  manualColumnResize: true,
-  readOnly: true,
-  licenseKey: 'non-commercial-and-evaluation',
+    const csvData = results.data as string[][]
+    if (csvData && csvData.length > 0) {
+      mockInputHeaders.value = csvData[0]
+      mockInputData.value = csvData // Keep full CSV data for processCSVData
+    }
+  } catch (error) {
+    console.error('Failed to load mock data:', error)
+  } finally {
+    isLoadingMockData.value = false
+  }
 }
 
-const outputTableSettings = {
-  data: mockOutputData,
-  colHeaders: mockOutputHeaders,
-  rowHeaders: true,
-  width: '100%',
-  height: 300,
-  stretchH: 'all',
-  columnSorting: false,
-  manualColumnResize: true,
-  readOnly: true,
-  licenseKey: 'non-commercial-and-evaluation',
-}
+// Extract just the data rows for table display (without headers)
+const mockInputDataRows = computed(() => {
+  if (mockInputData.value.length <= 1) return []
+  return mockInputData.value.slice(1) // Skip header row for display
+})
+
+// Load mock data on component mount
+onMounted(async () => {
+  await loadMockData()
+  await nextTick()
+  // Give DOM elements more time to render
+  setTimeout(() => {
+    isActive = true
+    // Start the curve animation
+    rafId = requestAnimationFrame(updateCurvesDirectly)
+  }, 200)
+})
+
+// Process mock data using shared transformation logic
+const mockProcessedData = computed(() => {
+  if (isLoadingMockData.value || mockInputData.value.length === 0) {
+    return null
+  }
+  try {
+    return processCSVData(mockInputData.value)
+  } catch (error) {
+    console.error('Failed to process mock data:', error)
+    return null
+  }
+})
+
+const mockPartitions = computed(() => {
+  if (!mockProcessedData.value) return {}
+  return createPartitions(
+    mockProcessedData.value.categories,
+    mockProcessedData.value.partitionedCategories
+  )
+})
+
+// Generate actual output data using shared export logic
+const realOutputData = computed(() => {
+  if (!mockProcessedData.value || mockInputData.value.length === 0) {
+    return []
+  }
+
+  // Calculate default max bib using shared logic
+  const defaultMaxBib = calculateDefaultMaxBib(
+    mockInputData.value,
+    mockProcessedData.value.colIndexes,
+    mockProcessedData.value.hasHeaderRow
+  )
+
+  const settings: ExportSettings = {
+    maxBibNumber: defaultMaxBib,
+    isPrintingYears: true,
+    includeCountry: false,
+  }
+
+  return generateExportData(
+    mockInputData.value,
+    mockProcessedData.value.colIndexes,
+    mockPartitions.value,
+    settings,
+    mockProcessedData.value.hasHeaderRow
+  )
+})
+
 
 const store = useAppStore()
 
@@ -916,15 +499,6 @@ function updateCurvesDirectly() {
   rafId = requestAnimationFrame(updateCurvesDirectly)
 }
 
-onMounted(async () => {
-  await nextTick()
-  // Give DOM elements more time to render
-  setTimeout(() => {
-    isActive = true
-    // Start the curve animation
-    rafId = requestAnimationFrame(updateCurvesDirectly)
-  }, 200)
-})
 
 onUnmounted(() => {
   isActive = false
@@ -978,8 +552,8 @@ async function handleFileSelected(file: File) {
     // Update store with processed data
     store.setProcessedData(categories, partitionedCategories)
 
-    // Calculate default max bib number
-    const defaultMaxBib = Math.round((dataRows.length + 50) / 100) * 100 + 100
+    // Calculate default max bib number using shared logic
+    const defaultMaxBib = calculateDefaultMaxBib(csvData, colIndexes, hasHeaders)
     store.updateExportSettings({ maxBibNumber: defaultMaxBib })
 
     // Data is now processed and hasData will be true, causing SplitsView to show

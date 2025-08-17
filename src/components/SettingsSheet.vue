@@ -38,20 +38,14 @@
         <!-- Content -->
         <div class="flex-1 overflow-y-auto p-6">
           <div class="grid lg:grid-cols-2 gap-6">
-            <!-- Left side: Table preview -->
+            <!-- Left side: Preview content -->
             <div class="space-y-4">
-              <h3 class="text-sm font-medium">Data Preview</h3>
-              <div class="border rounded-lg">
-                <HotTable
-                  v-if="previewData?.length"
-                  :data="previewData"
-                  :settings="{
-                    colHeaders: store.hasHeaderRow ? store.inputHeaders : true,
-                    readOnly: true,
-                    height: 300,
-                  }"
-                />
-              </div>
+              <slot name="preview">
+                <h3 class="text-sm font-medium">Preview</h3>
+                <div class="border rounded-lg p-4 bg-muted/20">
+                  <p class="text-sm text-muted-foreground">No preview available</p>
+                </div>
+              </slot>
             </div>
 
             <!-- Right side: Settings -->
@@ -76,11 +70,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useAppStore } from '@/stores/app'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-vue-next'
-import HotTable from '@/components/HotTable.vue'
 
 interface Props {
   open: boolean
@@ -95,10 +86,4 @@ defineEmits<{
   save: []
 }>()
 
-const store = useAppStore()
-
-// Preview a subset of data
-const previewData = computed(() => {
-  return store.inputCSV?.slice(0, 10) || []
-})
 </script>

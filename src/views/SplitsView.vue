@@ -203,6 +203,16 @@
       description="Map your CSV columns to the correct fields for processing"
       @save="saveColumnMapping"
     >
+      <template #preview>
+        <h3 class="text-sm font-medium">Input Data Preview</h3>
+        <div class="border rounded-lg">
+          <InputDataTable
+            :data="store.inputCSV || []"
+            :headers="store.inputHeaders"
+            :height="300"
+          />
+        </div>
+      </template>
       <template #settings>
         <div class="space-y-4">
           <div class="space-y-2">
@@ -229,7 +239,7 @@
               {{ name }}{{ required ? ' *' : '' }}
             </Label>
             <Select
-              :model-value="store.inputHeaders[store.colIndexes[id]] || 'none'"
+              :model-value="(store.inputHeaders[store.colIndexes[id]] || 'none') as string"
               @update:model-value="updateColIndex(id, $event)"
             >
               <SelectTrigger class="w-full">
@@ -255,6 +265,15 @@
       description="Configure bib numbers and output format options"
       @save="saveExportSettings"
     >
+      <template #preview>
+        <h3 class="text-sm font-medium">Export Preview</h3>
+        <div class="border rounded-lg">
+          <OutputDataTable :data="exportPreviewData" :height="300" />
+        </div>
+        <p class="text-xs text-muted-foreground">
+          Preview of your export data. Changes to settings will update this preview in real-time.
+        </p>
+      </template>
       <template #settings>
         <div class="space-y-6">
           <div class="space-y-4">
@@ -323,12 +342,14 @@ import { ref, computed, provide } from 'vue'
 import { startViewTransition } from 'vue-view-transitions'
 import { useAppStore } from '@/stores/app'
 import { Button } from '@/components/ui/button'
-import { Table, Settings, Download, X, AlertTriangle, PersonStanding, Share } from 'lucide-vue-next'
+import { Table, Settings, X, AlertTriangle, PersonStanding, Share } from 'lucide-vue-next'
 import DarkModeToggle from '@/components/DarkModeToggle.vue'
 import SettingsSheet from '@/components/SettingsSheet.vue'
-import { unparse } from 'papaparse'
 import { downloadCSV } from '@/lib/helpers'
-import { getAgeGroupName, CATEGORY_CODE_NAMES, INPUT_COLUMNS } from '@/lib/data'
+import { CATEGORY_CODE_NAMES, INPUT_COLUMNS, createPartitions, type Partition } from '@/lib/input'
+import { generateExportData, convertToCSV, type ExportSettings } from '@/lib/output'
+import OutputDataTable from '@/components/OutputDataTable.vue'
+import InputDataTable from '@/components/InputDataTable.vue'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -391,12 +412,6 @@ const dataStatus = computed(() => {
 })
 
 // Partitions store - maps category code to age ranges
-type Partition = {
-  categoryCode: string
-  ageRange: number[]
-  codes: string[]
-}
-
 const partitions = ref<Record<string, Partition[]>>({})
 
 // Provide for CategoryCard components
@@ -439,9 +454,10 @@ function showValidationErrors() {
   validationDismissed.value = false
 }
 
-function updateColIndex(id: string, value: string) {
+function updateColIndex(id: string, value: any) {
   const newIndexes = { ...store.colIndexes }
-  newIndexes[id] = value === 'none' ? -1 : store.inputHeaders.indexOf(value)
+  const stringValue = String(value || 'none')
+  newIndexes[id] = stringValue === 'none' ? -1 : store.inputHeaders.indexOf(stringValue)
   store.updateColIndexes(newIndexes)
 }
 
@@ -454,29 +470,7 @@ function isFieldValid(fieldId: string) {
 }
 
 function handlePartition(categoryCode: string, partitionedAgeRanges: number[][]) {
-  const ageCodesWithinGroup = Object.keys(store.categories?.[categoryCode] || {})
-  const partitioned = partitionedAgeRanges.map(
-    ([minAge, maxAge]) =>
-      ({
-        categoryCode,
-        ageRange: [minAge, maxAge],
-        codes: [],
-      }) as Partition,
-  )
-
-  ageCodesWithinGroup.forEach((ageCode) => {
-    const age = Number(ageCode)
-    partitionedAgeRanges.forEach(([minAge, maxAge], index) => {
-      if (minAge <= age && age <= maxAge) {
-        const code = `${categoryCode}${ageCode}`
-        partitioned[index].codes.push(code)
-      }
-    })
-  })
-
-  partitions.value[categoryCode] = partitioned
-
-  // Update the store's partitioned categories
+  // Update the store's partitioned categories first
   const newPartitionedCategories = {
     ...store.partitionedCategories,
     [categoryCode]: partitionedAgeRanges.map(
@@ -484,70 +478,38 @@ function handlePartition(categoryCode: string, partitionedAgeRanges: number[][])
     ),
   }
   store.setProcessedData(store.categories!, newPartitionedCategories)
+
+  // Use shared function to create partitions for this category
+  const categoryPartitions = createPartitions(
+    { [categoryCode]: store.categories?.[categoryCode] || {} },
+    { [categoryCode]: newPartitionedCategories[categoryCode] },
+  )
+
+  partitions.value[categoryCode] = categoryPartitions[categoryCode] || []
 }
 
-// Generate numbered CSV with bib numbers based on registration order
-const numberedCSV = computed(() => {
-  const inputData = store.inputCSV?.slice(store.hasHeaderRow ? 1 : 0) || []
+// Generate export preview data
+const exportPreviewData = computed(() => {
+  if (!store.inputCSV) return []
 
-  return inputData
-    ?.filter((row) => row[store.colIndexes.firstName || 0])
-    .sort((rowA, rowB) =>
-      (rowA[store.colIndexes.timestamp || 0] || '').localeCompare(
-        rowB[store.colIndexes.timestamp || 0] || '',
-      ),
-    )
-    .map((row, index) => [...row, `${(store.maxBibNumber || 100) - index}`])
+  const settings: ExportSettings = {
+    maxBibNumber: store.maxBibNumber,
+    isPrintingYears: store.isPrintingYears,
+    includeCountry: store.includeCountry,
+  }
+
+  return generateExportData(
+    store.inputCSV,
+    store.colIndexes,
+    partitions.value,
+    settings,
+    store.hasHeaderRow,
+  )
 })
 
-// Real export function using original logic
+// Export function using shared logic
 function handleExportDownload() {
-  const data: (string | number)[][] = []
-
-  Object.values(partitions.value)
-    .flat()
-    .forEach((partition) => {
-      if (data.length) data.push([])
-
-      const name = `${CATEGORY_CODE_NAMES[partition.categoryCode]} ${getAgeGroupName(partition.ageRange[0], partition.ageRange[1], store.isPrintingYears)}`
-      data.push([name])
-
-      const rows =
-        numberedCSV.value?.filter((row) =>
-          row.find((value) => partition.codes.includes(value as string)),
-        ) || []
-      data.push(
-        ...rows.map((row) => {
-          // Build location column based on includeCountry setting
-          const locationParts: string[] = []
-
-          if (store.colIndexes.location !== -1 && row[store.colIndexes.location]) {
-            locationParts.push(String(row[store.colIndexes.location]))
-          }
-          if (store.colIndexes.region !== -1 && row[store.colIndexes.region]) {
-            locationParts.push(String(row[store.colIndexes.region]))
-          }
-
-          if (
-            store.includeCountry &&
-            store.colIndexes.country !== -1 &&
-            row[store.colIndexes.country]
-          ) {
-            locationParts.push(String(row[store.colIndexes.country]))
-          }
-
-          return [
-            row[row.length - 1], // bib number (last column)
-            row[store.colIndexes.firstName || 0] ||
-              (!row[store.colIndexes.lastName || 0] && row[store.colIndexes.fullName || 0]),
-            row[store.colIndexes.lastName || 0],
-            locationParts.join(', '),
-          ]
-        }),
-      )
-    })
-
-  const csvContent = unparse(data)
+  const csvContent = convertToCSV(exportPreviewData.value)
   downloadCSV(csvContent, 'splits-export')
 }
 </script>
