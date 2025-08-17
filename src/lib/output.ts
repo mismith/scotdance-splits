@@ -1,5 +1,5 @@
 import { unparse } from 'papaparse'
-import { CATEGORY_CODE_NAMES, getAgeGroupName, type Partition } from './input'
+import { CATEGORY_CODE_NAMES, CATEGORY_ORDER, getAgeGroupName, type Partition } from './input'
 
 export interface ExportSettings {
   maxBibNumber: number
@@ -26,9 +26,15 @@ export function generateExportData(
     )
     .map((row, index) => [...row, `${settings.maxBibNumber - index}`])
 
-  Object.values(partitions)
-    .flat()
-    .forEach((partition) => {
+  // Sort categories by the defined order: P, B, N, I, R, X
+  const sortedPartitions = CATEGORY_ORDER
+    .filter(categoryCode => partitions[categoryCode]) // Only include categories that exist
+    .flatMap(categoryCode => 
+      // Sort partitions within each category by minimum age
+      partitions[categoryCode].sort((a, b) => a.ageRange[0] - b.ageRange[0])
+    )
+
+  sortedPartitions.forEach((partition) => {
       if (data.length) data.push(['', '', '', ''])
 
       const name = `${CATEGORY_CODE_NAMES[partition.categoryCode]} ${getAgeGroupName(partition.ageRange[0], partition.ageRange[1], settings.isPrintingYears)}`

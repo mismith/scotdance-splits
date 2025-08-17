@@ -10,6 +10,9 @@ export const CATEGORY_CODE_NAMES: Record<string, string> = {
   X: 'Premier',
 }
 
+// Highland dance category order (progression from beginner to advanced)
+export const CATEGORY_ORDER = ['P', 'B', 'N', 'I', 'R', 'X'] as const
+
 // Age group name formatting
 export function getAgeGroupName(minAge: number, maxAge: number, printYears = true) {
   const YEARS = printYears ? ' Years' : ''
