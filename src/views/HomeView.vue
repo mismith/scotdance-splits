@@ -358,6 +358,7 @@ const realOutputData = computed(() => {
     maxBibNumber: defaultMaxBib,
     isPrintingYears: true,
     includeCountry: false,
+    combineNames: false,
   }
 
   return generateExportData(

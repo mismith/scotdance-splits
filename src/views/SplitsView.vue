@@ -277,27 +277,25 @@
       <template #settings>
         <div class="space-y-6">
           <div class="space-y-4">
-            <h3 class="text-sm font-semibold">Bib Numbers</h3>
-            <div class="space-y-2">
-              <Label for="max-bib">Highest bib number</Label>
-              <Input
-                id="max-bib"
-                type="number"
-                :model-value="store.maxBibNumber"
-                @update:model-value="
-                  (value) => store.updateExportSettings({ maxBibNumber: Number(value) })
-                "
-                class="w-full"
-              />
-              <p class="text-xs text-muted-foreground">
-                Bib numbers will count down from this number based on registration order
-              </p>
-            </div>
-          </div>
-
-          <div class="space-y-4">
             <h3 class="text-sm font-semibold">Output Format</h3>
             <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="w-full">
+                  <Label for="max-bib">Highest bib number</Label>
+                  <p class="text-xs text-muted-foreground">
+                    Bib numbers will count down from this number
+                  </p>
+                </div>
+                <Input
+                  id="max-bib"
+                  type="number"
+                  :model-value="store.maxBibNumber"
+                  class="w-24"
+                  @update:model-value="
+                    (value) => store.updateExportSettings({ maxBibNumber: Number(value) })
+                  "
+                />
+              </div>
               <div class="flex items-center justify-between">
                 <div>
                   <Label for="printing-years">Include "Years" in age group names</Label>
@@ -316,7 +314,23 @@
 
               <div class="flex items-center justify-between">
                 <div>
-                  <Label for="include-country">Include country in location</Label>
+                  <Label for="combine-names">Combine names</Label>
+                  <p class="text-xs text-muted-foreground">
+                    Use one column for full name instead of separate first/last name columns
+                  </p>
+                </div>
+                <Switch
+                  id="combine-names"
+                  :model-value="store.combineNames"
+                  @update:model-value="
+                    (value) => store.updateExportSettings({ combineNames: value })
+                  "
+                />
+              </div>
+
+              <div class="flex items-center justify-between">
+                <div>
+                  <Label for="include-country">Include country</Label>
                   <p class="text-xs text-muted-foreground">
                     Add country to dancer locations when available
                   </p>
@@ -496,6 +510,7 @@ const exportPreviewData = computed(() => {
     maxBibNumber: store.maxBibNumber,
     isPrintingYears: store.isPrintingYears,
     includeCountry: store.includeCountry,
+    combineNames: store.combineNames,
   }
 
   return generateExportData(

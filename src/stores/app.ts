@@ -49,6 +49,7 @@ export const useAppStore = defineStore('app', () => {
   const maxBibNumber = ref<number>(100)
   const isPrintingYears = ref(true)
   const includeCountry = ref(false)
+  const combineNames = ref(false)
 
   // Computed
   const hasData = computed(() => {
@@ -125,6 +126,7 @@ export const useAppStore = defineStore('app', () => {
     maxBibNumber?: number
     isPrintingYears?: boolean
     includeCountry?: boolean
+    combineNames?: boolean
   }) {
     if (settings.maxBibNumber !== undefined) {
       maxBibNumber.value = settings.maxBibNumber
@@ -134,6 +136,9 @@ export const useAppStore = defineStore('app', () => {
     }
     if (settings.includeCountry !== undefined) {
       includeCountry.value = settings.includeCountry
+    }
+    if (settings.combineNames !== undefined) {
+      combineNames.value = settings.combineNames
     }
   }
 
@@ -153,6 +158,7 @@ export const useAppStore = defineStore('app', () => {
     maxBibNumber,
     isPrintingYears,
     includeCountry,
+    combineNames,
 
     // Computed
     hasData,

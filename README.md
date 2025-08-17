@@ -15,5 +15,4 @@ Free online tool that splits highland dance competition registrations into age g
 - read and use selected file name for Championship detection and export filename (e.g. Calgary Premiership 2025 -> Championship [x] + Calgary Premiership 2025 Grouped.csv)
 - age group min-size detection (e.g. no less than 5 people)
 - customizable age groups, e.g. drag-n-drop boundaries
-- setting to group first and last name together in output
 - input setting to detect scrutineer code from words + age, age from birthday, etc

@@ -5,6 +5,7 @@ export interface ExportSettings {
   maxBibNumber: number
   isPrintingYears: boolean
   includeCountry: boolean
+  combineNames: boolean
 }
 
 // Generate export-ready data structure
@@ -27,50 +28,55 @@ export function generateExportData(
     .map((row, index) => [...row, `${settings.maxBibNumber - index}`])
 
   // Sort categories by the defined order: P, B, N, I, R, X
-  const sortedPartitions = CATEGORY_ORDER
-    .filter(categoryCode => partitions[categoryCode]) // Only include categories that exist
-    .flatMap(categoryCode => 
+  const sortedPartitions = CATEGORY_ORDER.filter((categoryCode) => partitions[categoryCode]) // Only include categories that exist
+    .flatMap((categoryCode) =>
       // Sort partitions within each category by minimum age
-      partitions[categoryCode].sort((a, b) => a.ageRange[0] - b.ageRange[0])
+      partitions[categoryCode].sort((a, b) => a.ageRange[0] - b.ageRange[0]),
     )
 
   sortedPartitions.forEach((partition) => {
-      if (data.length) data.push(['', '', '', ''])
+    if (data.length) data.push(['', '', '', ''])
 
-      const name = `${CATEGORY_CODE_NAMES[partition.categoryCode]} ${getAgeGroupName(partition.ageRange[0], partition.ageRange[1], settings.isPrintingYears)}`
-      data.push([name, '', '', ''])
+    const name = `${CATEGORY_CODE_NAMES[partition.categoryCode]} ${getAgeGroupName(partition.ageRange[0], partition.ageRange[1], settings.isPrintingYears)}`
+    data.push([name, '', '', ''])
 
-      const rows = numberedCSV.filter((row) =>
-        row.find((value) => partition.codes.includes(value as string)),
-      )
+    const rows = numberedCSV.filter((row) =>
+      row.find((value) => partition.codes.includes(value as string)),
+    )
 
-      data.push(
-        ...rows.map((row) => {
-          // Build location column based on includeCountry setting
-          const locationParts: string[] = []
+    data.push(
+      ...rows.map((row) => {
+        const bibNumber = row[row.length - 1] // bib number (last column)
 
-          if (colIndexes.location !== -1 && row[colIndexes.location]) {
-            locationParts.push(String(row[colIndexes.location]))
-          }
-          if (colIndexes.region !== -1 && row[colIndexes.region]) {
-            locationParts.push(String(row[colIndexes.region]))
-          }
+        // Output name information
+        const firstName =
+          row[colIndexes.firstName] || (!row[colIndexes.lastName] && row[colIndexes.fullName]) || ''
+        const lastName = row[colIndexes.lastName] || ''
+        const nameParts = []
+        if (settings.combineNames) {
+          const fullName = [firstName, lastName].filter(Boolean).join(' ')
+          nameParts.push(fullName)
+        } else {
+          nameParts.push(firstName, lastName)
+        }
 
-          if (settings.includeCountry && colIndexes.country !== -1 && row[colIndexes.country]) {
-            locationParts.push(String(row[colIndexes.country]))
-          }
+        // Build location column based on includeCountry setting
+        const locationParts: string[] = []
+        if (colIndexes.location !== -1 && row[colIndexes.location]) {
+          locationParts.push(String(row[colIndexes.location]))
+        }
+        if (colIndexes.region !== -1 && row[colIndexes.region]) {
+          locationParts.push(String(row[colIndexes.region]))
+        }
+        if (settings.includeCountry && colIndexes.country !== -1 && row[colIndexes.country]) {
+          locationParts.push(String(row[colIndexes.country]))
+        }
+        const location = locationParts.join(', ')
 
-          return [
-            row[row.length - 1], // bib number (last column)
-            row[colIndexes.firstName] ||
-              (!row[colIndexes.lastName] && row[colIndexes.fullName]) ||
-              '',
-            row[colIndexes.lastName] || '',
-            locationParts.join(', '),
-          ]
-        }),
-      )
-    })
+        return [bibNumber, ...nameParts, location].filter(Boolean)
+      }),
+    )
+  })
 
   return data
 }
