@@ -14,7 +14,7 @@
           {{ count }}
         </span>
       </TooltipTrigger>
-      <TooltipContent>
+      <TooltipContent side="right">
         <p>
           {{ count }} out of {{ total }} {{ pluralize(total, 'dancer') }} ({{
             Math.round((count / total) * 100)

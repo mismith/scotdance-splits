@@ -169,28 +169,37 @@
           style="overflow: visible"
         ></svg>
 
-        <!-- Drag handle -->
-        <div
-          v-if="showDragHandle"
-          ref="dragHandleRef"
-          class="absolute z-10 bg-primary rounded-md cursor-ns-resize h-1.5 transition-opacity duration-200 flex items-center justify-center"
-          :style="{
-            left: dragHandleLeft + 'px',
-            top: dragHandleY + 'px',
-            width: dragHandleWidth + 'px',
-            transform: 'translateY(-50%)',
-          }"
-          @mousedown="onDragStart"
-          @mouseenter="onDragHandleHover"
-          @mouseleave="onDragHandleLeave"
+        <!-- Drag handle with transition -->
+        <Transition
+          enter-active-class="transition-all duration-200 ease-out"
+          leave-active-class="transition-all duration-150 ease-in"
+          enter-from-class="opacity-0 scale-95"
+          enter-to-class="opacity-100 scale-100"
+          leave-from-class="opacity-100 scale-100"
+          leave-to-class="opacity-0 scale-95"
         >
-          <!-- Three dots using CSS -->
-          <div class="flex gap-0.5">
-            <div class="w-1 h-1 bg-primary-foreground rounded-full"></div>
-            <div class="w-1 h-1 bg-primary-foreground rounded-full"></div>
-            <div class="w-1 h-1 bg-primary-foreground rounded-full"></div>
+          <div
+            v-if="showDragHandle"
+            ref="dragHandleRef"
+            class="absolute z-10 bg-primary rounded-md cursor-ns-resize h-3 flex items-center justify-center shadow-lg"
+            :style="{
+              left: dragHandleLeft + 'px',
+              top: dragHandleY + 'px',
+              width: dragHandleWidth + 'px',
+              transform: 'translateY(-50%)',
+            }"
+            @mousedown="onDragStart"
+            @mouseenter="onDragHandleHover"
+            @mouseleave="onDragHandleLeave"
+          >
+            <!-- Three dots using CSS -->
+            <div class="flex gap-0.5">
+              <div class="w-1 h-1 bg-primary-foreground rounded-full"></div>
+              <div class="w-1 h-1 bg-primary-foreground rounded-full"></div>
+              <div class="w-1 h-1 bg-primary-foreground rounded-full"></div>
+            </div>
           </div>
-        </div>
+        </Transition>
       </div>
     </CardContent>
   </Card>
@@ -787,35 +796,59 @@ function updateCurvesDirectly() {
   const svg = svgRef.value
   const curvesToRender = rightSideRef.value.slice(0, -1)
 
-  // Ensure we have the right number of path elements
-  while (svg.children.length < curvesToRender.length) {
+  // Ensure we have the right number of path elements (2 per curve: invisible hit area + visible line)
+  const expectedChildCount = curvesToRender.length * 2
+  while (svg.children.length < expectedChildCount) {
+    const currentIndex = Math.floor(svg.children.length / 2)
+    const isHitArea = svg.children.length % 2 === 0
+    
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
-    path.setAttribute('class', 'stroke-primary fill-none stroke-2')
-    path.setAttribute('stroke-linecap', 'round')
-    path.setAttribute('pointer-events', 'stroke')
-    path.setAttribute('data-boundary-index', svg.children.length.toString())
-
-    // Add hover events
-    path.addEventListener('mouseenter', () => {
-      const boundaryIndex = parseInt(path.getAttribute('data-boundary-index') || '0')
-      onBoundaryHover(boundaryIndex)
-    })
-    path.addEventListener('mouseleave', onBoundaryLeave)
+    path.setAttribute('data-boundary-index', currentIndex.toString())
+    
+    if (isHitArea) {
+      // Invisible thick hit area
+      path.setAttribute('class', 'fill-none stroke-transparent')
+      path.setAttribute('stroke-width', '12')
+      path.setAttribute('stroke-linecap', 'round')
+      path.setAttribute('pointer-events', 'stroke')
+      path.setAttribute('data-hit-area', 'true')
+      
+      // Add hover events only to hit area
+      path.addEventListener('mouseenter', () => {
+        const boundaryIndex = parseInt(path.getAttribute('data-boundary-index') || '0')
+        onBoundaryHover(boundaryIndex)
+      })
+      path.addEventListener('mouseleave', onBoundaryLeave)
+    } else {
+      // Visible thin yellow line
+      path.setAttribute('class', 'stroke-primary fill-none stroke-2')
+      path.setAttribute('stroke-linecap', 'round')
+      path.setAttribute('pointer-events', 'none')
+      path.setAttribute('data-visible-line', 'true')
+    }
 
     svg.appendChild(path)
   }
 
   // Remove extra path elements if needed
-  while (svg.children.length > curvesToRender.length) {
+  while (svg.children.length > expectedChildCount) {
     svg.removeChild(svg.lastChild!)
   }
 
-  // Update each path directly
+  // Update each path directly (both hit area and visible line)
   curvesToRender.forEach((el, index) => {
-    const pathElement = svg.children[index] as SVGPathElement
     const newPath = getCurvePath(el, index)
-    if (pathElement.getAttribute('d') !== newPath) {
-      pathElement.setAttribute('d', newPath)
+    
+    // Update hit area path (even indices: 0, 2, 4...)
+    const hitAreaElement = svg.children[index * 2] as SVGPathElement
+    if (hitAreaElement.getAttribute('d') !== newPath) {
+      hitAreaElement.setAttribute('d', newPath)
+    }
+    
+    // Update visible line path (odd indices: 1, 3, 5...)
+    const visibleLineElement = svg.children[index * 2 + 1] as SVGPathElement
+    if (visibleLineElement.getAttribute('d') !== newPath) {
+      visibleLineElement.setAttribute('d', newPath)
     }
   })
 
