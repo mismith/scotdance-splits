@@ -36,6 +36,7 @@
 </template>
 
 <script setup lang="ts">
+import { Plus } from 'lucide-vue-next'
 import { ref, watch, withDefaults } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -46,7 +47,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus } from 'lucide-vue-next'
 import FilterCard, { type FilterConfig } from './FilterCard.vue'
 
 interface Props {

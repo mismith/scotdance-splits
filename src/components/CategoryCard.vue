@@ -197,16 +197,16 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, inject, onMounted, onUnmounted, nextTick, useId } from 'vue'
 import partition from 'linear-partitioning'
+import { Delete, Minus, Plus } from 'lucide-vue-next'
+import { computed, inject, nextTick, onMounted, onUnmounted, ref, useId, watch } from 'vue'
 import { useAppStore } from '@/stores/app'
-import { Card, CardContent, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import DancerCount from '@/components/DancerCount.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardTitle } from '@/components/ui/card'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { pluralize } from '@/lib/helpers'
-import { getAgeGroupName, CATEGORY_CODE_NAMES } from '@/lib/input'
-import { Minus, Plus, Delete } from 'lucide-vue-next'
+import { CATEGORY_CODE_NAMES, getAgeGroupName } from '@/lib/input'
 
 const props = defineProps({
   name: {

@@ -70,8 +70,8 @@
 </template>
 
 <script setup lang="ts">
-import { Button } from '@/components/ui/button'
 import { X } from 'lucide-vue-next'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   open: boolean

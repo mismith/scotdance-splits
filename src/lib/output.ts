@@ -1,5 +1,5 @@
 import { unparse } from 'papaparse'
-import { CATEGORY_CODE_NAMES, CATEGORY_ORDER, getAgeGroupName, type Partition } from './input'
+import { CATEGORY_CODE_NAMES, CATEGORY_ORDER, type Partition, getAgeGroupName } from './input'
 
 export interface ExportSettings {
   maxBibNumber: number

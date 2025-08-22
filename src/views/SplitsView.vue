@@ -352,18 +352,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, provide } from 'vue'
+import { AlertTriangle, PersonStanding, Settings, Share, Table, X } from 'lucide-vue-next'
+import { computed, provide, ref } from 'vue'
 import { startViewTransition } from 'vue-view-transitions'
 import { useAppStore } from '@/stores/app'
-import { Button } from '@/components/ui/button'
-import { Table, Settings, X, AlertTriangle, PersonStanding, Share } from 'lucide-vue-next'
+import CategoryCard from '@/components/CategoryCard.vue'
 import DarkModeToggle from '@/components/DarkModeToggle.vue'
-import SettingsSheet from '@/components/SettingsSheet.vue'
-import { downloadCSV } from '@/lib/helpers'
-import { CATEGORY_CODE_NAMES, INPUT_COLUMNS, createPartitions, type Partition } from '@/lib/input'
-import { generateExportData, convertToCSV, type ExportSettings } from '@/lib/output'
-import OutputDataTable from '@/components/OutputDataTable.vue'
 import InputDataTable from '@/components/InputDataTable.vue'
+import OutputDataTable from '@/components/OutputDataTable.vue'
+import SettingsSheet from '@/components/SettingsSheet.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -374,9 +373,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import CategoryCard from '@/components/CategoryCard.vue'
+import { downloadCSV } from '@/lib/helpers'
+import { CATEGORY_CODE_NAMES, INPUT_COLUMNS, type Partition, createPartitions } from '@/lib/input'
+import { type ExportSettings, convertToCSV, generateExportData } from '@/lib/output'
 
 const store = useAppStore()
 

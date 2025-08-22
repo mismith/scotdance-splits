@@ -1,7 +1,7 @@
 import './assets/main.css'
 
-import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import { createApp } from 'vue'
 import { ViewTransitionsPlugin } from 'vue-view-transitions'
 import App from './App.vue'
 // import router from './router'

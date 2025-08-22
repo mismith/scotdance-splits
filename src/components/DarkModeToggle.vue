@@ -21,11 +21,11 @@
 </template>
 
 <script setup lang="ts">
+import { Moon, Sun } from 'lucide-vue-next'
+import { startViewTransition } from 'vue-view-transitions'
+import { useDarkMode } from '@/composables/useDarkMode'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { useDarkMode } from '@/composables/useDarkMode'
-import { Sun, Moon } from 'lucide-vue-next'
-import { startViewTransition } from 'vue-view-transitions'
 
 const { isDark, toggle } = useDarkMode()
 async function toggleDarkMode() {

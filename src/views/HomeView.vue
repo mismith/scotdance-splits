@@ -257,24 +257,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { Check, ChevronRight, TextCursorInput, X } from 'lucide-vue-next'
 import { parse } from 'papaparse'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useAppStore } from '@/stores/app'
-import { Button } from '@/components/ui/button'
 import DarkModeToggle from '@/components/DarkModeToggle.vue'
 import FileUpload from '@/components/FileUpload.vue'
 import InputDataTable from '@/components/InputDataTable.vue'
 import OutputDataTable from '@/components/OutputDataTable.vue'
-import { X, Check, TextCursorInput, ChevronRight } from 'lucide-vue-next'
+import { Button } from '@/components/ui/button'
 import {
   INPUT_COLUMNS,
-  detectColumnMapping,
-  categorizeData,
   autoPartitionCategories,
-  processCSVData,
+  categorizeData,
   createPartitions,
+  detectColumnMapping,
+  processCSVData,
 } from '@/lib/input'
-import { generateExportData, calculateDefaultMaxBib, type ExportSettings } from '@/lib/output'
+import { type ExportSettings, calculateDefaultMaxBib, generateExportData } from '@/lib/output'
 
 // Dynamic mock data loaded from CSV
 const mockInputData = ref<string[][]>([])

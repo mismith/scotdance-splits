@@ -66,10 +66,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useDropZone } from '@vueuse/core'
-import { Button } from '@/components/ui/button'
 import { AlertTriangle, X } from 'lucide-vue-next'
+import { ref } from 'vue'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   accept?: string

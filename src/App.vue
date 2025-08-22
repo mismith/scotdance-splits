@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import { startViewTransition } from 'vue-view-transitions'
 import { useAppStore } from '@/stores/app'
 import HomeView from '@/views/HomeView.vue'
 import SplitsView from '@/views/SplitsView.vue'
-import { ref, watch } from 'vue'
 
 const store = useAppStore()
 

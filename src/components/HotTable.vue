@@ -5,9 +5,9 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, nextTick, onMounted, onUnmounted, type PropType } from 'vue'
 import { HotTable } from '@handsontable/vue3'
 import { registerAllModules } from 'handsontable/registry'
+import { type PropType, computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import 'handsontable/styles/handsontable.css'
 import 'handsontable/styles/ht-theme-main.css'
 import { useDarkMode } from '@/composables/useDarkMode'

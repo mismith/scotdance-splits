@@ -66,9 +66,9 @@
 </template>
 
 <script setup lang="ts">
+import { X } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -76,7 +76,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { X } from 'lucide-vue-next'
+import { Switch } from '@/components/ui/switch'
 
 export interface FilterConfig {
   id: string

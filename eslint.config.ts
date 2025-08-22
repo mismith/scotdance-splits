@@ -1,6 +1,7 @@
-import pluginVue from 'eslint-plugin-vue'
-import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript'
 import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
+import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript'
+import pluginImport from 'eslint-plugin-import'
+import pluginVue from 'eslint-plugin-vue'
 
 // To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
 // import { configureVueProject } from '@vue/eslint-config-typescript'
@@ -21,4 +22,78 @@ export default defineConfigWithVueTs(
   pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,
   skipFormatting,
+
+  { plugins: { import: pluginImport } },
+  {
+    rules: {
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'import/order': [
+        'error',
+        {
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+          pathGroups: [
+            {
+              pattern: '@/assets/**',
+              group: 'external',
+              position: 'after',
+            },
+            {
+              pattern: '@/utils',
+              group: 'internal',
+              position: 'before',
+            },
+            {
+              pattern: '@/utils/**',
+              group: 'internal',
+              position: 'before',
+            },
+            {
+              pattern: '@/stores/**',
+              group: 'internal',
+              position: 'before',
+            },
+            {
+              pattern: '@/composables/**',
+              group: 'internal',
+              position: 'before',
+            },
+            {
+              pattern: '@/directives/**',
+              group: 'internal',
+              position: 'before',
+            },
+            {
+              pattern: '@/components/ui/**',
+              group: 'parent',
+              position: 'before',
+            },
+            {
+              pattern: '@/views/**',
+              group: 'internal',
+            },
+            {
+              pattern: '@/sections/**',
+              group: 'internal',
+            },
+            {
+              pattern: '@/components/**',
+              group: 'internal',
+            },
+          ],
+          alphabetize: {
+            order: 'asc',
+          },
+          named: true,
+        },
+      ],
+    },
+  },
+  {
+    files: ['**/components/ui/**/*.{js,vue}'],
+    rules: {
+      'vue/multi-word-component-names': ['off'],
+      'vue/require-default-prop': ['off'],
+      'vue/block-order': ['error', { order: ['script', 'template', 'style'] }],
+    },
+  },
 )
