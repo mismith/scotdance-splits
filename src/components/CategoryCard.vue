@@ -8,20 +8,42 @@
           :class="`grid gap-4 ${showDancers ? 'grid-cols-[1fr_80px_1fr_1fr]' : 'grid-cols-[1fr_80px_1fr]'}`"
         >
           <!-- Row 1: Header with title and controls -->
-          <div class="flex items-center space-x-3">
-            <CardTitle class="text-xl font-bold">{{ name }}</CardTitle>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <DancerCount :count="totalDancers" />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{{ totalDancers }} dancers</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <CardTitle class="text-xl font-bold">{{ name }}</CardTitle>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <DancerCount :count="totalDancers" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{{ totalDancers }} dancers</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+
+            <!-- Manual adjustment indicator -->
+            <div v-if="store.hasManualAdjustments(categoryCode)" class="flex items-center gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      class="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-full cursor-pointer hover:bg-primary/15 transition-colors"
+                      @click="resetToDefaults"
+                    >
+                      <span class="text-xs font-medium text-primary">Manual</span>
+                      <Delete class="w-3 h-3 text-primary ml-1" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Reset to auto-calculated groups</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </div>
 
           <div></div>
@@ -146,6 +168,29 @@
           class="absolute inset-0 w-full h-full pointer-events-none will-change-auto"
           style="overflow: visible"
         ></svg>
+
+        <!-- Drag handle -->
+        <div
+          v-if="showDragHandle"
+          ref="dragHandleRef"
+          class="absolute z-10 bg-primary rounded-md cursor-ns-resize h-1.5 transition-opacity duration-200 flex items-center justify-center"
+          :style="{
+            left: dragHandleLeft + 'px',
+            top: dragHandleY + 'px',
+            width: dragHandleWidth + 'px',
+            transform: 'translateY(-50%)',
+          }"
+          @mousedown="onDragStart"
+          @mouseenter="onDragHandleHover"
+          @mouseleave="onDragHandleLeave"
+        >
+          <!-- Three dots using CSS -->
+          <div class="flex gap-0.5">
+            <div class="w-1 h-1 bg-primary-foreground rounded-full"></div>
+            <div class="w-1 h-1 bg-primary-foreground rounded-full"></div>
+            <div class="w-1 h-1 bg-primary-foreground rounded-full"></div>
+          </div>
+        </div>
       </div>
     </CardContent>
   </Card>
@@ -161,7 +206,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import DancerCount from '@/components/DancerCount.vue'
 import { pluralize } from '@/lib/helpers'
 import { getAgeGroupName, CATEGORY_CODE_NAMES } from '@/lib/input'
-import { Minus, Plus } from 'lucide-vue-next'
+import { Minus, Plus, Delete } from 'lucide-vue-next'
 
 const props = defineProps({
   name: {
@@ -258,19 +303,42 @@ function getDefaultNumAgeGroups() {
 }
 
 const numAgeGroups = ref(getDefaultNumAgeGroups())
+
+// Get category code from component name
+const categoryCode = computed(() => {
+  return (
+    Object.keys(CATEGORY_CODE_NAMES).find((code) => CATEGORY_CODE_NAMES[code] === props.name) ||
+    props.name.charAt(0)
+  )
+})
+
+// Effective partitions (manual overrides auto)
+const effectivePartitions = computed(() => {
+  return store.manualPartitions[categoryCode.value] || null
+})
+
 const partitionedAgeCountsArray = computed(() => {
+  if (effectivePartitions.value) {
+    // Manual partitions already in correct [number[], number][] format
+    return effectivePartitions.value
+  }
+  // Otherwise use auto-calculated partitions
   return getPartitionedAgeCounts(ageCountsArray.value, numAgeGroups.value)
 })
 
 function incrementGroups() {
   if (numAgeGroups.value < ageCountsArray.value.length) {
     numAgeGroups.value++
+    // Clear manual adjustments when changing group count
+    store.clearManualPartitions(categoryCode.value)
   }
 }
 
 function decrementGroups() {
   if (numAgeGroups.value > 1) {
     numAgeGroups.value--
+    // Clear manual adjustments when changing group count
+    store.clearManualPartitions(categoryCode.value)
   }
 }
 
@@ -367,12 +435,29 @@ const leftSideRef = ref<HTMLElement[]>([])
 const rightSideRef = ref<HTMLElement[]>([])
 const svgRef = ref<SVGElement>()
 const groupsInputRef = ref<HTMLInputElement>()
+const dragHandleRef = ref<HTMLElement>()
+
+// Drag state
+const isDragging = ref(false)
+const draggingBoundaryIndex = ref(-1)
+const dragPreviewY = ref<number | null>(null)
+const showDragHandle = ref(false)
+const dragHandleLeft = ref(0)
+const dragHandleY = ref(0)
+const dragHandleWidth = ref(0)
+const hoveredBoundaryIndex = ref(-1)
+let hideHandleTimeout: ReturnType<typeof setTimeout> | null = null
 
 // Function to select the input text when clicking the label
 function selectGroupsInput() {
   if (groupsInputRef.value) {
     groupsInputRef.value.select()
   }
+}
+
+// Reset to default partitions
+function resetToDefaults() {
+  store.clearManualPartitions(categoryCode.value)
 }
 
 function getCurvePath(rightSide: HTMLElement, rightSideIndex: number) {
@@ -402,13 +487,19 @@ function getCurvePath(rightSide: HTMLElement, rightSideIndex: number) {
   const rightCardStartX = right.left - root.left
   const midX = (leftCardEndX + rightCardStartX) / 2
 
-  // Position left line in the middle of gap between left cards (if next exists, otherwise bottom)
-  const leftY = nextLeftSide
-    ? left.top -
-      root.top +
-      left.height +
-      (nextLeftSide.getBoundingClientRect().top - left.top - left.height) / 2
-    : left.top - root.top + left.height
+  // Check if this is the boundary being dragged and use preview Y if available
+  let leftY
+  if (rightSideIndex === draggingBoundaryIndex.value && dragPreviewY.value !== null) {
+    leftY = dragPreviewY.value
+  } else {
+    // Position left line in the middle of gap between left cards (if next exists, otherwise bottom)
+    leftY = nextLeftSide
+      ? left.top -
+        root.top +
+        left.height +
+        (nextLeftSide.getBoundingClientRect().top - left.top - left.height) / 2
+      : left.top - root.top + left.height
+  }
 
   // Position right line in the middle of the gap between current and next right card
   const rightY =
@@ -416,6 +507,271 @@ function getCurvePath(rightSide: HTMLElement, rightSideIndex: number) {
 
   // Create path: straight line from left edge to end of left card, curve in middle, straight line to right edge
   return `M ${leftX} ${leftY} L ${leftCardEndX} ${leftY} C ${midX} ${leftY}, ${midX} ${rightY}, ${rightCardStartX} ${rightY} L ${rightX} ${rightY}`
+}
+
+// Boundary hover and drag handlers
+function onBoundaryHover(boundaryIndex: number) {
+  if (isDragging.value) return
+
+  // Clear any pending hide timeout
+  if (hideHandleTimeout) {
+    clearTimeout(hideHandleTimeout)
+    hideHandleTimeout = null
+  }
+
+  hoveredBoundaryIndex.value = boundaryIndex
+  showDragHandle.value = true
+
+  // Position the drag handle
+  updateDragHandlePosition(boundaryIndex)
+}
+
+function onBoundaryLeave() {
+  if (isDragging.value) return
+
+  // Start a delay before hiding the handle
+  hideHandleTimeout = setTimeout(() => {
+    if (!isDragging.value) {
+      hoveredBoundaryIndex.value = -1
+      showDragHandle.value = false
+    }
+    hideHandleTimeout = null
+  }, 150)
+}
+
+function onDragHandleHover() {
+  // Clear any pending hide timeout when hovering over handle
+  if (hideHandleTimeout) {
+    clearTimeout(hideHandleTimeout)
+    hideHandleTimeout = null
+  }
+
+  // Keep the handle visible when hovering over it
+  if (!isDragging.value) {
+    showDragHandle.value = true
+  }
+}
+
+function onDragHandleLeave() {
+  if (isDragging.value) return
+
+  // Start a delay before hiding the handle
+  hideHandleTimeout = setTimeout(() => {
+    if (!isDragging.value) {
+      hoveredBoundaryIndex.value = -1
+      showDragHandle.value = false
+    }
+    hideHandleTimeout = null
+  }, 150)
+}
+
+function updateDragHandlePosition(boundaryIndex: number) {
+  if (!colsRef.value || !leftSideRef.value || !rightSideRef.value) return
+
+  const rightSide = rightSideRef.value[boundaryIndex]
+  const maxAge = partitionedAgeCountsArray.value[boundaryIndex]?.[0]?.[1]
+  const leftSideIndex = ageCountsArray.value.findIndex(([age]) => age === maxAge)
+  const leftSide =
+    leftSideRef.value[leftSideIndex === -1 ? leftSideRef.value.length - 1 : leftSideIndex]
+  const nextLeftSide = leftSideRef.value[leftSideIndex + 1]
+
+  if (!leftSide || !rightSide) return
+
+  const root = colsRef.value.getBoundingClientRect()
+  const left = leftSide.getBoundingClientRect()
+
+  // Calculate Y position - in the gap between left cards
+  const leftY = nextLeftSide
+    ? left.top -
+      root.top +
+      left.height +
+      (nextLeftSide.getBoundingClientRect().top - left.top - left.height) / 2
+    : left.top - root.top + left.height
+
+  // Position handle to match the width and position of the age cards
+  dragHandleLeft.value = left.left - root.left
+  dragHandleWidth.value = left.width
+  dragHandleY.value = leftY
+}
+
+function onDragStart(event: MouseEvent) {
+  if (hoveredBoundaryIndex.value === -1) return
+
+  event.preventDefault()
+  isDragging.value = true
+  draggingBoundaryIndex.value = hoveredBoundaryIndex.value
+  showDragHandle.value = true
+
+  const startY = event.clientY
+  const initialY = dragHandleY.value
+
+  // Track the last valid position
+  let lastValidY = initialY
+  let lastValidAge: number | null = null
+
+  function onMouseMove(moveEvent: MouseEvent) {
+    if (!isDragging.value) return
+
+    const deltaY = moveEvent.clientY - startY
+    const newY = initialY + deltaY
+
+    // Find the closest valid age boundary to snap to
+    const snappedAge = calculateAgeFromY(newY)
+    if (snappedAge !== null && isValidBoundaryChange(draggingBoundaryIndex.value, snappedAge)) {
+      // Calculate the Y position for this age
+      const snappedY = calculateYFromAge(snappedAge)
+      if (snappedY !== null) {
+        // Update last valid position
+        lastValidY = snappedY
+        lastValidAge = snappedAge
+
+        dragPreviewY.value = snappedY
+        dragHandleY.value = snappedY
+      }
+    } else {
+      // Stay at last valid position instead of following mouse
+      dragPreviewY.value = lastValidY
+      dragHandleY.value = lastValidY
+    }
+  }
+
+  function onMouseUp() {
+    if (!isDragging.value) return
+
+    // Use the last valid age that was tracked during drag
+    if (lastValidAge !== null && isValidBoundaryChange(draggingBoundaryIndex.value, lastValidAge)) {
+      // Create new partition array
+      const newPartitions = createNewPartitions(draggingBoundaryIndex.value, lastValidAge)
+      if (newPartitions) {
+        store.setManualPartitions(categoryCode.value, newPartitions)
+      }
+    }
+
+    // Reset drag state
+    isDragging.value = false
+    draggingBoundaryIndex.value = -1
+    dragPreviewY.value = null
+    showDragHandle.value = false
+    hoveredBoundaryIndex.value = -1
+
+    document.removeEventListener('mousemove', onMouseMove)
+    document.removeEventListener('mouseup', onMouseUp)
+  }
+
+  document.addEventListener('mousemove', onMouseMove)
+  document.addEventListener('mouseup', onMouseUp)
+}
+
+// Helper functions for partition calculations
+function calculateAgeFromY(y: number): number | null {
+  if (!leftSideRef.value || !colsRef.value) return null
+
+  const root = colsRef.value.getBoundingClientRect()
+
+  // Find closest age boundary
+  let closestAge: number | null = null
+  let closestDistance = Infinity
+
+  leftSideRef.value.forEach((ageElement, ageIndex) => {
+    const ageRect = ageElement.getBoundingClientRect()
+    const ageY = ageRect.top - root.top + ageRect.height
+    const distance = Math.abs(y - ageY)
+
+    if (distance < closestDistance && distance < 30) {
+      // Within 30px threshold
+      closestDistance = distance
+      const age = ageCountsArray.value[ageIndex]?.[0]
+      if (age !== undefined) {
+        closestAge = age
+      }
+    }
+  })
+
+  return closestAge
+}
+
+function calculateYFromAge(age: number): number | null {
+  if (!leftSideRef.value || !colsRef.value) return null
+
+  const root = colsRef.value.getBoundingClientRect()
+
+  // Find the age element that matches this age
+  const ageIndex = ageCountsArray.value.findIndex(([ageValue]) => ageValue === age)
+  if (ageIndex === -1 || !leftSideRef.value[ageIndex]) return null
+
+  const ageElement = leftSideRef.value[ageIndex]
+  const nextAgeElement = leftSideRef.value[ageIndex + 1]
+
+  const ageRect = ageElement.getBoundingClientRect()
+
+  // Position at the bottom of this age element, or in the gap if there's a next element
+  if (nextAgeElement) {
+    const nextRect = nextAgeElement.getBoundingClientRect()
+    return (
+      ageRect.top - root.top + ageRect.height + (nextRect.top - ageRect.top - ageRect.height) / 2
+    )
+  } else {
+    return ageRect.top - root.top + ageRect.height
+  }
+}
+
+function isValidBoundaryChange(boundaryIndex: number, newAge: number): boolean {
+  const currentPartitions = partitionedAgeCountsArray.value
+  const ages = ageCountsArray.value.map(([age]) => age).sort((a, b) => a - b)
+
+  // Check bounds - newAge must be within the available age range
+  if (newAge < ages[0] || newAge >= ages[ages.length - 1]) return false
+
+  // Get the boundaries of adjacent groups
+  const prevGroupEnd = boundaryIndex > 0 ? currentPartitions[boundaryIndex - 1][0][1] : null
+  const nextGroupStart =
+    boundaryIndex < currentPartitions.length - 2 ? currentPartitions[boundaryIndex + 2][0][0] : null
+
+  // Calculate what the group boundaries would be
+  const currentGroupStart = prevGroupEnd !== null ? prevGroupEnd + 1 : ages[0]
+  const nextGroupEnd = nextGroupStart !== null ? nextGroupStart - 1 : ages[ages.length - 1]
+
+  // Ensure both groups would contain at least one actual age
+  const currentGroupHasAges = ages.some((age) => age >= currentGroupStart && age <= newAge)
+  const nextGroupHasAges = ages.some((age) => age > newAge && age <= nextGroupEnd)
+
+  return currentGroupHasAges && nextGroupHasAges
+}
+
+function createNewPartitions(boundaryIndex: number, newAge: number): [number[], number][] | null {
+  if (!isValidBoundaryChange(boundaryIndex, newAge)) return null
+
+  const currentPartitions = partitionedAgeCountsArray.value
+  const ages = ageCountsArray.value.map(([age]) => age).sort((a, b) => a - b)
+  const newPartitions: [number[], number][] = []
+
+  for (let i = 0; i < currentPartitions.length; i++) {
+    const [currentRange, currentCount] = currentPartitions[i] // [ageRange, count]
+
+    if (i === boundaryIndex) {
+      // This group ends at the new age
+      const startAge = i > 0 ? currentPartitions[i - 1][0][1] + 1 : ages[0]
+      const newCount = ageCountsArray.value
+        .filter(([age]) => age >= startAge && age <= newAge)
+        .reduce((sum, [, count]) => sum + count, 0)
+      newPartitions.push([[startAge, newAge], newCount])
+    } else if (i === boundaryIndex + 1) {
+      // This group starts after the new age
+      const endAge = currentRange[1] // Keep the original end age of this group
+      const newCount = ageCountsArray.value
+        .filter(([age]) => age >= newAge + 1 && age <= endAge)
+        .reduce((sum, [, count]) => sum + count, 0)
+      newPartitions.push([[newAge + 1, endAge], newCount])
+    } else if (i < boundaryIndex) {
+      // Groups before the changed boundary keep their original boundaries
+      newPartitions.push([currentRange, currentCount])
+    } else {
+      // Groups after the changed boundary (i > boundaryIndex + 1) keep their original boundaries
+      newPartitions.push([currentRange, currentCount])
+    }
+  }
+
+  return newPartitions
 }
 
 // Direct DOM manipulation - no Vue reactivity needed
@@ -436,6 +792,16 @@ function updateCurvesDirectly() {
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
     path.setAttribute('class', 'stroke-primary fill-none stroke-2')
     path.setAttribute('stroke-linecap', 'round')
+    path.setAttribute('pointer-events', 'stroke')
+    path.setAttribute('data-boundary-index', svg.children.length.toString())
+
+    // Add hover events
+    path.addEventListener('mouseenter', () => {
+      const boundaryIndex = parseInt(path.getAttribute('data-boundary-index') || '0')
+      onBoundaryHover(boundaryIndex)
+    })
+    path.addEventListener('mouseleave', onBoundaryLeave)
+
     svg.appendChild(path)
   }
 

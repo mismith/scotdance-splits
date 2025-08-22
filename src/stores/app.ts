@@ -31,6 +31,9 @@ export const useAppStore = defineStore('app', () => {
   const partitionedCategories = ref<Record<string, [number, number][]>>()
   const processedDancers = ref<DancerData[]>([])
 
+  // Manual partition overrides
+  const manualPartitions = ref<Record<string, [number[], number][]>>({})
+
   // Input configuration
   const hasHeaderRow = ref(true)
   const inputHeaders = ref<string[]>([])
@@ -108,6 +111,7 @@ export const useAppStore = defineStore('app', () => {
       showDimmed: true,
       filters: []
     }
+    manualPartitions.value = {}
   }
 
   function updateColIndexes(indexes: Record<string, number>) {
@@ -142,6 +146,19 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  // Manual partition methods
+  function hasManualAdjustments(categoryCode: string): boolean {
+    return categoryCode in manualPartitions.value
+  }
+
+  function setManualPartitions(categoryCode: string, partitions: [number[], number][]) {
+    manualPartitions.value[categoryCode] = partitions
+  }
+
+  function clearManualPartitions(categoryCode: string) {
+    delete manualPartitions.value[categoryCode]
+  }
+
   return {
     // State
     inputFiles,
@@ -151,6 +168,7 @@ export const useAppStore = defineStore('app', () => {
     categories,
     partitionedCategories,
     processedDancers,
+    manualPartitions,
     hasHeaderRow,
     inputHeaders,
     colIndexes,
@@ -174,5 +192,8 @@ export const useAppStore = defineStore('app', () => {
     updateColIndexes,
     updateRowFiltering,
     updateExportSettings,
+    hasManualAdjustments,
+    setManualPartitions,
+    clearManualPartitions,
   }
 })

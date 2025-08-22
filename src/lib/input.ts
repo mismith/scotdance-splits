@@ -123,23 +123,25 @@ export function getPartitionedAgeCounts(ageCounts: [number, number][], numPartit
   const result: [number[], number][] = []
   let index = 0
   partitionedCounts.forEach((partitionedCount, i) => {
-    const range = [0, Infinity]
+    let minAge = 0
+    let maxAge = Infinity
     let count = 0
     partitionedCount.forEach((_, j) => {
       const age = ageCounts[index][0]
       if (j === 0 && (i || (numPartitions > 1 && age === 4))) {
-        range[0] = age
+        minAge = age
       }
       if (
         j === partitionedCount.length - 1 &&
         (i < partitionedCounts.length - 1 || (numPartitions > 1 && age === 6))
       ) {
-        range[1] = age
+        maxAge = age
       }
       count += ageCounts[index][1]
       index++
     })
-    result.push([range, count])
+    // Create fresh immutable array for each range
+    result.push([[minAge, maxAge], count])
   })
   return result
 }
@@ -182,7 +184,7 @@ export function autoPartitionCategories(categories: Record<string, Record<string
     const optimalGroups = getDefaultNumAgeGroups(ageCountsArray)
     const partitionedAgeCounts = getPartitionedAgeCounts(ageCountsArray, optimalGroups)
     
-    partitionedCategories[categoryCode] = partitionedAgeCounts.map(([ageRange]) => ageRange as [number, number])
+    partitionedCategories[categoryCode] = partitionedAgeCounts.map(([ageRange]) => [ageRange[0], ageRange[1]] as [number, number])
   })
   
   return partitionedCategories
