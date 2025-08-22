@@ -89,75 +89,84 @@
           </section>
 
           <!-- Tables comparison -->
-          <section class="mb-20 relative">
-            <div class="grid lg:grid-cols-2 gap-16 relative z-10">
-              <!-- Before: Input table -->
-              <div ref="leftTableRef" class="space-y-0">
-                <div class="bg-muted/20 border border-border rounded-xl p-4 shadow-sm">
-                  <div class="mb-4">
-                    <h4 class="text-xl font-semibold text-muted-foreground">From:</h4>
-                    <p class="text-sm text-muted-foreground">
-                      Raw registration data containing dancer info
-                    </p>
-                  </div>
-                  <div class="h-80 w-full rounded-lg overflow-hidden border border-border/50">
-                    <InputDataTable :data="mockInputDataRows" :headers="mockInputHeaders" :height="320" />
-                  </div>
-                  <div class="grid grid-cols-2 gap-4 mt-6 text-sm">
-                    <div class="space-y-2">
-                      <div class="flex items-center gap-2 text-muted-foreground">
-                        <X class="h-4 w-4 text-destructive shrink-0" />
-                        <span>Manual grouping logic</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-muted-foreground">
-                        <X class="h-4 w-4 text-destructive shrink-0" />
-                        <span>Manual dancer ordering</span>
-                      </div>
+          <section class="mb-20 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4 items-center">
+            <!-- Before: Input table -->
+            <div ref="leftTableRef" class="space-y-0">
+              <div class="bg-muted/20 border border-border rounded-xl p-4 shadow-sm">
+                <div class="mb-4">
+                  <h4 class="text-xl font-semibold text-muted-foreground">From:</h4>
+                  <p class="text-sm text-muted-foreground">
+                    Raw registration data containing dancer info
+                  </p>
+                </div>
+                <div class="h-80 w-full rounded-lg overflow-hidden border border-border/50">
+                  <InputDataTable
+                    :data="mockInputDataRows"
+                    :headers="mockInputHeaders"
+                    :height="320"
+                  />
+                </div>
+                <div class="grid grid-cols-2 gap-4 mt-6 text-sm">
+                  <div class="space-y-2">
+                    <div class="flex items-center gap-2 text-muted-foreground">
+                      <X class="h-4 w-4 text-destructive shrink-0" />
+                      <span>Manual grouping logic</span>
                     </div>
-                    <div class="space-y-2">
-                      <div class="flex items-center gap-2 text-muted-foreground">
-                        <X class="h-4 w-4 text-destructive shrink-0" />
-                        <span>Time-consuming endeavour</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-muted-foreground">
-                        <X class="h-4 w-4 text-destructive shrink-0" />
-                        <span>Error-prone process</span>
-                      </div>
+                    <div class="flex items-center gap-2 text-muted-foreground">
+                      <X class="h-4 w-4 text-destructive shrink-0" />
+                      <span>Manual dancer ordering</span>
+                    </div>
+                  </div>
+                  <div class="space-y-2">
+                    <div class="flex items-center gap-2 text-muted-foreground">
+                      <X class="h-4 w-4 text-destructive shrink-0" />
+                      <span>Time-consuming endeavour</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-muted-foreground">
+                      <X class="h-4 w-4 text-destructive shrink-0" />
+                      <span>Error-prone process</span>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <!-- After: Output table -->
-              <div ref="rightTableRef" class="space-y-0">
-                <div class="bg-primary/5 border border-primary/20 rounded-xl p-4 shadow-sm">
-                  <div class="mb-4">
-                    <h4 class="text-xl font-semibold text-primary">To:</h4>
-                    <p class="text-sm text-primary/80">Groups balanced and bib numbers assigned</p>
-                  </div>
-                  <div class="h-80 w-full rounded-lg overflow-hidden border border-primary/20">
-                    <OutputDataTable :data="realOutputData" :height="320" />
-                  </div>
-                  <div class="grid grid-cols-2 gap-4 mt-6 text-sm">
-                    <div class="space-y-2">
-                      <div class="flex items-center gap-2 text-primary">
-                        <Check class="h-4 w-4 shrink-0" />
-                        <span>Age groups optimized for similar number of dancers</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-primary">
-                        <Check class="h-4 w-4 shrink-0" />
-                        <span>Bib numbers based on reverse registration order</span>
-                      </div>
+            <!-- Arrow between tables -->
+            <div class="flex justify-center lg:justify-start">
+              <div class="bg-background rounded-full p-3 shadow-lg">
+                <ChevronRight class="h-6 w-6 text-primary lg:rotate-0 rotate-90" />
+              </div>
+            </div>
+
+            <!-- After: Output table -->
+            <div ref="rightTableRef" class="space-y-0">
+              <div class="bg-primary/5 border border-primary/20 rounded-xl p-4 shadow-sm">
+                <div class="mb-4">
+                  <h4 class="text-xl font-semibold text-primary">To:</h4>
+                  <p class="text-sm text-primary/80">Groups balanced and bib numbers assigned</p>
+                </div>
+                <div class="h-80 w-full rounded-lg overflow-hidden border border-primary/20">
+                  <OutputDataTable :data="realOutputData" :height="320" />
+                </div>
+                <div class="grid grid-cols-2 gap-4 mt-6 text-sm">
+                  <div class="space-y-2">
+                    <div class="flex items-center gap-2 text-primary">
+                      <Check class="h-4 w-4 shrink-0" />
+                      <span>Age groups optimized for similar number of dancers</span>
                     </div>
-                    <div class="space-y-2">
-                      <div class="flex items-center gap-2 text-primary">
-                        <Check class="h-4 w-4 shrink-0" />
-                        <span>Instant results with simple customizations</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-primary">
-                        <Check class="h-4 w-4 shrink-0" />
-                        <span>Ready to import into ScotDance.app</span>
-                      </div>
+                    <div class="flex items-center gap-2 text-primary">
+                      <Check class="h-4 w-4 shrink-0" />
+                      <span>Bib numbers based on reverse registration order</span>
+                    </div>
+                  </div>
+                  <div class="space-y-2">
+                    <div class="flex items-center gap-2 text-primary">
+                      <Check class="h-4 w-4 shrink-0" />
+                      <span>Instant results with simple customizations</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-primary">
+                      <Check class="h-4 w-4 shrink-0" />
+                      <span>Ready to import into ScotDance.app</span>
                     </div>
                   </div>
                 </div>
@@ -256,7 +265,7 @@ import DarkModeToggle from '@/components/DarkModeToggle.vue'
 import FileUpload from '@/components/FileUpload.vue'
 import InputDataTable from '@/components/InputDataTable.vue'
 import OutputDataTable from '@/components/OutputDataTable.vue'
-import { X, Check, TextCursorInput } from 'lucide-vue-next'
+import { X, Check, TextCursorInput, ChevronRight } from 'lucide-vue-next'
 import {
   INPUT_COLUMNS,
   detectColumnMapping,
@@ -265,11 +274,7 @@ import {
   processCSVData,
   createPartitions,
 } from '@/lib/input'
-import {
-  generateExportData,
-  calculateDefaultMaxBib,
-  type ExportSettings,
-} from '@/lib/output'
+import { generateExportData, calculateDefaultMaxBib, type ExportSettings } from '@/lib/output'
 
 // Dynamic mock data loaded from CSV
 const mockInputData = ref<string[][]>([])
@@ -281,7 +286,7 @@ async function loadMockData() {
   try {
     const response = await fetch('/mock-data.csv')
     const csvText = await response.text()
-    
+
     const results = await new Promise<{ data: string[][] }>((resolve, reject) => {
       parse(csvText, {
         worker: true,
@@ -337,7 +342,7 @@ const mockPartitions = computed(() => {
   if (!mockProcessedData.value) return {}
   return createPartitions(
     mockProcessedData.value.categories,
-    mockProcessedData.value.partitionedCategories
+    mockProcessedData.value.partitionedCategories,
   )
 })
 
@@ -351,7 +356,7 @@ const realOutputData = computed(() => {
   const defaultMaxBib = calculateDefaultMaxBib(
     mockInputData.value,
     mockProcessedData.value.colIndexes,
-    mockProcessedData.value.hasHeaderRow
+    mockProcessedData.value.hasHeaderRow,
   )
 
   const settings: ExportSettings = {
@@ -366,10 +371,9 @@ const realOutputData = computed(() => {
     mockProcessedData.value.colIndexes,
     mockPartitions.value,
     settings,
-    mockProcessedData.value.hasHeaderRow
+    mockProcessedData.value.hasHeaderRow,
   )
 })
-
 
 const store = useAppStore()
 
@@ -499,7 +503,6 @@ function updateCurvesDirectly() {
 
   rafId = requestAnimationFrame(updateCurvesDirectly)
 }
-
 
 onUnmounted(() => {
   isActive = false
