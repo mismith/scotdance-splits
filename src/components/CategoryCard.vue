@@ -18,7 +18,7 @@
                       <DancerCount :count="totalDancers" />
                     </span>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent side="right">
                     <p>{{ totalDancers }} dancers</p>
                   </TooltipContent>
                 </Tooltip>
@@ -171,8 +171,8 @@
 
         <!-- Drag handle with transition -->
         <Transition
-          enter-active-class="transition-all duration-200 ease-out"
-          leave-active-class="transition-all duration-150 ease-in"
+          enter-active-class="transition-opacity duration-200 ease-out"
+          leave-active-class="transition-opacity duration-150 ease-in"
           enter-from-class="opacity-0 scale-95"
           enter-to-class="opacity-100 scale-100"
           leave-from-class="opacity-100 scale-100"
@@ -530,9 +530,6 @@ function onBoundaryHover(boundaryIndex: number) {
 
   hoveredBoundaryIndex.value = boundaryIndex
   showDragHandle.value = true
-
-  // Position the drag handle
-  updateDragHandlePosition(boundaryIndex)
 }
 
 function onBoundaryLeave() {
@@ -601,6 +598,19 @@ function updateDragHandlePosition(boundaryIndex: number) {
   dragHandleLeft.value = left.left - root.left
   dragHandleWidth.value = left.width
   dragHandleY.value = leftY
+}
+
+// Continuous drag handle position updates
+function updateDragHandlePositionContinuously() {
+  if (!isActive || !showDragHandle.value || hoveredBoundaryIndex.value === -1) {
+    dragHandleRafId = requestAnimationFrame(updateDragHandlePositionContinuously)
+    return
+  }
+
+  // Update position based on current hover state
+  updateDragHandlePosition(hoveredBoundaryIndex.value)
+
+  dragHandleRafId = requestAnimationFrame(updateDragHandlePositionContinuously)
 }
 
 function onDragStart(event: MouseEvent) {
@@ -785,6 +795,7 @@ function createNewPartitions(boundaryIndex: number, newAge: number): [number[], 
 
 // Direct DOM manipulation - no Vue reactivity needed
 let rafId: number | null = null
+let dragHandleRafId: number | null = null
 let isActive = false
 
 function updateCurvesDirectly() {
@@ -801,10 +812,10 @@ function updateCurvesDirectly() {
   while (svg.children.length < expectedChildCount) {
     const currentIndex = Math.floor(svg.children.length / 2)
     const isHitArea = svg.children.length % 2 === 0
-    
+
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
     path.setAttribute('data-boundary-index', currentIndex.toString())
-    
+
     if (isHitArea) {
       // Invisible thick hit area
       path.setAttribute('class', 'fill-none stroke-transparent')
@@ -812,7 +823,7 @@ function updateCurvesDirectly() {
       path.setAttribute('stroke-linecap', 'round')
       path.setAttribute('pointer-events', 'stroke')
       path.setAttribute('data-hit-area', 'true')
-      
+
       // Add hover events only to hit area
       path.addEventListener('mouseenter', () => {
         const boundaryIndex = parseInt(path.getAttribute('data-boundary-index') || '0')
@@ -838,13 +849,13 @@ function updateCurvesDirectly() {
   // Update each path directly (both hit area and visible line)
   curvesToRender.forEach((el, index) => {
     const newPath = getCurvePath(el, index)
-    
+
     // Update hit area path (even indices: 0, 2, 4...)
     const hitAreaElement = svg.children[index * 2] as SVGPathElement
     if (hitAreaElement.getAttribute('d') !== newPath) {
       hitAreaElement.setAttribute('d', newPath)
     }
-    
+
     // Update visible line path (odd indices: 1, 3, 5...)
     const visibleLineElement = svg.children[index * 2 + 1] as SVGPathElement
     if (visibleLineElement.getAttribute('d') !== newPath) {
@@ -856,15 +867,19 @@ function updateCurvesDirectly() {
 }
 
 onMounted(async () => {
-  // Start continuous RAF loop for direct DOM updates
+  // Start continuous RAF loops for direct DOM updates
   await nextTick() // Wait for SVG ref to be available
   isActive = true
   rafId = requestAnimationFrame(updateCurvesDirectly)
+  dragHandleRafId = requestAnimationFrame(updateDragHandlePositionContinuously)
 })
 onUnmounted(() => {
   isActive = false
   if (rafId) {
     cancelAnimationFrame(rafId)
+  }
+  if (dragHandleRafId) {
+    cancelAnimationFrame(dragHandleRafId)
   }
 })
 
