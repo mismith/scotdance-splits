@@ -72,7 +72,7 @@
     </main>
 
     <!-- Sticky Footer - Status/Export -->
-    <div class="sticky bottom-0 z-40 mt-8 pb-8" v-view-transition-name="'FloatingFooter'">
+    <div class="sticky bottom-8 z-40 mt-8" v-view-transition-name="'FloatingFooter'">
       <!-- Status Problems -->
       <div
         v-if="dataStatus.status === 'error' && !validationDismissed"

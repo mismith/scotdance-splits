@@ -106,26 +106,18 @@
                     :height="320"
                   />
                 </div>
-                <div class="grid grid-cols-2 gap-4 mt-6 text-sm">
-                  <div class="space-y-2">
-                    <div class="flex items-center gap-2 text-muted-foreground">
-                      <X class="h-4 w-4 text-destructive shrink-0" />
-                      <span>Manual grouping logic</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-muted-foreground">
-                      <X class="h-4 w-4 text-destructive shrink-0" />
-                      <span>Manual dancer ordering</span>
-                    </div>
+                <div class="space-y-2 mt-6 text-sm">
+                  <div class="flex items-center gap-2 text-muted-foreground">
+                    <X class="h-4 w-4 text-destructive shrink-0" />
+                    <span>Hours spent sorting dancers in spreadsheets</span>
                   </div>
-                  <div class="space-y-2">
-                    <div class="flex items-center gap-2 text-muted-foreground">
-                      <X class="h-4 w-4 text-destructive shrink-0" />
-                      <span>Time-consuming endeavour</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-muted-foreground">
-                      <X class="h-4 w-4 text-destructive shrink-0" />
-                      <span>Error-prone process</span>
-                    </div>
+                  <div class="flex items-center gap-2 text-muted-foreground">
+                    <X class="h-4 w-4 text-destructive shrink-0" />
+                    <span>Counting and balancing groups manually</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-muted-foreground">
+                    <X class="h-4 w-4 text-destructive shrink-0" />
+                    <span>Prone to mistakes with repetitive tasks</span>
                   </div>
                 </div>
               </div>
@@ -143,31 +135,25 @@
               <div class="bg-primary/5 border border-primary/20 rounded-xl p-4 shadow-sm">
                 <div class="mb-4">
                   <h4 class="text-xl font-semibold text-primary">To:</h4>
-                  <p class="text-sm text-primary/80">Groups balanced and bib numbers assigned</p>
+                  <p class="text-sm text-primary/80">Groups created and bib numbers assigned</p>
                 </div>
                 <div class="h-80 w-full rounded-lg overflow-hidden border border-primary/20">
                   <OutputDataTable :data="realOutputData" :height="320" />
                 </div>
-                <div class="grid grid-cols-2 gap-4 mt-6 text-sm">
-                  <div class="space-y-2">
-                    <div class="flex items-center gap-2 text-primary">
-                      <Check class="h-4 w-4 shrink-0" />
-                      <span>Age groups optimized for similar number of dancers</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-primary">
-                      <Check class="h-4 w-4 shrink-0" />
-                      <span>Bib numbers based on reverse registration order</span>
-                    </div>
+                <div class="space-y-2 mt-6 text-sm">
+                  <div class="flex items-center gap-2 text-primary">
+                    <Check class="h-4 w-4 shrink-0 text-foreground" />
+                    <span>Age groups optimized for balanced number of dancers</span>
                   </div>
-                  <div class="space-y-2">
-                    <div class="flex items-center gap-2 text-primary">
-                      <Check class="h-4 w-4 shrink-0" />
-                      <span>Instant results with simple customizations</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-primary">
-                      <Check class="h-4 w-4 shrink-0" />
-                      <span>Ready to import into ScotDance.app</span>
-                    </div>
+                  <div class="flex items-center gap-2 text-primary">
+                    <Check class="h-4 w-4 shrink-0 text-foreground" />
+                    <span>Bib numbers based on reverse registration order</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-primary">
+                    <Check class="h-4 w-4 shrink-0 text-foreground" />
+                    <span
+                      >Instant output that can be exported in one click or customized further</span
+                    >
                   </div>
                 </div>
               </div>
@@ -224,17 +210,47 @@
               </div>
             </div>
           </section>
+
+          <!-- Privacy banner -->
+          <section class="mb-12">
+            <div class="bg-muted/20 border border-accent/30 rounded-xl p-6 max-w-4xl mx-auto">
+              <div class="flex items-center gap-4">
+                <div
+                  class="bg-accent/10 rounded-lg p-2 shrink-0"
+                  v-view-transition-name="'privacy-shield'"
+                >
+                  <Shield class="h-5 w-5 text-accent" />
+                </div>
+                <div class="space-y-3 flex-1">
+                  <h3 class="text-lg font-semibold text-foreground">Your Data Stays Private</h3>
+                  <p class="text-sm text-muted-foreground leading-relaxed">
+                    Everything happens right here in your browser. Your dancer registration data
+                    never gets uploaded to any server, nor does it leave your computer in any way.
+                    We can't see it, store it, or access it in any way.
+                  </p>
+                  <p class="text-sm text-muted-foreground">
+                    This tool is completely
+                    <a
+                      href="https://github.com/mismith/scotdance-splits"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-accent underline hover:no-underline font-medium"
+                      >open source</a
+                    >, so you can check the code yourself to verify how it works.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
         </main>
 
         <!-- Sticky floating CTA -->
-        <div class="sticky bottom-0 z-40 mt-12 pb-8" v-view-transition-name="'FloatingFooter'">
+        <div class="sticky bottom-8 z-40 mt-12" v-view-transition-name="'FloatingFooter'">
           <div
-            class="bg-card/95 backdrop-blur-lg border border-border/50 shadow-2xl rounded-2xl p-8 max-w-lg mx-auto"
+            class="bg-card/95 flex flex-col gap-3 text-center items-center backdrop-blur-lg border border-border/50 shadow-2xl rounded-2xl p-8 max-w-lg mx-auto"
           >
-            <div class="text-center mb-6">
-              <p class="text-muted-foreground mb-2">Ready to organize your competition?</p>
-              <p class="text-sm text-muted-foreground">Drag & drop your CSV file anywhere or</p>
-            </div>
+            <p>To get started, drag & drop your CSV file anywhere</p>
+            <div class="text-muted-foreground text-xs">OR</div>
             <Button
               size="lg"
               :disabled="store.isLoadingInputFile"
@@ -247,7 +263,7 @@
                 ></div>
                 Processing...
               </span>
-              <span v-else>Choose CSV File</span>
+              <span v-else>Choose CSV file</span>
             </Button>
           </div>
         </div>
@@ -257,7 +273,7 @@
 </template>
 
 <script setup lang="ts">
-import { Check, ChevronRight, TextCursorInput, X } from 'lucide-vue-next'
+import { Check, ChevronRight, Shield, TextCursorInput, X } from 'lucide-vue-next'
 import { parse } from 'papaparse'
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useAppStore } from '@/stores/app'
@@ -317,6 +333,7 @@ const mockInputDataRows = computed(() => {
 onMounted(async () => {
   await loadMockData()
   await nextTick()
+
   // Give DOM elements more time to render
   setTimeout(() => {
     isActive = true
