@@ -9,11 +9,7 @@
   }
 
   html {
-    @apply font-sans;
-  }
-
-  body {
-    @apply bg-background text-foreground;
+    @apply font-sans bg-background text-foreground bg-gradient-to-br from-primary/0 to-primary/5;
   }
 
   * {

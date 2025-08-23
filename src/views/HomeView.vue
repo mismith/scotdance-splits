@@ -496,12 +496,12 @@ async function scrollToBottom() {
   // Manually trigger the expansion
   isTriggerVisible.value = true
   await nextTick()
-  
+
   // Now scroll to the actual bottom
   const maxScroll = document.body.scrollHeight - window.innerHeight
   window.scrollTo({
     top: maxScroll,
-    behavior: 'smooth'
+    behavior: 'smooth',
   })
 }
 
