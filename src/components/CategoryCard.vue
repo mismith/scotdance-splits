@@ -455,7 +455,9 @@ const dragHandleLeft = ref(0)
 const dragHandleY = ref(0)
 const dragHandleWidth = ref(0)
 const hoveredBoundaryIndex = ref(-1)
+const isScrolling = ref(false)
 let hideHandleTimeout: ReturnType<typeof setTimeout> | null = null
+let scrollTimeout: ReturnType<typeof setTimeout> | null = null
 
 // Function to select the input text when clicking the label
 function selectGroupsInput() {
@@ -520,7 +522,7 @@ function getCurvePath(rightSide: HTMLElement, rightSideIndex: number) {
 
 // Boundary hover and drag handlers
 function onBoundaryHover(boundaryIndex: number) {
-  if (isDragging.value) return
+  if (isDragging.value || isScrolling.value) return
 
   // Clear any pending hide timeout
   if (hideHandleTimeout) {
@@ -600,9 +602,32 @@ function updateDragHandlePosition(boundaryIndex: number) {
   dragHandleY.value = leftY
 }
 
+// Scroll detection
+function onScroll() {
+  // Hide drag handle immediately when scrolling starts
+  if (showDragHandle.value && !isDragging.value) {
+    showDragHandle.value = false
+    hoveredBoundaryIndex.value = -1
+  }
+  
+  // Mark as scrolling
+  isScrolling.value = true
+  
+  // Clear existing timeout
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout)
+  }
+  
+  // Reset scrolling state after scroll ends
+  scrollTimeout = setTimeout(() => {
+    isScrolling.value = false
+    scrollTimeout = null
+  }, 150)
+}
+
 // Continuous drag handle position updates
 function updateDragHandlePositionContinuously() {
-  if (!isActive || !showDragHandle.value || hoveredBoundaryIndex.value === -1) {
+  if (!isActive || !showDragHandle.value || hoveredBoundaryIndex.value === -1 || isScrolling.value) {
     dragHandleRafId = requestAnimationFrame(updateDragHandlePositionContinuously)
     return
   }
@@ -872,6 +897,9 @@ onMounted(async () => {
   isActive = true
   rafId = requestAnimationFrame(updateCurvesDirectly)
   dragHandleRafId = requestAnimationFrame(updateDragHandlePositionContinuously)
+  
+  // Add scroll listener to window
+  window.addEventListener('scroll', onScroll, { passive: true })
 })
 onUnmounted(() => {
   isActive = false
@@ -881,6 +909,12 @@ onUnmounted(() => {
   if (dragHandleRafId) {
     cancelAnimationFrame(dragHandleRafId)
   }
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout)
+  }
+  
+  // Remove scroll listener
+  window.removeEventListener('scroll', onScroll)
 })
 
 const emit = defineEmits(['partition'])
