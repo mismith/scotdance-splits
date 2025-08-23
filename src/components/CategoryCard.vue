@@ -26,20 +26,18 @@
             </div>
 
             <!-- Manual adjustment indicator -->
-            <div v-if="store.hasManualAdjustments(categoryCode)" class="flex items-center gap-2">
+            <div v-if="hasCustomizations" class="flex items-center gap-2">
               <TooltipProvider>
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div
-                      class="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-full cursor-pointer hover:bg-primary/15 transition-colors"
-                      @click="resetToDefaults"
-                    >
-                      <span class="text-xs font-medium text-primary">Manual</span>
-                      <Delete class="w-3 h-3 text-primary ml-1" />
-                    </div>
+                  <TooltipTrigger
+                    class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full cursor-pointer hover:bg-accent/15 transition-colors"
+                    @click="resetToDefaults"
+                  >
+                    <span class="text-xs font-medium text-accent">Manual</span>
+                    <Delete class="w-3 h-3 text-accent ml-1" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Reset to auto-calculated groups</p>
+                    <p>Reset partition boundaries</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -50,46 +48,72 @@
           <!-- Empty spacer for curved lines column -->
 
           <div
-            class="flex items-center gap-2 justify-center"
+            class="grid grid-cols-[1fr_auto_1fr] items-center"
             v-view-transition-name="`CategoryCard-${id}-AgeGroupHeader`"
           >
+            <!-- Left spacer -->
+            <div></div>
+            
+            <!-- Center controls -->
             <div class="flex items-center gap-2">
-              <input
-                ref="groupsInputRef"
-                type="number"
-                v-model.number="numAgeGroups"
-                :min="1"
-                :max="ageCountsArray.length"
-                class="text-center text-sm font-medium bg-transparent border-none outline-none focus:ring-0 p-0 text-foreground [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [field-sizing:content]"
-                style="field-sizing: content"
-                @blur="!numAgeGroups && (numAgeGroups = getDefaultNumAgeGroups())"
-                @keyup.enter="($event.target as HTMLInputElement).blur()"
-              />
-              <span
-                class="text-sm font-medium text-foreground cursor-pointer"
-                @click="selectGroupsInput"
+              <Button
+                variant="outline"
+                size="sm"
+                @click="decrementGroups"
+                :disabled="numAgeGroups <= 1"
+                class="w-6 h-6 rounded-full p-0"
               >
-                {{ pluralize(numAgeGroups || 1, 'group') }}
-              </span>
+                <Minus class="h-3 w-3" />
+              </Button>
+              <div class="flex items-center gap-2">
+                <input
+                  ref="groupsInputRef"
+                  type="number"
+                  v-model.number="numAgeGroups"
+                  :min="1"
+                  :max="ageCountsArray.length"
+                  class="text-center text-sm font-medium bg-transparent border-none outline-none focus:ring-0 p-0 text-foreground [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [field-sizing:content]"
+                  style="field-sizing: content"
+                  @blur="!numAgeGroups && (numAgeGroups = getDefaultNumAgeGroups())"
+                  @keyup.enter="($event.target as HTMLInputElement).blur()"
+                />
+                <span
+                  class="text-sm font-medium text-foreground cursor-pointer"
+                  @click="selectGroupsInput"
+                >
+                  {{ pluralize(numAgeGroups || 1, 'group') }}
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                @click="incrementGroups"
+                :disabled="numAgeGroups >= ageCountsArray.length"
+                class="w-6 h-6 rounded-full p-0"
+              >
+                <Plus class="h-3 w-3" />
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              @click="decrementGroups"
-              :disabled="numAgeGroups <= 1"
-              class="w-6 h-6 rounded-full p-0"
-            >
-              <Minus class="h-3 w-3" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              @click="incrementGroups"
-              :disabled="numAgeGroups >= ageCountsArray.length"
-              class="w-6 h-6 rounded-full p-0"
-            >
-              <Plus class="h-3 w-3" />
-            </Button>
+            
+            <!-- Right reset button -->
+            <div class="flex justify-end">
+              <TooltipProvider v-if="hasNonStandardGroupCount">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full cursor-pointer hover:bg-accent/15 transition-colors"
+                      @click="resetGroupCount"
+                    >
+                      <span class="text-xs font-medium text-accent">Manual</span>
+                      <Delete class="w-3 h-3 text-accent ml-1" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Reset to default group count</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </div>
 
           <div v-if="showDancers"></div>
@@ -181,7 +205,7 @@
           <div
             v-show="showDragHandle"
             ref="dragHandleRef"
-            class="absolute z-20 bg-primary rounded-md cursor-ns-resize h-3 flex items-center justify-center shadow-lg"
+            :class="`absolute z-20 rounded-md cursor-ns-resize h-3 flex items-center justify-center shadow-lg ${lastKnownBoundaryIndex !== -1 && isBoundaryManual(lastKnownBoundaryIndex) ? 'bg-accent' : 'bg-primary'}`"
             :style="{
               left: dragHandleLeft + 'px',
               top: dragHandleY + 'px',
@@ -194,9 +218,15 @@
           >
             <!-- Three dots using CSS -->
             <div class="flex gap-0.5">
-              <div class="w-1 h-1 bg-primary-foreground rounded-full"></div>
-              <div class="w-1 h-1 bg-primary-foreground rounded-full"></div>
-              <div class="w-1 h-1 bg-primary-foreground rounded-full"></div>
+              <div
+                :class="`w-1 h-1 rounded-full ${lastKnownBoundaryIndex !== -1 && isBoundaryManual(lastKnownBoundaryIndex) ? 'bg-accent-foreground' : 'bg-primary-foreground'}`"
+              ></div>
+              <div
+                :class="`w-1 h-1 rounded-full ${lastKnownBoundaryIndex !== -1 && isBoundaryManual(lastKnownBoundaryIndex) ? 'bg-accent-foreground' : 'bg-primary-foreground'}`"
+              ></div>
+              <div
+                :class="`w-1 h-1 rounded-full ${lastKnownBoundaryIndex !== -1 && isBoundaryManual(lastKnownBoundaryIndex) ? 'bg-accent-foreground' : 'bg-primary-foreground'}`"
+              ></div>
             </div>
           </div>
         </Transition>
@@ -338,6 +368,25 @@ const partitionedAgeCountsArray = computed(() => {
   return getPartitionedAgeCounts(ageCountsArray.value, numAgeGroups.value)
 })
 
+// Check if current state differs from default (only manual partitions, not group count changes)
+const hasCustomizations = computed(() => {
+  return store.hasManualAdjustments(categoryCode.value)
+})
+
+// Check if group count is non-standard
+const hasNonStandardGroupCount = computed(() => {
+  return numAgeGroups.value !== getDefaultNumAgeGroups()
+})
+
+// Check if a specific boundary is manual (only for dragged partitions, not group count changes)
+function isBoundaryManual(boundaryIndex: number): boolean {
+  // Only check if this specific boundary differs from default (ignore group count changes)
+  const defaultPartitions = getPartitionedAgeCounts(ageCountsArray.value, numAgeGroups.value)
+  const currentBoundary = partitionedAgeCountsArray.value[boundaryIndex]?.[0]?.[1]
+  const defaultBoundary = defaultPartitions[boundaryIndex]?.[0]?.[1]
+  return currentBoundary !== defaultBoundary
+}
+
 async function incrementGroups() {
   if (numAgeGroups.value < ageCountsArray.value.length) {
     const viewTransition = startViewTransition()
@@ -462,6 +511,7 @@ const dragHandleLeft = ref(0)
 const dragHandleY = ref(0)
 const dragHandleWidth = ref(0)
 const hoveredBoundaryIndex = ref(-1)
+const lastKnownBoundaryIndex = ref(-1) // Track last boundary for color persistence
 const isScrolling = ref(false)
 let hideHandleTimeout: ReturnType<typeof setTimeout> | null = null
 let scrollTimeout: ReturnType<typeof setTimeout> | null = null
@@ -473,11 +523,18 @@ function selectGroupsInput() {
   }
 }
 
-// Reset to default partitions
+// Reset only manual partitions (keep current group count)
 async function resetToDefaults() {
   const viewTransition = startViewTransition()
   await viewTransition.captured
   store.clearManualPartitions(categoryCode.value)
+}
+
+// Reset only the group count to default
+async function resetGroupCount() {
+  const viewTransition = startViewTransition()
+  await viewTransition.captured
+  numAgeGroups.value = getDefaultNumAgeGroups()
 }
 
 function getCurvePath(rightSide: HTMLElement, rightSideIndex: number) {
@@ -540,6 +597,7 @@ function onBoundaryHover(boundaryIndex: number) {
   }
 
   hoveredBoundaryIndex.value = boundaryIndex
+  lastKnownBoundaryIndex.value = boundaryIndex // Update last known boundary
   showDragHandle.value = true
 }
 
@@ -903,6 +961,17 @@ function updateCurvesDirectly() {
     const visibleLineElement = svg.children[index * 2 + 1] as SVGPathElement
     if (visibleLineElement.getAttribute('d') !== newPath) {
       visibleLineElement.setAttribute('d', newPath)
+    }
+
+    // Check if this boundary is manual (either dragged or due to non-standard group count)
+    const isThisBoundaryManual = isBoundaryManual(index)
+
+    // Update stroke color for this specific line (accent for manual, primary for default)
+    const strokeClass = isThisBoundaryManual
+      ? 'stroke-accent fill-none stroke-2'
+      : 'stroke-primary fill-none stroke-2'
+    if (visibleLineElement.getAttribute('class') !== strokeClass) {
+      visibleLineElement.setAttribute('class', strokeClass)
     }
   })
 
