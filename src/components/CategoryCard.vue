@@ -1,5 +1,5 @@
 <template>
-  <Card class="category-card" v-view-transition-name="`CategoryCard-${id}`">
+  <Card class="category-card select-none">
     <CardContent class="px-6">
       <div class="relative">
         <!-- 4-column CSS Grid Layout -->
@@ -102,8 +102,7 @@
               v-for="[age, count] in ageCountsArray"
               :key="age"
               ref="leftSideRef"
-              v-view-transition-name="`CategoryCard-${id}-Age-${age}`"
-              class="flex items-center justify-between p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-colors"
+              class="flex items-center justify-between p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-colors select-text"
             >
               <span class="font-medium">Age {{ age }}</span>
               <DancerCount :count="count" :total="totalDancers" size="x-small" />
@@ -121,7 +120,7 @@
               ref="rightSideRef"
               v-view-transition-name="`CategoryCard-${id}-AgeGroup-${index}`"
               :style="{ flex: `${count} 1 0` }"
-              class="flex items-center justify-between p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-colors"
+              class="flex items-center justify-between p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-colors select-text"
             >
               <span class="font-semibold text-foreground">{{
                 getAgeGroupName(minAge, maxAge, isPrintingYears)
@@ -137,7 +136,7 @@
               :key="`preview-${index}`"
               v-view-transition-name="`CategoryCard-${id}-DancerPreview-${index}`"
               :style="{ flex: `${count} 1 0` }"
-              class="p-3 text-sm bg-muted/30 border border-border/50 rounded-md flex flex-col justify-start"
+              class="p-3 text-sm bg-muted/30 border border-border/50 rounded-md flex flex-col justify-start select-text"
             >
               <div class="space-y-1">
                 <div
@@ -174,15 +173,15 @@
         <Transition
           enter-active-class="transition-opacity duration-200 ease-out"
           leave-active-class="transition-opacity duration-150 ease-in"
-          enter-from-class="opacity-0 scale-95"
-          enter-to-class="opacity-100 scale-100"
-          leave-from-class="opacity-100 scale-100"
-          leave-to-class="opacity-0 scale-95"
+          enter-from-class="opacity-0"
+          enter-to-class="opacity-100"
+          leave-from-class="opacity-100"
+          leave-to-class="opacity-0"
         >
           <div
-            v-if="showDragHandle"
+            v-show="showDragHandle"
             ref="dragHandleRef"
-            class="absolute z-10 bg-primary rounded-md cursor-ns-resize h-3 flex items-center justify-center shadow-lg"
+            class="absolute z-20 bg-primary rounded-md cursor-ns-resize h-3 flex items-center justify-center shadow-lg"
             :style="{
               left: dragHandleLeft + 'px',
               top: dragHandleY + 'px',
@@ -268,23 +267,25 @@ function getPartitionedAgeCounts(ageCounts: number[][], numPartitions: number) {
   const result: [number[], number][] = []
   let index = 0
   partitionedCounts.forEach((partitionedCount, i) => {
-    const range = [0, Infinity]
+    let minAge = 0
+    let maxAge = Infinity
     let count = 0
     partitionedCount.forEach((_, j) => {
       const age = ageCounts[index][0]
       if (j === 0 && (i || (numPartitions > 1 && age === 4))) {
-        range[0] = age
+        minAge = age
       }
       if (
         j === partitionedCount.length - 1 &&
         (i < partitionedCounts.length - 1 || (numPartitions > 1 && age === 6))
       ) {
-        range[1] = age
+        maxAge = age
       }
       count += ageCounts[index][1]
       index++
     })
-    result.push([range, count])
+    // Create fresh immutable array for each range
+    result.push([[minAge, maxAge], count])
   })
   // TODO: handle edge case where there are ties, so the number of groups doesn't exactly match the numPartitions requested
   // TODO: handle edge case where Premier needs to be split around/above 12 y/o, since steps change
@@ -617,15 +618,15 @@ function onScroll() {
     showDragHandle.value = false
     hoveredBoundaryIndex.value = -1
   }
-  
+
   // Mark as scrolling
   isScrolling.value = true
-  
+
   // Clear existing timeout
   if (scrollTimeout) {
     clearTimeout(scrollTimeout)
   }
-  
+
   // Reset scrolling state after scroll ends
   scrollTimeout = setTimeout(() => {
     isScrolling.value = false
@@ -635,13 +636,20 @@ function onScroll() {
 
 // Continuous drag handle position updates
 function updateDragHandlePositionContinuously() {
-  if (!isActive || !showDragHandle.value || hoveredBoundaryIndex.value === -1 || isScrolling.value) {
+  if (!isActive) {
     dragHandleRafId = requestAnimationFrame(updateDragHandlePositionContinuously)
     return
   }
 
-  // Update position based on current hover state
-  updateDragHandlePosition(hoveredBoundaryIndex.value)
+  // Update position if handle is visible and not dragging (during drag, onMouseMove handles position)
+  if (
+    showDragHandle.value &&
+    hoveredBoundaryIndex.value !== -1 &&
+    !isDragging.value &&
+    !isScrolling.value
+  ) {
+    updateDragHandlePosition(hoveredBoundaryIndex.value)
+  }
 
   dragHandleRafId = requestAnimationFrame(updateDragHandlePositionContinuously)
 }
@@ -907,7 +915,7 @@ onMounted(async () => {
   isActive = true
   rafId = requestAnimationFrame(updateCurvesDirectly)
   dragHandleRafId = requestAnimationFrame(updateDragHandlePositionContinuously)
-  
+
   // Add scroll listener to window
   window.addEventListener('scroll', onScroll, { passive: true })
 })
@@ -922,7 +930,7 @@ onUnmounted(() => {
   if (scrollTimeout) {
     clearTimeout(scrollTimeout)
   }
-  
+
   // Remove scroll listener
   window.removeEventListener('scroll', onScroll)
 })
