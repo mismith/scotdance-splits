@@ -211,18 +211,44 @@
             </div>
           </section>
 
-          <!-- Privacy banner -->
-          <section class="mb-12">
-            <div class="bg-muted/20 border border-accent/30 rounded-xl p-6 max-w-4xl mx-auto">
-              <div class="flex items-center gap-4">
-                <div
-                  class="bg-accent/10 rounded-lg p-2 shrink-0"
-                  v-view-transition-name="'privacy-shield'"
-                >
-                  <Shield class="h-5 w-5 text-accent" />
-                </div>
-                <div class="space-y-3 flex-1">
+          <!-- Privacy trigger (always in DOM) -->
+          <div ref="privacyTriggerRef" class="h-px"></div>
+        </main>
+
+        <!-- Privacy banner (FLIP morphing) -->
+        <section
+          :class="[
+            isTriggerVisible
+              ? 'mb-12 flex justify-center'
+              : 'fixed bottom-40 left-0 right-0 z-30 flex justify-center pb-8',
+          ]"
+        >
+          <div
+            ref="privacyBannerRef"
+            class="bg-accent/20 border border-accent/30 backdrop-blur-lg rounded-xl"
+            :class="[
+              isTriggerVisible
+                ? 'p-6 max-w-4xl'
+                : 'p-3 pb-8 w-full max-w-lg cursor-pointer hover:bg-accent/30 shadow-lg',
+            ]"
+            @click="!isTriggerVisible && scrollToBottom()"
+          >
+            <div class="flex items-center gap-4">
+              <div class="bg-accent/10 rounded-lg p-2 shrink-0">
+                <Shield class="h-5 w-5 text-accent" />
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
                   <h3 class="text-lg font-semibold text-foreground">Your Data Stays Private</h3>
+                  <ChevronRight
+                    v-show="!isTriggerVisible"
+                    class="h-4 w-4 text-muted-foreground shrink-0 transition-opacity duration-300"
+                  />
+                </div>
+                <div
+                  v-show="isTriggerVisible"
+                  class="space-y-3 mt-3 transition-opacity duration-300"
+                >
                   <p class="text-sm text-muted-foreground leading-relaxed">
                     Everything happens right here in your browser. Your dancer registration data
                     never gets uploaded to any server, nor does it leave your computer in any way.
@@ -241,8 +267,8 @@
                 </div>
               </div>
             </div>
-          </section>
-        </main>
+          </div>
+        </section>
 
         <!-- Sticky floating CTA -->
         <div class="sticky bottom-8 z-40 mt-12" v-view-transition-name="'FloatingFooter'">
@@ -275,7 +301,8 @@
 <script setup lang="ts">
 import { Check, ChevronRight, Shield, TextCursorInput, X } from 'lucide-vue-next'
 import { parse } from 'papaparse'
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useElementVisibility } from '@vueuse/core'
 import { useAppStore } from '@/stores/app'
 import DarkModeToggle from '@/components/DarkModeToggle.vue'
 import FileUpload from '@/components/FileUpload.vue'
@@ -402,6 +429,81 @@ const rightTableRef = ref<HTMLElement>()
 const outputSourcesRef = ref<HTMLElement[]>([])
 const topSvgRef = ref<SVGElement>()
 const bottomSvgRef = ref<SVGElement>()
+
+// Privacy banner refs and visibility detection
+const privacyTriggerRef = ref<HTMLElement>()
+const privacyBannerRef = ref<HTMLElement>()
+const triggerVisible = useElementVisibility(privacyTriggerRef)
+const isTriggerVisible = ref(false)
+
+// Custom FLIP animation for privacy banner position morphing
+async function morphPrivacyBanner() {
+  if (!privacyBannerRef.value) return
+
+  // FIRST: Get current position before any changes
+  const first = privacyBannerRef.value.getBoundingClientRect()
+
+  // Disable transitions immediately
+  privacyBannerRef.value.style.transition = 'none'
+
+  // Wait for Vue to update the DOM classes (this triggers the position change)
+  await nextTick()
+
+  // LAST: Get new position after Vue has updated classes
+  const last = privacyBannerRef.value.getBoundingClientRect()
+
+  // Calculate the difference accounting for center positioning
+  const deltaX = first.left - last.left + (first.width - last.width) / 2
+  const deltaY = first.top - last.top
+  const scaleX = first.width / last.width
+  const scaleY = first.height / last.height
+
+  // Apply inverse transform to appear in old position
+  privacyBannerRef.value.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${scaleX}, ${scaleY})`
+
+  // Force a reflow to ensure the transform is applied
+  privacyBannerRef.value.offsetHeight
+
+  // Animate to natural position
+  requestAnimationFrame(() => {
+    if (privacyBannerRef.value) {
+      // Set up transitionend listener before starting transition
+      const handleTransitionEnd = () => {
+        if (privacyBannerRef.value) {
+          privacyBannerRef.value.style.transform = ''
+          privacyBannerRef.value.style.transition = ''
+          privacyBannerRef.value.removeEventListener('transitionend', handleTransitionEnd)
+        }
+      }
+
+      privacyBannerRef.value.addEventListener('transitionend', handleTransitionEnd)
+      privacyBannerRef.value.style.transition = 'transform 250ms ease-in-out'
+      privacyBannerRef.value.style.transform = 'translate(0px, 0px) scale(1, 1)'
+    }
+  })
+}
+
+// Sync proxy variable with actual visibility
+watch(triggerVisible, (newVal) => {
+  isTriggerVisible.value = newVal
+})
+
+// Watch trigger visibility and apply state changes with FLIP
+watch(isTriggerVisible, morphPrivacyBanner)
+
+// Scroll to privacy banner
+async function scrollToBottom() {
+  // Manually trigger the expansion
+  isTriggerVisible.value = true
+  await nextTick()
+  
+  // Now scroll to the actual bottom
+  const maxScroll = document.body.scrollHeight - window.innerHeight
+  window.scrollTo({
+    top: maxScroll,
+    behavior: 'smooth'
+  })
+}
 
 // Functions to set refs for arrays
 function setInputSourceRef(el: HTMLElement | null, index: number) {
