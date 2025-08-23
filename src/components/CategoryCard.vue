@@ -135,6 +135,7 @@
             <div
               v-for="([, count], index) in partitionedAgeCountsArray"
               :key="`preview-${index}`"
+              v-view-transition-name="`CategoryCard-${id}-DancerPreview-${index}`"
               :style="{ flex: `${count} 1 0` }"
               class="p-3 text-sm bg-muted/30 border border-border/50 rounded-md flex flex-col justify-start"
             >
@@ -209,6 +210,7 @@
 import partition from 'linear-partitioning'
 import { Delete, Minus, Plus } from 'lucide-vue-next'
 import { computed, inject, nextTick, onMounted, onUnmounted, ref, useId, watch } from 'vue'
+import { startViewTransition } from 'vue-view-transitions'
 import { useAppStore } from '@/stores/app'
 import DancerCount from '@/components/DancerCount.vue'
 import { Button } from '@/components/ui/button'
@@ -335,16 +337,20 @@ const partitionedAgeCountsArray = computed(() => {
   return getPartitionedAgeCounts(ageCountsArray.value, numAgeGroups.value)
 })
 
-function incrementGroups() {
+async function incrementGroups() {
   if (numAgeGroups.value < ageCountsArray.value.length) {
+    const viewTransition = startViewTransition()
+    await viewTransition.captured
     numAgeGroups.value++
     // Clear manual adjustments when changing group count
     store.clearManualPartitions(categoryCode.value)
   }
 }
 
-function decrementGroups() {
+async function decrementGroups() {
   if (numAgeGroups.value > 1) {
+    const viewTransition = startViewTransition()
+    await viewTransition.captured
     numAgeGroups.value--
     // Clear manual adjustments when changing group count
     store.clearManualPartitions(categoryCode.value)
@@ -467,7 +473,9 @@ function selectGroupsInput() {
 }
 
 // Reset to default partitions
-function resetToDefaults() {
+async function resetToDefaults() {
+  const viewTransition = startViewTransition()
+  await viewTransition.captured
   store.clearManualPartitions(categoryCode.value)
 }
 
@@ -679,7 +687,7 @@ function onDragStart(event: MouseEvent) {
     }
   }
 
-  function onMouseUp() {
+  async function onMouseUp() {
     if (!isDragging.value) return
 
     // Use the last valid age that was tracked during drag
@@ -687,6 +695,8 @@ function onDragStart(event: MouseEvent) {
       // Create new partition array
       const newPartitions = createNewPartitions(draggingBoundaryIndex.value, lastValidAge)
       if (newPartitions) {
+        const viewTransition = startViewTransition()
+        await viewTransition.captured
         store.setManualPartitions(categoryCode.value, newPartitions)
       }
     }
