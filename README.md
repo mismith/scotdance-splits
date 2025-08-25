@@ -19,3 +19,4 @@ Free online tool that splits highland dance competition registrations into age g
 - input data preview + settings + better error handling (e.g. Ready to export in green is ugly)
 - useLocalStorage for settings + showDancers
 - drag n drop groups on mobile
+- when you have unsaved changes, prompt before unloading (or leaving route)

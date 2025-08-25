@@ -1016,10 +1016,22 @@ onUnmounted(() => {
 // Age group interaction functions
 async function openAgeGroupSheet(ageGroupIndex: number) {
   if (window.innerWidth >= 768) {
-    // Desktop: Toggle dancers visibility
+    // Desktop: Toggle dancers visibility with smooth scroll to element
     const viewTransition = startViewTransition()
     await viewTransition.captured
     showDancers.value = !showDancers.value
+
+    // Wait for transition to complete, then smooth scroll to the tapped element
+    await viewTransition.finished
+
+    // Find and scroll to the tapped age group element
+    const ageGroupElement = rightSideRef.value?.[ageGroupIndex]
+    if (ageGroupElement) {
+      ageGroupElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      })
+    }
   } else {
     // Mobile: Open sheet
     selectedAgeGroupIndex.value = ageGroupIndex
