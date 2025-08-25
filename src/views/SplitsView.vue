@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col min-h-screen">
+  <div class="flex flex-col min-h-screen min-w-md">
     <!-- Fixed Toolbar -->
     <header
       class="fixed top-0 left-0 right-0 z-50 grid grid-cols-[1fr_auto_1fr] items-center px-3 py-1.5 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-12"
@@ -28,18 +28,6 @@
 
       <!-- Right side -->
       <div class="flex items-center gap-1 justify-self-end">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" @click="toggleDancers" class="w-8 h-8 p-0">
-                <PersonStanding class="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{{ showDancers ? 'Hide Dancers' : 'Show Dancers' }}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
         <DarkModeToggle />
       </div>
     </header>
@@ -72,7 +60,7 @@
     </main>
 
     <!-- Sticky Footer - Status/Export -->
-    <div class="sticky bottom-8 z-40 mt-8" v-view-transition-name="'FloatingFooter'">
+    <div class="sticky bottom-0 md:bottom-8 z-40 mt-8" v-view-transition-name="'FloatingFooter'">
       <!-- Status Problems -->
       <div
         v-if="dataStatus.status === 'error' && !validationDismissed"
@@ -130,7 +118,7 @@
       <!-- Export CTA (hidden when there are unresolved issues) -->
       <div
         v-if="dataStatus.status === 'success' || validationDismissed"
-        class="bg-card border border-border shadow-lg rounded-xl p-6 max-w-lg mx-auto"
+        class="bg-card border border-border shadow-lg rounded-t-xl md:rounded-xl p-6 max-w-lg mx-auto"
       >
         <div
           v-if="dataStatus.status === 'success'"
@@ -352,9 +340,8 @@
 </template>
 
 <script setup lang="ts">
-import { AlertTriangle, PersonStanding, Settings, Share, Table, X } from 'lucide-vue-next'
+import { AlertTriangle, Settings, Share, Table, X } from 'lucide-vue-next'
 import { computed, provide, ref } from 'vue'
-import { startViewTransition } from 'vue-view-transitions'
 import { useAppStore } from '@/stores/app'
 import CategoryCard from '@/components/CategoryCard.vue'
 import DarkModeToggle from '@/components/DarkModeToggle.vue'
@@ -373,7 +360,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { downloadCSV } from '@/lib/helpers'
 import { CATEGORY_CODE_NAMES, INPUT_COLUMNS, type Partition, createPartitions } from '@/lib/input'
 import { type ExportSettings, convertToCSV, generateExportData } from '@/lib/output'
@@ -384,7 +371,7 @@ const categoryCardRef = ref<(typeof CategoryCard)[]>()
 const showColumnMappingSheet = ref(false)
 const showExportSettingsSheet = ref(false)
 const validationDismissed = ref(false)
-const showDancers = ref(true)
+const showDancers = ref(false)
 
 // Data quality status
 const dataStatus = computed(() => {
@@ -434,11 +421,6 @@ provide(
   computed(() => store.isPrintingYears),
 )
 provide('showDancers', showDancers)
-async function toggleDancers() {
-  const viewTransition = startViewTransition()
-  await viewTransition.captured
-  showDancers.value = !showDancers.value
-}
 
 // Navigation functions
 function goToHome() {

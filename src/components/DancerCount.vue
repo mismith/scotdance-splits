@@ -1,6 +1,14 @@
 <template>
-  <TooltipProvider v-if="total">
-    <Tooltip>
+  <!-- Mobile: Simple text on new line -->
+  <div class="md:hidden">
+    <div class="text-xs text-muted-foreground mt-1">
+      {{ count }} {{ pluralize(count, 'dancer') }}
+    </div>
+  </div>
+
+  <!-- Desktop: Badge with tooltip -->
+  <div class="hidden md:inline-flex">
+    <Tooltip v-if="total">
       <TooltipTrigger as-child>
         <span
           :class="
@@ -22,23 +30,23 @@
         </p>
       </TooltipContent>
     </Tooltip>
-  </TooltipProvider>
-  <span
-    v-else
-    :class="
-      cn(
-        'inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors',
-        'bg-secondary text-secondary-foreground',
-        sizeClasses[size],
-      )
-    "
-  >
-    {{ count }}
-  </span>
+    <span
+      v-else
+      :class="
+        cn(
+          'inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors',
+          'bg-secondary text-secondary-foreground',
+          sizeClasses[size],
+        )
+      "
+    >
+      {{ count }}
+    </span>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { pluralize } from '@/lib/helpers'
 import { cn } from '@/lib/utils'
 

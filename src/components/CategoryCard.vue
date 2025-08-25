@@ -5,47 +5,40 @@
         <!-- 4-column CSS Grid Layout -->
         <div
           ref="colsRef"
-          :class="`grid gap-4 ${showDancers ? 'grid-cols-[1fr_80px_1fr_1fr]' : 'grid-cols-[1fr_80px_1fr]'}`"
+          :class="`grid gap-4 grid-cols-[1fr_1rem_1fr] md:grid-cols-[1fr_80px_1fr] ${showDancers ? 'md:!grid-cols-[1fr_80px_1fr_1fr]' : ''}`"
         >
           <!-- Row 1: Header with title and controls -->
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between col-span-2">
             <div class="flex items-center space-x-3">
               <CardTitle class="text-xl font-bold">{{ name }}</CardTitle>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <DancerCount :count="totalDancers" />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p>{{ totalDancers }} dancers</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <DancerCount :count="totalDancers" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>{{ totalDancers }} dancers</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
 
             <!-- Manual adjustment indicator -->
             <div v-if="hasCustomizations" class="flex items-center gap-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger
-                    class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full cursor-pointer hover:bg-accent/15 transition-colors"
-                    @click="resetToDefaults"
-                  >
-                    <span class="text-xs font-medium text-accent">Manual</span>
-                    <Delete class="w-3 h-3 text-accent ml-1" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Reset partition boundaries</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full cursor-pointer hover:bg-accent/15 transition-colors"
+                  @click="resetToDefaults"
+                >
+                  <span class="text-xs font-medium text-accent">Manual</span>
+                  <Delete class="w-3 h-3 text-accent ml-1" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Reset partition boundaries</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
-
-          <div></div>
-          <!-- Empty spacer for curved lines column -->
 
           <div
             class="grid grid-cols-[1fr_auto_1fr] items-center"
@@ -53,7 +46,7 @@
           >
             <!-- Left spacer -->
             <div></div>
-            
+
             <!-- Center controls -->
             <div class="flex items-center gap-2">
               <Button
@@ -94,29 +87,27 @@
                 <Plus class="h-3 w-3" />
               </Button>
             </div>
-            
+
             <!-- Right reset button -->
             <div class="flex justify-end">
-              <TooltipProvider v-if="hasNonStandardGroupCount">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div
-                      class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full cursor-pointer hover:bg-accent/15 transition-colors"
-                      @click="resetGroupCount"
-                    >
-                      <span class="text-xs font-medium text-accent">Manual</span>
-                      <Delete class="w-3 h-3 text-accent ml-1" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Reset to default group count</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip v-if="hasNonStandardGroupCount">
+                <TooltipTrigger asChild>
+                  <div
+                    class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full cursor-pointer hover:bg-accent/15 transition-colors"
+                    @click="resetGroupCount"
+                  >
+                    <span class="text-xs font-medium text-accent">Manual</span>
+                    <Delete class="w-3 h-3 text-accent ml-1" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Reset to default group count</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
-          <div v-if="showDancers"></div>
+          <div v-if="showDancers" class="hidden md:block"></div>
           <!-- Empty spacer for dancers column -->
 
           <!-- Row 2: Content columns -->
@@ -126,10 +117,12 @@
               v-for="[age, count] in ageCountsArray"
               :key="age"
               ref="leftSideRef"
-              class="flex items-center justify-between p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-colors select-text"
+              class="p-3 text-sm bg-secondary/50 border border-border rounded-md select-text"
             >
-              <span class="font-medium">Age {{ age }}</span>
-              <DancerCount :count="count" :total="totalDancers" size="x-small" />
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <span class="font-medium">Age {{ age }}</span>
+                <DancerCount :count="count" :total="totalDancers" size="x-small" />
+              </div>
             </div>
           </div>
 
@@ -144,17 +137,20 @@
               ref="rightSideRef"
               v-view-transition-name="`CategoryCard-${id}-AgeGroup-${index}`"
               :style="{ flex: `${count} 1 0` }"
-              class="flex items-center justify-between p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-colors select-text"
+              class="p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-colors select-text cursor-pointer"
+              @click="openAgeGroupSheet(index)"
             >
-              <span class="font-semibold text-foreground">{{
-                getAgeGroupName(minAge, maxAge, isPrintingYears)
-              }}</span>
-              <DancerCount :count="count" :total="totalDancers" size="x-small" />
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <span class="font-semibold text-foreground">{{
+                  getAgeGroupName(minAge, maxAge, isPrintingYears)
+                }}</span>
+                <DancerCount :count="count" :total="totalDancers" size="x-small" />
+              </div>
             </div>
           </div>
 
           <!-- Preview Dancers column -->
-          <div v-if="showDancers" class="flex flex-col gap-2">
+          <div v-if="showDancers" class="hidden md:flex flex-col gap-2">
             <div
               v-for="([, count], index) in partitionedAgeCountsArray"
               :key="`preview-${index}`"
@@ -162,25 +158,7 @@
               :style="{ flex: `${count} 1 0` }"
               class="p-3 text-sm bg-muted/30 border border-border/50 rounded-md flex flex-col justify-start select-text"
             >
-              <div class="space-y-1">
-                <div
-                  v-for="dancer in getRealDancersForAgeGroup(index)"
-                  :key="dancer.bibNumber"
-                  class="flex items-center gap-2 text-xs"
-                >
-                  <span
-                    class="bg-primary/20 text-primary px-1.5 py-0.5 rounded text-[10px] font-bold min-w-[2rem] text-center"
-                  >
-                    {{ dancer.bibNumber }}
-                  </span>
-                  <span class="truncate text-foreground flex-1"
-                    >{{ dancer.firstName }} {{ dancer.lastName }}</span
-                  >
-                  <span class="truncate text-muted-foreground text-[10px]">{{
-                    dancer.location
-                  }}</span>
-                </div>
-              </div>
+              <DancerPreview :dancers="getRealDancersForAgeGroup(index)" />
             </div>
           </div>
         </div>
@@ -233,6 +211,24 @@
       </div>
     </CardContent>
   </Card>
+
+  <!-- Mobile Dancer Sheet -->
+  <Sheet v-model:open="showDancerSheet">
+    <SheetContent side="bottom" class="md:hidden">
+      <SheetHeader>
+        <SheetTitle>{{ sheetTitle }}</SheetTitle>
+      </SheetHeader>
+      <div class="overflow-y-auto -mt-4">
+        <div
+          v-if="selectedAgeGroupIndex !== null"
+          class="p-3 bg-muted/30 border border-border/50 rounded-md"
+        >
+          <DancerPreview :dancers="getRealDancersForAgeGroup(selectedAgeGroupIndex)" />
+        </div>
+        <div v-else class="text-center text-muted-foreground py-8">No dancers found</div>
+      </div>
+    </SheetContent>
+  </Sheet>
 </template>
 
 <script lang="ts" setup>
@@ -242,9 +238,11 @@ import { computed, inject, nextTick, onMounted, onUnmounted, ref, useId, watch }
 import { startViewTransition } from 'vue-view-transitions'
 import { useAppStore } from '@/stores/app'
 import DancerCount from '@/components/DancerCount.vue'
+import DancerPreview from '@/components/DancerPreview.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardTitle } from '@/components/ui/card'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { pluralize } from '@/lib/helpers'
 import { CATEGORY_CODE_NAMES, getAgeGroupName } from '@/lib/input'
 
@@ -275,6 +273,19 @@ const ageCountsArray = computed(() => {
 
 const totalDancers = computed(() => {
   return ageCountsArray.value.reduce((sum, [, count]) => sum + count, 0)
+})
+
+// Sheet computed properties
+const sheetTitle = computed(() => {
+  if (selectedAgeGroupIndex.value !== null) {
+    const ageRange = partitionedAgeCountsArray.value[selectedAgeGroupIndex.value]?.[0]
+    if (ageRange) {
+      const [minAge, maxAge] = ageRange
+      const ageGroupName = getAgeGroupName(minAge, maxAge, !!isPrintingYears)
+      return `${props.name} ${ageGroupName}`
+    }
+  }
+  return `${props.name}`
 })
 
 const averageDancersPerAge = computed(() => {
@@ -505,6 +516,10 @@ const dragHandleRef = ref<HTMLElement>()
 // Drag state
 const isDragging = ref(false)
 const draggingBoundaryIndex = ref(-1)
+
+// Mobile sheet state
+const showDancerSheet = ref(false)
+const selectedAgeGroupIndex = ref<number | null>(null)
 const dragPreviewY = ref<number | null>(null)
 const showDragHandle = ref(false)
 const dragHandleLeft = ref(0)
@@ -1003,6 +1018,25 @@ onUnmounted(() => {
   // Remove scroll listener
   window.removeEventListener('scroll', onScroll)
 })
+
+// Age group interaction functions
+async function openAgeGroupSheet(ageGroupIndex: number) {
+  if (window.innerWidth >= 768) {
+    // Desktop: Toggle dancers visibility
+    const viewTransition = startViewTransition()
+    await viewTransition.captured
+    showDancers.value = !showDancers.value
+  } else {
+    // Mobile: Open sheet
+    selectedAgeGroupIndex.value = ageGroupIndex
+    showDancerSheet.value = true
+  }
+}
+
+function closeDancerSheet() {
+  showDancerSheet.value = false
+  selectedAgeGroupIndex.value = null
+}
 
 const emit = defineEmits(['partition'])
 watch(
