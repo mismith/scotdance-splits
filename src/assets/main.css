@@ -9,7 +9,7 @@
   }
 
   html {
-    @apply font-sans bg-background text-foreground bg-gradient-to-br from-primary/0 to-primary/5;
+    @apply font-sans bg-background text-foreground after:inset-0 after:fixed after:z-[-1] after:bg-gradient-to-br after:from-primary/0 after:to-primary/5;
   }
 
   * {

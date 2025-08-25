@@ -6,9 +6,9 @@
     @error-dismiss="handleErrorDismiss"
   >
     <template #default="{ chooseFile }">
-      <div class="flex flex-col">
+      <div class="flex flex-col min-w-md">
         <!-- Header - Center-aligned logo -->
-        <header class="py-16 text-center relative">
+        <header class="py-16 text-center relative px-6">
           <!-- Dark mode toggle -->
           <div class="absolute top-8 right-8">
             <DarkModeToggle />
@@ -47,7 +47,7 @@
 
           <!-- Input sources -->
           <section class="mb-20">
-            <div class="flex justify-center items-center gap-16">
+            <div class="flex justify-center items-center gap-12">
               <div
                 :ref="(el) => setInputSourceRef(el as HTMLElement, 0)"
                 class="flex flex-col items-center gap-2"
@@ -125,9 +125,7 @@
 
             <!-- Arrow between tables -->
             <div class="flex justify-center lg:justify-start">
-              <div class="bg-background rounded-full p-3 shadow-lg">
-                <ChevronRight class="h-6 w-6 text-primary lg:rotate-0 rotate-90" />
-              </div>
+              <ChevronRight class="h-6 w-6 text-primary lg:rotate-0 rotate-90" />
             </div>
 
             <!-- After: Output table -->
@@ -143,17 +141,17 @@
                 <div class="space-y-2 mt-6 text-sm">
                   <div class="flex items-center gap-2 text-primary">
                     <Check class="h-4 w-4 shrink-0 text-foreground" />
+                    <span
+                      >Instant output that can be exported in one click or customized further</span
+                    >
+                  </div>
+                  <div class="flex items-center gap-2 text-primary">
+                    <Check class="h-4 w-4 shrink-0 text-foreground" />
                     <span>Age groups optimized for balanced number of dancers</span>
                   </div>
                   <div class="flex items-center gap-2 text-primary">
                     <Check class="h-4 w-4 shrink-0 text-foreground" />
                     <span>Bib numbers based on reverse registration order</span>
-                  </div>
-                  <div class="flex items-center gap-2 text-primary">
-                    <Check class="h-4 w-4 shrink-0 text-foreground" />
-                    <span
-                      >Instant output that can be exported in one click or customized further</span
-                    >
                   </div>
                 </div>
               </div>
@@ -162,7 +160,7 @@
 
           <!-- Output sources -->
           <section class="mb-20">
-            <div class="flex justify-center items-center gap-16">
+            <div class="flex justify-center items-center gap-12">
               <div
                 :ref="(el) => setOutputSourceRef(el as HTMLElement, 0)"
                 class="flex flex-col items-center gap-2"
@@ -220,7 +218,7 @@
           :class="[
             isTriggerVisible
               ? 'mb-12 flex justify-center'
-              : 'fixed bottom-40 left-0 right-0 z-30 flex justify-center pb-8',
+              : 'fixed bottom-24 md:bottom-40 left-0 right-0 z-30 flex justify-center pb-8',
           ]"
         >
           <div
@@ -228,7 +226,7 @@
             class="bg-accent/20 border border-accent/30 backdrop-blur-lg rounded-xl"
             :class="[
               isTriggerVisible
-                ? 'p-6 max-w-4xl'
+                ? 'p-6 max-w-4xl mx-6 md:mx-auto'
                 : 'p-3 pb-8 w-full max-w-lg cursor-pointer hover:bg-accent/30 shadow-lg',
             ]"
             @click="!isTriggerVisible && scrollToBottom()"
@@ -252,7 +250,7 @@
                   <p class="text-sm text-muted-foreground leading-relaxed">
                     Everything happens right here in your browser. Your dancer registration data
                     never gets uploaded to any server, nor does it leave your computer in any way.
-                    We can't see it, store it, or access it in any way.
+                    It cannot be seen, stored, or accessed remotely in any way.
                   </p>
                   <p class="text-sm text-muted-foreground">
                     This tool is completely
@@ -271,12 +269,16 @@
         </section>
 
         <!-- Sticky floating CTA -->
-        <div class="sticky bottom-8 z-40 mt-12" v-view-transition-name="'FloatingFooter'">
+        <div
+          class="sticky bottom-0 md:bottom-8 z-40 mt-12"
+          v-view-transition-name="'FloatingFooter'"
+        >
           <div
-            class="bg-card/95 flex flex-col gap-3 text-center items-center backdrop-blur-lg border border-border/50 shadow-2xl rounded-2xl p-8 max-w-lg mx-auto"
+            class="bg-card/95 flex flex-col gap-3 text-center items-center backdrop-blur-lg border border-border/50 shadow-2xl rounded-t-2xl md:rounded-2xl p-8 max-w-lg mx-auto"
           >
-            <p>To get started, drag & drop your CSV file anywhere</p>
-            <div class="text-muted-foreground text-xs">OR</div>
+            <p class="hidden md:block">To get started, drag your registration data anywhere</p>
+            <p class="md:hidden">To get started, export your registration data, then</p>
+            <div class="text-muted-foreground text-xs hidden md:block">OR</div>
             <Button
               size="lg"
               :disabled="store.isLoadingInputFile"
