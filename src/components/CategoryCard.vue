@@ -8,23 +8,14 @@
           :class="`grid gap-4 grid-cols-[1fr_1rem_1fr] md:grid-cols-[1fr_80px_1fr] ${showDancers ? 'md:!grid-cols-[1fr_80px_1fr_1fr]' : ''}`"
         >
           <!-- Row 1: Header with title and controls -->
-          <div class="flex items-center justify-between col-span-2">
-            <div class="flex items-center space-x-3">
+          <div class="flex items-center col-span-2 gap-2">
+            <div class="flex flex-col md:flex-row md:items-center space-x-3">
               <CardTitle class="text-xl font-bold">{{ name }}</CardTitle>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <DancerCount :count="totalDancers" />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>{{ totalDancers }} dancers</p>
-                </TooltipContent>
-              </Tooltip>
+              <DancerCount :count="totalDancers" />
             </div>
 
             <!-- Manual adjustment indicator -->
-            <div v-if="hasCustomizations" class="flex items-center gap-2">
+            <div v-if="hasCustomizations" class="flex items-center gap-2 flex-shrink-0 ml-auto">
               <Tooltip>
                 <TooltipTrigger
                   class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full cursor-pointer hover:bg-accent/15 transition-colors"
@@ -38,6 +29,9 @@
                 </TooltipContent>
               </Tooltip>
             </div>
+
+            <!-- Flexible spacer to avoid curve gap -->
+            <div class="shrink-0 w-6 md:w-22"></div>
           </div>
 
           <div
