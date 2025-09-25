@@ -131,7 +131,7 @@
               ref="rightSideRef"
               v-view-transition-name="`CategoryCard-${id}-AgeGroup-${index}`"
               :style="{ flex: `${count} 1 0` }"
-              class="p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-colors select-text cursor-pointer"
+              class="p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-all select-text cursor-pointer ring-primary"
               @click="openAgeGroupSheet(index)"
             >
               <div class="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -1031,6 +1031,14 @@ async function openAgeGroupSheet(ageGroupIndex: number) {
         behavior: 'smooth',
         block: 'center',
       })
+
+      // Add highlight animation
+      ageGroupElement.classList.add('ring-2')
+
+      // Remove highlight after 2 seconds
+      setTimeout(() => {
+        ageGroupElement.classList.remove('ring-2')
+      }, 1250)
     }
   } else {
     // Mobile: Open sheet
