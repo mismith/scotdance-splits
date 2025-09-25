@@ -8,7 +8,7 @@
 
   <!-- Desktop: Badge with tooltip -->
   <div class="hidden md:inline-flex">
-    <Tooltip v-if="total">
+    <Tooltip>
       <TooltipTrigger as-child>
         <span
           :class="
@@ -23,25 +23,16 @@
         </span>
       </TooltipTrigger>
       <TooltipContent side="right">
-        <p>
+        <p v-if="total">
           {{ count }} out of {{ total }} {{ pluralize(total, 'dancer') }} ({{
             Math.round((count / total) * 100)
           }}%)
         </p>
+        <p v-else>
+          {{ count }} {{ pluralize(count, 'dancer') }} total
+        </p>
       </TooltipContent>
     </Tooltip>
-    <span
-      v-else
-      :class="
-        cn(
-          'inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors',
-          'bg-secondary text-secondary-foreground',
-          sizeClasses[size],
-        )
-      "
-    >
-      {{ count }}
-    </span>
   </div>
 </template>
 
