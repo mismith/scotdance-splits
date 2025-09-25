@@ -8,7 +8,7 @@
     <template #default="{ chooseFile }">
       <div class="flex flex-col min-w-md">
         <!-- Header - Center-aligned logo -->
-        <header class="py-16 text-center relative px-6">
+        <header class="py-16 text-center relative px-6 flex flex-col items-center">
           <!-- Dark mode toggle -->
           <div class="absolute top-8 right-8">
             <DarkModeToggle />
@@ -16,7 +16,7 @@
 
           <a
             href="/"
-            class="will-change-transform flex items-center justify-center gap-4 text-4xl font-semibold text-primary hover:text-primary/80 transition-colors"
+            class="will-change-transform flex items-center justify-center gap-4 text-4xl font-semibold text-primary hover:tracking-widest transition-all"
           >
             <img
               src="/touchicon.png"

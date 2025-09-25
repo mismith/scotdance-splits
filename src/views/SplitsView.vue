@@ -13,7 +13,7 @@
       <!-- Center - Logo -->
       <div class="justify-self-center">
         <button
-          class="will-change-transform flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+          class="will-change-transform flex items-center gap-2 text-sm font-semibold text-primary hover:tracking-widest transition-all"
           @click="goToHome"
         >
           <img
