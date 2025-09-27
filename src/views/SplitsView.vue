@@ -60,14 +60,11 @@
     </main>
 
     <!-- Sticky Footer - Status/Export -->
-    <div
-      class="sticky bottom-0 md:bottom-8 z-40 mt-8 pointer-events-none"
-      v-view-transition-name="'FloatingFooter'"
-    >
+    <div class="sticky bottom-0 md:bottom-8 z-40 mt-8 pointer-events-none">
       <!-- Status Problems -->
       <div
         v-if="dataStatus.status === 'error' && !validationDismissed"
-        class="pointer-events-auto bg-gradient-to-r from-red-50 to-red-100 dark:from-red-950/50 dark:to-red-900/50 border border-red-200 dark:border-red-800 shadow-xl rounded-2xl max-w-lg mx-auto mb-4 relative overflow-hidden backdrop-blur-sm"
+        class="pointer-events-auto bg-gradient-to-r from-red-50 to-red-100 dark:from-red-950/50 dark:to-red-900/50 border border-red-200 dark:border-red-800 shadow-xl rounded-2xl max-w-lg mx-auto mb-4 relative overflow-hidden backdrop-blur-lg"
       >
         <!-- Close button -->
         <Button
@@ -121,7 +118,8 @@
       <!-- Export CTA (hidden when there are unresolved issues) -->
       <div
         v-if="dataStatus.status === 'success' || validationDismissed"
-        class="pointer-events-auto bg-card border border-border shadow-lg rounded-t-xl md:rounded-xl p-6 max-w-lg mx-auto"
+        v-view-transition-name="'FloatingFooter'"
+        class="pointer-events-auto bg-card/50 backdrop-blur-lg border border-border shadow-lg rounded-t-xl md:rounded-xl p-6 max-w-lg mx-auto"
       >
         <div
           v-if="dataStatus.status === 'success'"

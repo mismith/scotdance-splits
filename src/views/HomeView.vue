@@ -269,12 +269,10 @@
         </section>
 
         <!-- Sticky floating CTA -->
+        <div class="sticky bottom-0 md:bottom-8 z-40 mt-12">
         <div
-          class="sticky bottom-0 md:bottom-8 z-40 mt-12"
           v-view-transition-name="'FloatingFooter'"
-        >
-          <div
-            class="bg-card/95 flex flex-col gap-3 text-center items-center backdrop-blur-lg border border-border/50 shadow-2xl rounded-t-2xl md:rounded-2xl p-8 max-w-lg mx-auto"
+            class="bg-card/50 flex flex-col gap-3 text-center items-center backdrop-blur-lg border border-border/50 shadow-2xl rounded-t-2xl md:rounded-2xl p-8 max-w-lg mx-auto"
           >
             <p class="hidden md:block">To get started, drag your registration data anywhere</p>
             <p class="md:hidden">To get started, export your registration data, then</p>
