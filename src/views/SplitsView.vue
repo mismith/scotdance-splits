@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col min-h-screen min-w-md">
+  <div class="flex flex-col min-h-screen">
     <!-- Fixed Toolbar -->
     <header
       class="fixed top-0 left-0 right-0 z-50 grid grid-cols-[1fr_auto_1fr] items-center px-3 py-1.5 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-12"

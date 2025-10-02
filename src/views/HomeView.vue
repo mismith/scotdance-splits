@@ -6,7 +6,7 @@
     @error-dismiss="handleErrorDismiss"
   >
     <template #default="{ chooseFile }">
-      <div class="flex flex-col min-w-md">
+      <div class="flex flex-col">
         <!-- Header - Center-aligned logo -->
         <header class="py-16 text-center relative px-6 flex flex-col items-center">
           <!-- Dark mode toggle -->
