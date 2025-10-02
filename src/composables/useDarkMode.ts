@@ -1,9 +1,13 @@
-import { useDark, useToggle } from '@vueuse/core'
+import { ref } from 'vue'
 
 export function useDarkMode() {
-  const isDark = useDark()
+  // Always return true to force dark mode
+  const isDark = ref(true)
 
-  const toggle = useToggle(isDark)
+  // No-op toggle function (keeping for compatibility)
+  const toggle = () => {
+    // Do nothing - always stay in dark mode
+  }
 
   return {
     isDark,

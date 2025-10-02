@@ -9,11 +9,6 @@
       <div class="flex flex-col">
         <!-- Header - Center-aligned logo -->
         <header class="py-16 text-center relative px-6 flex flex-col items-center">
-          <!-- Dark mode toggle -->
-          <div class="absolute top-8 right-8">
-            <DarkModeToggle />
-          </div>
-
           <a
             href="/"
             class="will-change-transform flex items-center justify-center gap-4 text-4xl font-semibold text-primary hover:tracking-widest transition-all"
@@ -304,7 +299,6 @@ import { parse } from 'papaparse'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useElementVisibility } from '@vueuse/core'
 import { useAppStore } from '@/stores/app'
-import DarkModeToggle from '@/components/DarkModeToggle.vue'
 import FileUpload from '@/components/FileUpload.vue'
 import InputDataTable from '@/components/InputDataTable.vue'
 import OutputDataTable from '@/components/OutputDataTable.vue'

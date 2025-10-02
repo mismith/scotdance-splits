@@ -27,9 +27,7 @@
       </div>
 
       <!-- Right side -->
-      <div class="flex items-center gap-1 justify-self-end">
-        <DarkModeToggle />
-      </div>
+      <div class="flex items-center gap-1 justify-self-end"></div>
     </header>
 
     <!-- Main content with top padding to account for fixed header -->
@@ -345,7 +343,6 @@ import { AlertTriangle, Settings, Share, Table, X } from 'lucide-vue-next'
 import { computed, provide, ref } from 'vue'
 import { useAppStore } from '@/stores/app'
 import CategoryCard from '@/components/CategoryCard.vue'
-import DarkModeToggle from '@/components/DarkModeToggle.vue'
 import InputDataTable from '@/components/InputDataTable.vue'
 import OutputDataTable from '@/components/OutputDataTable.vue'
 import SettingsSheet from '@/components/SettingsSheet.vue'
