@@ -11,7 +11,7 @@
         <header class="py-16 text-center relative px-6 flex flex-col items-center">
           <a
             href="/"
-            class="will-change-transform flex items-center justify-center gap-4 text-4xl font-semibold text-primary hover:tracking-widest transition-all"
+            class="will-change-transform flex items-center justify-center gap-4 text-4xl font-semibold text-primary duration-500 hover:tracking-widest transition-all"
           >
             <img
               src="/touchicon.png"
@@ -213,7 +213,7 @@
           :class="[
             isTriggerVisible
               ? 'mb-12 flex justify-center'
-              : 'fixed bottom-24 md:bottom-40 left-0 right-0 z-30 flex justify-center pb-8',
+              : 'fixed bottom-16 md:bottom-24 left-0 right-0 z-30 flex justify-center pb-8',
           ]"
         >
           <div
@@ -232,7 +232,12 @@
               </div>
               <div class="flex-1">
                 <div class="flex items-center justify-between">
-                  <h3 class="text-lg font-semibold text-foreground">Your Data Stays Private</h3>
+                  <h3
+                    class="transition-all text-sm text-accent-foreground"
+                    :class="{ 'text-lg! font-semibold': isTriggerVisible }"
+                  >
+                    Your data stays private
+                  </h3>
                   <ChevronRight
                     v-show="!isTriggerVisible"
                     class="h-4 w-4 text-muted-foreground shrink-0 transition-opacity duration-300"
@@ -248,14 +253,15 @@
                     It cannot be seen, stored, or accessed remotely in any way.
                   </p>
                   <p class="text-sm text-muted-foreground">
-                    This tool is completely
+                    This tool is fully open source, so you can check
                     <a
                       href="https://github.com/mismith/scotdance-splits"
                       target="_blank"
                       rel="noopener noreferrer"
                       class="text-accent underline hover:no-underline font-medium"
-                      >open source</a
-                    >, so you can check the code yourself to verify how it works.
+                      >the code</a
+                    >
+                    yourself to verify how it works.
                   </p>
                 </div>
               </div>
@@ -267,26 +273,37 @@
         <div class="sticky bottom-0 md:bottom-8 z-40 mt-12">
         <div
           v-view-transition-name="'FloatingFooter'"
-            class="bg-card/50 flex flex-col gap-3 text-center items-center backdrop-blur-lg border border-border/50 shadow-2xl rounded-t-2xl md:rounded-2xl p-8 max-w-lg mx-auto"
+            class="bg-background/70 backdrop-blur-md border-t md:border border-border md:rounded-2xl px-6 py-5 md:p-6 md:max-w-lg md:mx-auto md:shadow-sm"
           >
-            <p class="hidden md:block">To get started, drag your registration data anywhere</p>
-            <p class="md:hidden">To get started, export your registration data, then</p>
-            <div class="text-muted-foreground text-xs hidden md:block">OR</div>
+            <div class="flex flex-col gap-3 text-center">
+              <!-- Instructions -->
+              <div>
+                <p class="hidden md:block text-sm text-muted-foreground">
+                  To get started, drag your registration data anywhere, or:
+                </p>
+                <p class="md:hidden text-sm text-muted-foreground">
+                  To get started, export your registration data, then
+                </p>
+              </div>
+
+              <!-- Buttons -->
+              <div class="flex gap-3">
             <Button
               size="lg"
               :disabled="store.isLoadingInputFile"
+                  :loading="store.isLoadingInputFile"
               @click="chooseFile"
-              class="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-shadow"
+                  class="flex-1"
             >
-              <span v-if="store.isLoadingInputFile" class="flex items-center gap-2">
-                <div
-                  class="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"
-                ></div>
-                Processing...
-              </span>
-              <span v-else>Choose CSV file</span>
+                  Choose CSV file
+                </Button>
+
+                <Button size="lg" variant="outline" @click="router.push('/demo')" class="flex-1">
+                  Try demo
             </Button>
           </div>
+        </div>
+      </div>
         </div>
       </div>
     </template>

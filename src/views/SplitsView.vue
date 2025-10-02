@@ -13,7 +13,7 @@
       <!-- Center - Logo -->
       <div class="justify-self-center">
         <button
-          class="will-change-transform flex items-center gap-2 text-sm font-semibold text-primary hover:tracking-widest transition-all"
+          class="will-change-transform flex items-center gap-2 text-sm font-semibold text-primary hover:tracking-widest duration-500 transition-all"
           @click="goToHome"
         >
           <img
@@ -117,7 +117,7 @@
       <div
         v-if="dataStatus.status === 'success' || validationDismissed"
         v-view-transition-name="'FloatingFooter'"
-        class="pointer-events-auto bg-card/50 backdrop-blur-lg border border-border shadow-lg rounded-t-xl md:rounded-xl p-6 max-w-lg mx-auto"
+        class="pointer-events-auto bg-background/70 backdrop-blur-md border-t md:border border-border shadow-sm rounded-t-2xl md:rounded-2xl px-6 py-5 md:p-6 max-w-lg mx-auto"
       >
         <div
           v-if="dataStatus.status === 'success'"
