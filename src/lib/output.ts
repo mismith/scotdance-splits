@@ -97,3 +97,14 @@ export function calculateDefaultMaxBib(
   const validRowCount = inputData.filter((row) => row[colIndexes.firstName || 0]).length
   return Math.round((validRowCount + 50) / 100) * 100 + 100
 }
+
+// Download CSV data as a file
+export function downloadCSV(data: string, filename: string = 'output') {
+  const a = document.createElement('a')
+  const blob = new Blob([data], { type: 'text/csv' })
+  const url = window.URL.createObjectURL(blob)
+  a.href = url
+  a.download = `${filename}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}

@@ -271,8 +271,8 @@
 
         <!-- Sticky floating CTA -->
         <div class="sticky bottom-0 md:bottom-8 z-40 mt-12">
-        <div
-          v-view-transition-name="'FloatingFooter'"
+          <div
+            v-view-transition-name="'FloatingFooter'"
             class="bg-background/70 backdrop-blur-md border-t md:border border-border md:rounded-2xl px-6 py-5 md:p-6 md:max-w-lg md:mx-auto md:shadow-sm"
           >
             <div class="flex flex-col gap-3 text-center">
@@ -288,22 +288,22 @@
 
               <!-- Buttons -->
               <div class="flex gap-3">
-            <Button
-              size="lg"
-              :disabled="store.isLoadingInputFile"
+                <Button
+                  size="lg"
+                  :disabled="store.isLoadingInputFile"
                   :loading="store.isLoadingInputFile"
-              @click="chooseFile"
+                  @click="chooseFile"
                   class="flex-1"
-            >
+                >
                   Choose CSV file
                 </Button>
 
-                <Button size="lg" variant="outline" @click="router.push('/demo')" class="flex-1">
-                  Try demo
-            </Button>
+                <Button size="lg" variant="outline" as-child class="flex-1">
+                  <router-link to="/demo">Try demo</router-link>
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
         </div>
       </div>
     </template>
@@ -315,19 +315,14 @@ import { Check, ChevronRight, Shield, TextCursorInput, X } from 'lucide-vue-next
 import { parse } from 'papaparse'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useElementVisibility } from '@vueuse/core'
+import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
+import { fetchDemoCSV } from '@/lib/input'
 import FileUpload from '@/components/FileUpload.vue'
 import InputDataTable from '@/components/InputDataTable.vue'
 import OutputDataTable from '@/components/OutputDataTable.vue'
 import { Button } from '@/components/ui/button'
-import {
-  INPUT_COLUMNS,
-  autoPartitionCategories,
-  categorizeData,
-  createPartitions,
-  detectColumnMapping,
-  processCSVData,
-} from '@/lib/input'
+import { createPartitions, processCSVData } from '@/lib/input'
 import { type ExportSettings, calculateDefaultMaxBib, generateExportData } from '@/lib/output'
 
 // Dynamic mock data loaded from CSV
@@ -335,11 +330,10 @@ const mockInputData = ref<string[][]>([])
 const mockInputHeaders = ref<string[]>([])
 const isLoadingMockData = ref(true)
 
-// Load mock data from CSV file
+// Load mock data for preview tables (simpler version)
 async function loadMockData() {
   try {
-    const response = await fetch('/mock-data.csv')
-    const csvText = await response.text()
+    const csvText = await fetchDemoCSV()
 
     const results = await new Promise<{ data: string[][] }>((resolve, reject) => {
       parse(csvText, {
@@ -431,6 +425,7 @@ const realOutputData = computed(() => {
 })
 
 const store = useAppStore()
+const router = useRouter()
 
 // Refs for dynamic curvy lines
 const containerRef = ref<HTMLElement>()
@@ -642,60 +637,9 @@ onUnmounted(() => {
 })
 
 async function handleFileSelected(file: File) {
-  store.clearError()
-  store.setLoading(true)
-
-  try {
-    const results = await new Promise<{ data: string[][] }>((resolve, reject) => {
-      parse(file, {
-        worker: true,
-        complete: resolve,
-        error: reject,
-      })
-    })
-
-    const csvData = results.data as string[][]
-    if (!csvData || csvData.length === 0) {
-      throw new Error('CSV file is empty')
-    }
-
-    // Set basic input data
-    store.setInputData([file], csvData)
-
-    // Detect if first row is headers
-    const potentialHeaders = csvData[0]
-    const hasHeaders = potentialHeaders.some((header) =>
-      INPUT_COLUMNS.some((col) => col.regex.test(header)),
-    )
-    store.hasHeaderRow = hasHeaders
-
-    // Auto-detect column mappings
-    const headers = hasHeaders ? potentialHeaders : []
-    const colIndexes = detectColumnMapping(headers)
-    store.updateColIndexes(colIndexes)
-
-    // Extract data rows (skip headers if present)
-    const dataRows = hasHeaders ? csvData.slice(1) : csvData
-
-    // Process data into categories
-    const categories = categorizeData(dataRows, colIndexes)
-
-    // Auto-partition categories into age groups
-    const partitionedCategories = autoPartitionCategories(categories)
-
-    // Update store with processed data
-    store.setProcessedData(categories, partitionedCategories)
-
-    // Calculate default max bib number using shared logic
-    const defaultMaxBib = calculateDefaultMaxBib(csvData, colIndexes, hasHeaders)
-    store.updateExportSettings({ maxBibNumber: defaultMaxBib })
-
-    // Data is now processed and hasData will be true, causing SplitsView to show
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to parse CSV file'
-    store.setError(errorMessage)
-  } finally {
-    store.setLoading(false)
+  const success = await store.loadFile(file)
+  if (success) {
+    router.push('/splits')
   }
 }
 

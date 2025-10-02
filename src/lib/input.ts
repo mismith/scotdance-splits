@@ -95,7 +95,10 @@ export function detectColumnMapping(headers: string[]): Record<string, number> {
 }
 
 // Age categorization from CSV data
-export function categorizeData(data: string[][], colIndexes: Record<string, number>): Record<string, Record<string, number>> {
+export function categorizeData(
+  data: string[][],
+  colIndexes: Record<string, number>,
+): Record<string, Record<string, number>> {
   return data.reduce(
     (acc, row) => {
       // Use Highland Scrutineer code format (e.g., P08, B12)
@@ -113,7 +116,10 @@ export function categorizeData(data: string[][], colIndexes: Record<string, numb
 }
 
 // Get partitioned age counts using linear partitioning algorithm
-export function getPartitionedAgeCounts(ageCounts: [number, number][], numPartitions: number): [number[], number][] {
+export function getPartitionedAgeCounts(
+  ageCounts: [number, number][],
+  numPartitions: number,
+): [number[], number][] {
   const counts = ageCounts.map(([, count]) => count)
   const partitionedCounts: number[][] = partition(
     counts,
@@ -149,20 +155,18 @@ export function getPartitionedAgeCounts(ageCounts: [number, number][], numPartit
 // Calculate optimal number of age groups for a category
 export function getDefaultNumAgeGroups(ageCountsArray: [number, number][]): number {
   const totalDancers = ageCountsArray.reduce((sum, [, count]) => sum + count, 0)
-  const averageDancersPerAge = ageCountsArray.length 
+  const averageDancersPerAge = ageCountsArray.length
     ? Math.ceil(totalDancers / ageCountsArray.length)
     : 0
   const maxDancersPerAge = ageCountsArray.reduce((max, [, count]) => Math.max(max, count), 0)
-  
-  const targetDancersPerGroup = Math.max(
-    totalDancers / averageDancersPerAge,
-    maxDancersPerAge,
-  )
-  
+
+  const targetDancersPerGroup = Math.max(totalDancers / averageDancersPerAge, maxDancersPerAge)
+
   const min = { diff: Infinity, numPartitions: 1 }
   for (let i = 1; i < ageCountsArray.length; i++) {
     const partitionedAgeCounts = getPartitionedAgeCounts(ageCountsArray, i)
-    const avg = partitionedAgeCounts.reduce((sum, [, count]) => sum + count, 0) / partitionedAgeCounts.length
+    const avg =
+      partitionedAgeCounts.reduce((sum, [, count]) => sum + count, 0) / partitionedAgeCounts.length
     const diff = Math.abs(avg - targetDancersPerGroup)
     if (diff < min.diff) {
       min.diff = diff
@@ -173,20 +177,24 @@ export function getDefaultNumAgeGroups(ageCountsArray: [number, number][]): numb
 }
 
 // Automatically partition all categories
-export function autoPartitionCategories(categories: Record<string, Record<string, number>>): Record<string, [number, number][]> {
+export function autoPartitionCategories(
+  categories: Record<string, Record<string, number>>,
+): Record<string, [number, number][]> {
   const partitionedCategories: Record<string, [number, number][]> = {}
-  
-  Object.keys(categories).forEach(categoryCode => {
+
+  Object.keys(categories).forEach((categoryCode) => {
     const ageCountsArray = Object.entries(categories[categoryCode])
       .map(([age, count]) => [Number(age), count] as [number, number])
       .sort(([ageA], [ageB]) => ageA - ageB)
-    
+
     const optimalGroups = getDefaultNumAgeGroups(ageCountsArray)
     const partitionedAgeCounts = getPartitionedAgeCounts(ageCountsArray, optimalGroups)
-    
-    partitionedCategories[categoryCode] = partitionedAgeCounts.map(([ageRange]) => [ageRange[0], ageRange[1]] as [number, number])
+
+    partitionedCategories[categoryCode] = partitionedAgeCounts.map(
+      ([ageRange]) => [ageRange[0], ageRange[1]] as [number, number],
+    )
   })
-  
+
   return partitionedCategories
 }
 
@@ -267,4 +275,18 @@ export function processCSVData(csvData: string[][]): ProcessedData {
     colIndexes,
     hasHeaderRow,
   }
+}
+
+// Fetch file text from a path
+export async function fetchFile(path: string): Promise<string> {
+  const response = await fetch(path)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch file from ${path}`)
+  }
+  return response.text()
+}
+
+// Fetch demo CSV text
+export async function fetchDemoCSV(): Promise<string> {
+  return fetchFile('/mock-data.csv')
 }

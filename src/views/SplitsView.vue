@@ -11,10 +11,10 @@
       </div>
 
       <!-- Center - Logo -->
-      <div class="justify-self-center">
-        <button
+      <div class="justify-self-center flex items-center gap-3">
+        <router-link
+          to="/"
           class="will-change-transform flex items-center gap-2 text-sm font-semibold text-primary hover:tracking-widest duration-500 transition-all"
-          @click="goToHome"
         >
           <img
             src="/touchicon.png"
@@ -23,7 +23,8 @@
             v-view-transition-name="'splits-logo'"
           />
           <span v-view-transition-name="'splits-name'">Splits</span>
-        </button>
+        </router-link>
+        <Badge v-if="isDemoMode" variant="accent"> Demo </Badge>
       </div>
 
       <!-- Right side -->
@@ -340,12 +341,14 @@
 
 <script setup lang="ts">
 import { AlertTriangle, Settings, Share, Table, X } from 'lucide-vue-next'
-import { computed, provide, ref } from 'vue'
+import { computed, onMounted, provide, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import CategoryCard from '@/components/CategoryCard.vue'
 import InputDataTable from '@/components/InputDataTable.vue'
 import OutputDataTable from '@/components/OutputDataTable.vue'
 import SettingsSheet from '@/components/SettingsSheet.vue'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -358,18 +361,21 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { downloadCSV } from '@/lib/helpers'
+import { fetchDemoCSV } from '@/lib/input'
 import { CATEGORY_CODE_NAMES, INPUT_COLUMNS, type Partition, createPartitions } from '@/lib/input'
-import { type ExportSettings, convertToCSV, generateExportData } from '@/lib/output'
+import { type ExportSettings, convertToCSV, generateExportData, downloadCSV } from '@/lib/output'
 
 const store = useAppStore()
+const route = useRoute()
 
 const categoryCardRef = ref<(typeof CategoryCard)[]>()
 const showColumnMappingSheet = ref(false)
 const showExportSettingsSheet = ref(false)
 const validationDismissed = ref(false)
 const showDancers = ref(false)
+
+// Demo mode detection
+const isDemoMode = computed(() => route.name === 'demo')
 
 // Data quality status
 const dataStatus = computed(() => {
@@ -421,10 +427,19 @@ provide(
 provide('showDancers', showDancers)
 
 // Navigation functions
-function goToHome() {
-  // Clear data to return to home view
-  store.clearAllData()
-}
+// Auto-load demo data if in demo mode and no data exists
+onMounted(async () => {
+  if (isDemoMode.value && !store.hasData) {
+    try {
+      const csvText = await fetchDemoCSV()
+      const demoFile = new File([csvText], 'demo.csv', { type: 'text/csv' })
+      await store.loadFile(demoFile)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load demo data'
+      store.setError(errorMessage)
+    }
+  }
+})
 
 function handleDataStatusAction() {
   showColumnMappingSheet.value = true

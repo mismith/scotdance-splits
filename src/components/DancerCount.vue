@@ -38,8 +38,7 @@
 
 <script setup lang="ts">
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { pluralize } from '@/lib/helpers'
-import { cn } from '@/lib/utils'
+import { cn, pluralize } from '@/lib/utils'
 
 interface Props {
   count: number

@@ -25,7 +25,7 @@
                   <Delete class="w-3 h-3 text-accent ml-1" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Reset partition boundaries</p>
+                  <p>Reset to recommended splits</p>
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -95,7 +95,7 @@
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Reset to default group count</p>
+                  <p>Reset to recommended number of groups</p>
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -228,7 +228,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardTitle } from '@/components/ui/card'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { pluralize } from '@/lib/helpers'
+import { pluralize } from '@/lib/utils'
 import { CATEGORY_CODE_NAMES, getAgeGroupName } from '@/lib/input'
 
 const props = defineProps({

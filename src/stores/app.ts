@@ -1,5 +1,13 @@
+import { parse } from 'papaparse'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import {
+  INPUT_COLUMNS,
+  autoPartitionCategories,
+  categorizeData,
+  detectColumnMapping,
+} from '@/lib/input'
+import { calculateDefaultMaxBib } from '@/lib/output'
 
 export interface FilterConfig {
   id: string
@@ -45,7 +53,7 @@ export const useAppStore = defineStore('app', () => {
   }>({
     enabled: false,
     showDimmed: true,
-    filters: []
+    filters: [],
   })
 
   // Export configuration
@@ -68,7 +76,7 @@ export const useAppStore = defineStore('app', () => {
     inputFiles.value = files
     inputCSV.value = csvData
     inputError.value = undefined
-    
+
     // Auto-detect headers
     if (csvData.length > 0) {
       inputHeaders.value = csvData[0]
@@ -90,7 +98,7 @@ export const useAppStore = defineStore('app', () => {
   function setProcessedData(
     cats: Record<string, Record<string, number>>,
     partitions: Record<string, [number, number][]>,
-    dancers?: DancerData[]
+    dancers?: DancerData[],
   ) {
     categories.value = cats
     partitionedCategories.value = partitions
@@ -109,7 +117,7 @@ export const useAppStore = defineStore('app', () => {
     rowFilteringConfig.value = {
       enabled: false,
       showDimmed: true,
-      filters: []
+      filters: [],
     }
     manualPartitions.value = {}
   }
@@ -159,6 +167,65 @@ export const useAppStore = defineStore('app', () => {
     delete manualPartitions.value[categoryCode]
   }
 
+  async function loadFile(file: File) {
+    clearError()
+    setLoading(true)
+
+    try {
+      const results = await new Promise<{ data: string[][] }>((resolve, reject) => {
+        parse(file, {
+          worker: true,
+          complete: resolve,
+          error: reject,
+        })
+      })
+
+      const csvData = results.data as string[][]
+      if (!csvData || csvData.length === 0) {
+        throw new Error('CSV file is empty')
+      }
+
+      // Set basic input data
+      setInputData([file], csvData)
+
+      // Detect if first row is headers
+      const potentialHeaders = csvData[0]
+      const hasHeaders = potentialHeaders.some((header) =>
+        INPUT_COLUMNS.some((col) => col.regex.test(header)),
+      )
+      hasHeaderRow.value = hasHeaders
+
+      // Auto-detect column mappings
+      const headers = hasHeaders ? potentialHeaders : []
+      const colIndexes = detectColumnMapping(headers)
+      updateColIndexes(colIndexes)
+
+      // Extract data rows (skip headers if present)
+      const dataRows = hasHeaders ? csvData.slice(1) : csvData
+
+      // Process data into categories
+      const cats = categorizeData(dataRows, colIndexes)
+
+      // Auto-partition categories into age groups
+      const partitionedCats = autoPartitionCategories(cats)
+
+      // Update store with processed data
+      setProcessedData(cats, partitionedCats)
+
+      // Calculate default max bib number using shared logic
+      const defaultMaxBib = calculateDefaultMaxBib(csvData, colIndexes, hasHeaders)
+      updateExportSettings({ maxBibNumber: defaultMaxBib })
+
+      return true
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to parse CSV file'
+      setError(errorMessage)
+      return false
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return {
     // State
     inputFiles,
@@ -195,5 +262,6 @@ export const useAppStore = defineStore('app', () => {
     hasManualAdjustments,
     setManualPartitions,
     clearManualPartitions,
+    loadFile,
   }
 })
