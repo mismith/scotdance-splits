@@ -167,22 +167,19 @@
 
         <!-- Drag handle with transition -->
         <Transition
-          enter-active-class="transition-opacity duration-200 ease-out"
-          leave-active-class="transition-opacity duration-150 ease-in"
-          enter-from-class="opacity-0"
-          enter-to-class="opacity-100"
-          leave-from-class="opacity-100"
-          leave-to-class="opacity-0"
+          enter-active-class="transition-transform duration-200 ease-out"
+          leave-active-class="transition-transform duration-150 ease-in"
+          enter-from-class="scale-y-0"
+          leave-to-class="scale-y-0"
         >
           <div
             v-show="showDragHandle"
             ref="dragHandleRef"
-            :class="`absolute z-20 rounded-md cursor-ns-resize h-3 flex items-center justify-center shadow-lg ${lastKnownBoundaryIndex !== -1 && isBoundaryManual(lastKnownBoundaryIndex) ? 'bg-accent' : 'bg-primary'}`"
+            :class="`absolute z-20 rounded-md cursor-ns-resize h-3 flex items-center -mt-1.5 justify-center shadow-lg ${lastKnownBoundaryIndex !== -1 && isBoundaryManual(lastKnownBoundaryIndex) ? 'bg-accent' : 'bg-primary'} ${lastKnownBoundaryIndex !== -1 && isBoundaryManual(lastKnownBoundaryIndex) ? 'text-accent-foreground' : 'text-primary-foreground'}`"
             :style="{
               left: dragHandleLeft + 'px',
               top: dragHandleY + 'px',
               width: dragHandleWidth + 'px',
-              transform: 'translateY(-50%)',
             }"
             @mousedown="onDragStart"
             @mouseenter="onDragHandleHover"
@@ -190,15 +187,9 @@
           >
             <!-- Three dots using CSS -->
             <div class="flex gap-0.5">
-              <div
-                :class="`w-1 h-1 rounded-full ${lastKnownBoundaryIndex !== -1 && isBoundaryManual(lastKnownBoundaryIndex) ? 'bg-accent-foreground' : 'bg-primary-foreground'}`"
-              ></div>
-              <div
-                :class="`w-1 h-1 rounded-full ${lastKnownBoundaryIndex !== -1 && isBoundaryManual(lastKnownBoundaryIndex) ? 'bg-accent-foreground' : 'bg-primary-foreground'}`"
-              ></div>
-              <div
-                :class="`w-1 h-1 rounded-full ${lastKnownBoundaryIndex !== -1 && isBoundaryManual(lastKnownBoundaryIndex) ? 'bg-accent-foreground' : 'bg-primary-foreground'}`"
-              ></div>
+              <div class="w-1 h-1 rounded-full bg-current"></div>
+              <div class="w-1 h-1 rounded-full bg-current"></div>
+              <div class="w-1 h-1 rounded-full bg-current"></div>
             </div>
           </div>
         </Transition>
