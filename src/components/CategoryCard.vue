@@ -175,21 +175,41 @@
           <div
             v-show="showDragHandle"
             ref="dragHandleRef"
-            :class="`absolute z-20 rounded-md cursor-ns-resize h-3 flex items-center -mt-1.5 justify-center shadow-lg ${lastKnownBoundaryIndex !== -1 && isBoundaryManual(lastKnownBoundaryIndex) ? 'bg-accent' : 'bg-primary'} ${lastKnownBoundaryIndex !== -1 && isBoundaryManual(lastKnownBoundaryIndex) ? 'text-accent-foreground' : 'text-primary-foreground'}`"
+            :class="`absolute cursor-ns-resize z-20 h-3 flex items-center -mt-1.5 justify-center shadow-lg ${lastKnownBoundaryIndex !== -1 && isBoundaryManual(lastKnownBoundaryIndex) ? 'bg-accent text-accent-foreground [&_path]:fill-accent' : 'bg-primary text-primary-foreground [&_path]:fill-primary'}`"
             :style="{
-              left: dragHandleLeft + 'px',
+              left: dragHandleLeft + 12 + 'px',
               top: dragHandleY + 'px',
-              width: dragHandleWidth + 'px',
+              width: dragHandleWidth - 24 + 'px',
             }"
             @mousedown="onDragStart"
             @mouseenter="onDragHandleHover"
             @mouseleave="onDragHandleLeave"
           >
-            <!-- Three dots using CSS -->
-            <div class="flex gap-0.5">
-              <div class="w-1 h-1 rounded-full bg-current"></div>
-              <div class="w-1 h-1 rounded-full bg-current"></div>
-              <div class="w-1 h-1 rounded-full bg-current"></div>
+            <div class="w-full h-full relative">
+              <!-- Left horizontal bulge -->
+              <svg
+                class="absolute right-full top-0 w-6 h-full"
+                viewBox="0 0 12 12"
+                preserveAspectRatio="none"
+              >
+                <path d="M12,0 C3,0 9,6 0,6 M0,6 C9,6 3,12 12,12 L12,0Z" />
+              </svg>
+
+              <!-- Right horizontal bulge -->
+              <svg
+                class="absolute left-full top-0 w-6 h-full"
+                viewBox="0 0 12 12"
+                preserveAspectRatio="none"
+              >
+                <path d="M0,0 C9,0 3,6 12,6 M12,6 C3,6 9,12 0,12 L0,0Z" />
+              </svg>
+
+              <!-- Three dots centered -->
+              <div class="flex gap-0.5 items-center justify-center h-full">
+                <div class="w-1 h-1 rounded-full bg-current"></div>
+                <div class="w-1 h-1 rounded-full bg-current"></div>
+                <div class="w-1 h-1 rounded-full bg-current"></div>
+              </div>
             </div>
           </div>
         </Transition>
