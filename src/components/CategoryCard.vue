@@ -176,12 +176,12 @@
             v-for="(pos, index) in dragHandlePositions"
             :key="index"
             v-show="showDragHandle && hoveredBoundaryIndex === index"
-            class="max-sm:flex! absolute cursor-ns-resize z-20 h-3 flex items-center -mt-1.5 justify-center shadow-lg"
-            :class="`${index !== -1 && isBoundaryManual(index) ? 'bg-accent text-accent-foreground [&_path]:fill-accent' : 'bg-primary text-primary-foreground [&_path]:fill-primary'}`"
+            class="max-sm:flex! absolute cursor-ns-resize z-20 h-3 flex items-center -mt-1.5 justify-center shadow transition-shadow"
+            :class="`${index !== -1 && isBoundaryManual(index) ? 'bg-accent text-accent-foreground [&_path]:fill-accent' : 'bg-primary text-primary-foreground [&_path]:fill-primary'} ${isDragging && draggingBoundaryIndex === index ? (index !== -1 && isBoundaryManual(index) ? 'shadow-[0_0_20px_var(--accent)]' : 'shadow-[0_0_20px_var(--primary)]') : ''}`"
             :style="{
-              left: pos.left + 12 + 'px',
+              left: pos.left + 24 + 'px',
               top: pos.top + 'px',
-              width: pos.width - 24 + 'px',
+              width: pos.width - 48 + 'px',
             }"
             @mousedown="(e) => onDragStart(e, index)"
             @touchstart="(e) => onDragStart(e, index)"
@@ -191,20 +191,20 @@
             <div class="w-full h-full relative">
               <!-- Left horizontal bulge -->
               <svg
-                class="absolute right-full top-0 w-6 h-full"
+                class="absolute right-full top-0 w-6 h-full -mr-px"
                 viewBox="0 0 12 12"
                 preserveAspectRatio="none"
               >
-                <path d="M12,0 C3,0 9,6 0,6 M0,6 C9,6 3,12 12,12 L12,0Z" />
+                <path d="M12,0 C3,0 9,5 0,5 M0,5 0,7 C9,7 3,12 12,12 L12,0Z" />
               </svg>
 
               <!-- Right horizontal bulge -->
               <svg
-                class="absolute left-full top-0 w-6 h-full"
+                class="absolute left-full top-0 w-6 h-full -ml-px"
                 viewBox="0 0 12 12"
                 preserveAspectRatio="none"
               >
-                <path d="M0,0 C9,0 3,6 12,6 M12,6 C3,6 9,12 0,12 L0,0Z" />
+                <path d="M0,0 C9,0 3,5 12,5 M12,5 12,7 C3,7 9,12 0,12 L0,0Z" />
               </svg>
 
               <!-- Three dots centered -->
