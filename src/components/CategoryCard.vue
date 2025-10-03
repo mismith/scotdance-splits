@@ -131,7 +131,7 @@
               ref="rightSideRef"
               v-view-transition-name="`CategoryCard-${id}-AgeGroup-${index}`"
               :style="{ flex: `${count} 1 0` }"
-              class="p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-all select-text cursor-pointer ring-primary"
+              class="p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-all select-text cursor-pointer"
               @click="openAgeGroupSheet(index)"
             >
               <div class="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -1049,24 +1049,26 @@ async function openAgeGroupSheet(ageGroupIndex: number) {
     await viewTransition.captured
     showDancers.value = !showDancers.value
 
+    const ageGroupElement = rightSideRef.value?.[ageGroupIndex]
+    const HIGHLIGHT_CLASS = 'shadow-[0_0_100px_color-mix(in_srgb,var(--primary),transparent_80%)]'
+    if (ageGroupElement) {
+      ageGroupElement.classList.add(HIGHLIGHT_CLASS)
+    }
+
     // Wait for transition to complete, then smooth scroll to the tapped element
     await viewTransition.finished
 
     // Find and scroll to the tapped age group element
-    const ageGroupElement = rightSideRef.value?.[ageGroupIndex]
     if (ageGroupElement) {
       ageGroupElement.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
       })
 
-      // Add highlight animation
-      ageGroupElement.classList.add('ring-2')
-
       // Remove highlight after 2 seconds
       setTimeout(() => {
-        ageGroupElement.classList.remove('ring-2')
-      }, 1250)
+        ageGroupElement.classList.remove(HIGHLIGHT_CLASS)
+      }, 1000)
     }
   } else {
     // Mobile: Open sheet
