@@ -165,23 +165,25 @@
           style="overflow: visible"
         ></svg>
 
-        <!-- Drag handle with transition -->
-        <Transition
+        <!-- Drag handles (one per boundary) -->
+        <TransitionGroup
           enter-active-class="transition-transform duration-200 ease-out"
           leave-active-class="transition-transform duration-150 ease-in"
-          enter-from-class="scale-y-0"
-          leave-to-class="scale-y-0"
+          enter-from-class="scale-y-0 scale-x-95"
+          leave-to-class="scale-y-0 scale-x-95"
         >
           <div
-            v-show="showDragHandle"
-            ref="dragHandleRef"
-            :class="`absolute cursor-ns-resize z-20 h-3 flex items-center -mt-1.5 justify-center shadow-lg ${lastKnownBoundaryIndex !== -1 && isBoundaryManual(lastKnownBoundaryIndex) ? 'bg-accent text-accent-foreground [&_path]:fill-accent' : 'bg-primary text-primary-foreground [&_path]:fill-primary'}`"
+            v-for="(pos, index) in dragHandlePositions"
+            :key="index"
+            v-show="showDragHandle && hoveredBoundaryIndex === index"
+            class="max-sm:flex! absolute cursor-ns-resize z-20 h-3 flex items-center -mt-1.5 justify-center shadow-lg"
+            :class="`${index !== -1 && isBoundaryManual(index) ? 'bg-accent text-accent-foreground [&_path]:fill-accent' : 'bg-primary text-primary-foreground [&_path]:fill-primary'}`"
             :style="{
-              left: dragHandleLeft + 12 + 'px',
-              top: dragHandleY + 'px',
-              width: dragHandleWidth - 24 + 'px',
+              left: pos.left + 12 + 'px',
+              top: pos.top + 'px',
+              width: pos.width - 24 + 'px',
             }"
-            @mousedown="onDragStart"
+            @mousedown="(e) => onDragStart(e, index)"
             @mouseenter="onDragHandleHover"
             @mouseleave="onDragHandleLeave"
           >
@@ -212,7 +214,7 @@
               </div>
             </div>
           </div>
-        </Transition>
+        </TransitionGroup>
       </div>
     </CardContent>
   </Card>
@@ -516,7 +518,6 @@ const leftSideRef = ref<HTMLElement[]>([])
 const rightSideRef = ref<HTMLElement[]>([])
 const svgRef = ref<SVGElement>()
 const groupsInputRef = ref<HTMLInputElement>()
-const dragHandleRef = ref<HTMLElement>()
 
 // Drag state
 const isDragging = ref(false)
@@ -527,11 +528,8 @@ const showDancerSheet = ref(false)
 const selectedAgeGroupIndex = ref<number | null>(null)
 const dragPreviewY = ref<number | null>(null)
 const showDragHandle = ref(false)
-const dragHandleLeft = ref(0)
-const dragHandleY = ref(0)
-const dragHandleWidth = ref(0)
+const dragHandlePositions = ref<Array<{ left: number; top: number; width: number }>>([])
 const hoveredBoundaryIndex = ref(-1)
-const lastKnownBoundaryIndex = ref(-1) // Track last boundary for color persistence
 const isScrolling = ref(false)
 let hideHandleTimeout: ReturnType<typeof setTimeout> | null = null
 let scrollTimeout: ReturnType<typeof setTimeout> | null = null
@@ -617,7 +615,6 @@ function onBoundaryHover(boundaryIndex: number) {
   }
 
   hoveredBoundaryIndex.value = boundaryIndex
-  lastKnownBoundaryIndex.value = boundaryIndex // Update last known boundary
   showDragHandle.value = true
 }
 
@@ -660,33 +657,45 @@ function onDragHandleLeave() {
   }, 150)
 }
 
-function updateDragHandlePosition(boundaryIndex: number) {
+function updateAllDragHandlePositions() {
   if (!colsRef.value || !leftSideRef.value || !rightSideRef.value) return
 
-  const rightSide = rightSideRef.value[boundaryIndex]
-  const maxAge = partitionedAgeCountsArray.value[boundaryIndex]?.[0]?.[1]
-  const leftSideIndex = ageCountsArray.value.findIndex(([age]) => age === maxAge)
-  const leftSide =
-    leftSideRef.value[leftSideIndex === -1 ? leftSideRef.value.length - 1 : leftSideIndex]
-  const nextLeftSide = leftSideRef.value[leftSideIndex + 1]
-
-  if (!leftSide || !rightSide) return
-
+  const positions: Array<{ left: number; top: number; width: number }> = []
   const root = colsRef.value.getBoundingClientRect()
-  const left = leftSide.getBoundingClientRect()
 
-  // Calculate Y position - in the gap between left cards
-  const leftY = nextLeftSide
-    ? left.top -
-      root.top +
-      left.height +
-      (nextLeftSide.getBoundingClientRect().top - left.top - left.height) / 2
-    : left.top - root.top + left.height
+  // Calculate position for each boundary
+  for (
+    let boundaryIndex = 0;
+    boundaryIndex < partitionedAgeCountsArray.value.length - 1;
+    boundaryIndex++
+  ) {
+    const rightSide = rightSideRef.value[boundaryIndex]
+    const maxAge = partitionedAgeCountsArray.value[boundaryIndex]?.[0]?.[1]
+    const leftSideIndex = ageCountsArray.value.findIndex(([age]) => age === maxAge)
+    const leftSide =
+      leftSideRef.value[leftSideIndex === -1 ? leftSideRef.value.length - 1 : leftSideIndex]
+    const nextLeftSide = leftSideRef.value[leftSideIndex + 1]
 
-  // Position handle to match the width and position of the age cards
-  dragHandleLeft.value = left.left - root.left
-  dragHandleWidth.value = left.width
-  dragHandleY.value = leftY
+    if (!leftSide || !rightSide) continue
+
+    const left = leftSide.getBoundingClientRect()
+
+    // Calculate Y position - in the gap between left cards
+    const leftY = nextLeftSide
+      ? left.top -
+        root.top +
+        left.height +
+        (nextLeftSide.getBoundingClientRect().top - left.top - left.height) / 2
+      : left.top - root.top + left.height
+
+    positions.push({
+      left: left.left - root.left,
+      top: leftY,
+      width: left.width,
+    })
+  }
+
+  dragHandlePositions.value = positions
 }
 
 // Scroll detection
@@ -719,29 +728,22 @@ function updateDragHandlePositionContinuously() {
     return
   }
 
-  // Update position if handle is visible and not dragging (during drag, onMouseMove handles position)
-  if (
-    showDragHandle.value &&
-    hoveredBoundaryIndex.value !== -1 &&
-    !isDragging.value &&
-    !isScrolling.value
-  ) {
-    updateDragHandlePosition(hoveredBoundaryIndex.value)
+  // Always update all positions (unless dragging or scrolling)
+  if (!isDragging.value && !isScrolling.value) {
+    updateAllDragHandlePositions()
   }
 
   dragHandleRafId = requestAnimationFrame(updateDragHandlePositionContinuously)
 }
 
-function onDragStart(event: MouseEvent) {
-  if (hoveredBoundaryIndex.value === -1) return
-
+function onDragStart(event: MouseEvent, boundaryIndex: number) {
   event.preventDefault()
   isDragging.value = true
-  draggingBoundaryIndex.value = hoveredBoundaryIndex.value
+  draggingBoundaryIndex.value = boundaryIndex
   showDragHandle.value = true
 
   const startY = event.clientY
-  const initialY = dragHandleY.value
+  const initialY = dragHandlePositions.value[boundaryIndex]?.top || 0
 
   // Track the last valid position
   let lastValidY = initialY
@@ -764,12 +766,17 @@ function onDragStart(event: MouseEvent) {
         lastValidAge = snappedAge
 
         dragPreviewY.value = snappedY
-        dragHandleY.value = snappedY
+        // Update the specific handle position in the array
+        if (dragHandlePositions.value[boundaryIndex]) {
+          dragHandlePositions.value[boundaryIndex].top = snappedY
+        }
       }
     } else {
       // Stay at last valid position instead of following mouse
       dragPreviewY.value = lastValidY
-      dragHandleY.value = lastValidY
+      if (dragHandlePositions.value[boundaryIndex]) {
+        dragHandlePositions.value[boundaryIndex].top = lastValidY
+      }
     }
   }
 
