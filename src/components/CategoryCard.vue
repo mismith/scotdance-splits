@@ -184,6 +184,7 @@
               width: pos.width - 24 + 'px',
             }"
             @mousedown="(e) => onDragStart(e, index)"
+            @touchstart="(e) => onDragStart(e, index)"
             @mouseenter="onDragHandleHover"
             @mouseleave="onDragHandleLeave"
           >
@@ -736,23 +737,26 @@ function updateDragHandlePositionContinuously() {
   dragHandleRafId = requestAnimationFrame(updateDragHandlePositionContinuously)
 }
 
-function onDragStart(event: MouseEvent, boundaryIndex: number) {
+function onDragStart(event: MouseEvent | TouchEvent, boundaryIndex: number) {
   event.preventDefault()
   isDragging.value = true
   draggingBoundaryIndex.value = boundaryIndex
   showDragHandle.value = true
 
-  const startY = event.clientY
+  // Detect if it's a touch or mouse event
+  const isTouch = 'touches' in event
+  const startY = isTouch ? event.touches[0].clientY : event.clientY
   const initialY = dragHandlePositions.value[boundaryIndex]?.top || 0
 
   // Track the last valid position
   let lastValidY = initialY
   let lastValidAge: number | null = null
 
-  function onMouseMove(moveEvent: MouseEvent) {
+  function onMove(moveEvent: MouseEvent | TouchEvent) {
     if (!isDragging.value) return
 
-    const deltaY = moveEvent.clientY - startY
+    const currentY = 'touches' in moveEvent ? moveEvent.touches[0].clientY : moveEvent.clientY
+    const deltaY = currentY - startY
     const newY = initialY + deltaY
 
     // Find the closest valid age boundary to snap to
@@ -780,7 +784,7 @@ function onDragStart(event: MouseEvent, boundaryIndex: number) {
     }
   }
 
-  async function onMouseUp() {
+  async function onEnd() {
     if (!isDragging.value) return
 
     // Use the last valid age that was tracked during drag
@@ -801,12 +805,18 @@ function onDragStart(event: MouseEvent, boundaryIndex: number) {
     showDragHandle.value = false
     hoveredBoundaryIndex.value = -1
 
-    document.removeEventListener('mousemove', onMouseMove)
-    document.removeEventListener('mouseup', onMouseUp)
+    // Remove both mouse and touch listeners
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onEnd)
+    document.removeEventListener('touchmove', onMove)
+    document.removeEventListener('touchend', onEnd)
   }
 
-  document.addEventListener('mousemove', onMouseMove)
-  document.addEventListener('mouseup', onMouseUp)
+  // Add both mouse and touch listeners
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onEnd)
+  document.addEventListener('touchmove', onMove, { passive: false })
+  document.addEventListener('touchend', onEnd)
 }
 
 // Helper functions for partition calculations
