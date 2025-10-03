@@ -42,7 +42,7 @@
 
           <!-- Input sources -->
           <section class="mb-20">
-            <div class="flex justify-center items-center gap-12">
+            <div class="flex justify-center items-center gap-6 md:gap-12">
               <div
                 :ref="(el) => setInputSourceRef(el as HTMLElement, 0)"
                 class="flex flex-col items-center gap-2"
@@ -155,7 +155,7 @@
 
           <!-- Output sources -->
           <section class="mb-20">
-            <div class="flex justify-center items-center gap-12">
+            <div class="flex justify-center items-center gap-6 md:gap-12">
               <div
                 :ref="(el) => setOutputSourceRef(el as HTMLElement, 0)"
                 class="flex flex-col items-center gap-2"
