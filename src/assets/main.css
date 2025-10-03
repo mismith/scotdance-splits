@@ -150,3 +150,52 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 }
+
+/* Handsontable z-index overrides - bring into Tailwind's 0-50 range */
+@layer utilities {
+  /* Highest priority elements: menus, dropdowns, autocomplete (9999, 1070, 1060, 1059 → 40-45) */
+  .htAutocompleteArrow,
+  .htAutocomplete,
+  .htDropdownMenu,
+  .htContextMenu,
+  .htCommentsContainer .htComments {
+    z-index: 45 !important;
+  }
+
+  /* High priority overlays and clones (200-210 → 20-25) */
+  .ht_clone_top,
+  .ht_clone_bottom,
+  .ht_clone_left,
+  .ht_clone_inline_start,
+  .ht_clone_top_inline_start_corner,
+  .ht_clone_bottom_inline_start_corner,
+  .handsontableInputHolder,
+  .htBorders .wtBorder {
+    z-index: 25 !important;
+  }
+
+  /* Medium priority elements: resize handles, borders (150-180 → 15-20) */
+  .manualColumnResizer,
+  .manualRowResizer,
+  .handsontable .htBorders,
+  .handsontable .htFiltersConditionsMenu,
+  .handsontable .htFiltersMenuValue,
+  .handsontable .htFiltersMenuLabel {
+    z-index: 20 !important;
+  }
+
+  /* Lower priority overlays (100-130 → 10-15) */
+  .ht_master .wtHolder,
+  .handsontable .htDimmed,
+  .handsontable .htInvalid {
+    z-index: 15 !important;
+  }
+
+  /* Catch-all for any other Handsontable elements with high z-index */
+  .handsontable [style*="z-index: 9999"],
+  .handsontable [style*="z-index: 1060"],
+  .handsontable [style*="z-index: 1059"],
+  .handsontable [style*="z-index: 1070"] {
+    z-index: 45 !important;
+  }
+}
