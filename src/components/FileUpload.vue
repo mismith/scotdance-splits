@@ -7,7 +7,7 @@
     <!-- Drop zone overlay -->
     <div
       v-show="isOverDropZone"
-      class="absolute inset-4 border-2 border-dashed border-primary bg-background/50 backdrop-blur-md rounded-2xl pointer-events-none z-10"
+      class="fixed inset-4 border-2 border-dashed border-primary bg-background/50 backdrop-blur-md rounded-2xl pointer-events-none z-50"
     >
       <div class="w-full h-full flex items-center justify-center">
         <div class="text-2xl font-semibold text-primary animate-pulse">Drop your CSV file here</div>

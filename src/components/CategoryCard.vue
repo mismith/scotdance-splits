@@ -1058,11 +1058,6 @@ async function openAgeGroupSheet(ageGroupIndex: number) {
   }
 }
 
-function closeDancerSheet() {
-  showDancerSheet.value = false
-  selectedAgeGroupIndex.value = null
-}
-
 const emit = defineEmits(['partition'])
 watch(
   partitionedAgeCountsArray,
