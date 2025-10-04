@@ -2,37 +2,57 @@
   <div class="flex flex-col min-h-screen">
     <!-- Fixed Toolbar -->
     <header
-      class="fixed top-0 left-0 right-0 z-50 grid grid-cols-[1fr_auto_1fr] items-center px-3 py-1.5 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-12"
-      v-view-transition-name="'Header'"
+      class="fixed top-0 left-0 right-0 z-50 grid grid-cols-[1fr_auto_1fr] items-center px-4 h-16 bg-gradient-to-b from-background to-transparent"
     >
       <!-- Left side -->
       <div class="flex items-center gap-1 justify-self-start">
-        <!-- Status moved to footer -->
+        <Button variant="outline" size="icon" @click="showColumnMappingSheet = true">
+          <Columns class="h-4 w-4" />
+        </Button>
       </div>
 
       <!-- Center - Logo -->
-      <div class="justify-self-center flex items-center gap-3">
-        <router-link
-          to="/"
-          class="will-change-transform flex items-center gap-2 text-sm font-semibold text-primary hover:tracking-widest duration-500 transition-all"
+      <div class="flex flex-col items-center justify-self-center">
+        <Button variant="outline" as-child>
+          <router-link
+            to="/"
+            class="font-semibold text-primary hover:tracking-widest duration-500 transition-all"
+          >
+            <div class="flex items-center gap-2">
+              <img
+                src="/touchicon.png"
+                alt="Splits Logo"
+                class="size-4"
+                v-view-transition-name="'splits-logo'"
+              />
+              <span
+                class="text-sm font-semibold text-primary"
+                v-view-transition-name="'splits-name'"
+              >
+                Splits
+              </span>
+            </div>
+          </router-link>
+        </Button>
+        <Badge
+          v-if="isDemoMode"
+          variant="accent"
+          class="text-xs -mt-1 -mb-5 bg-accent/50 backdrop-blur-md"
         >
-          <img
-            src="/touchicon.png"
-            alt="Splits Logo"
-            class="size-4"
-            v-view-transition-name="'splits-logo'"
-          />
-          <span v-view-transition-name="'splits-name'">Splits</span>
-        </router-link>
-        <Badge v-if="isDemoMode" variant="accent"> Demo </Badge>
+          Demo
+        </Badge>
       </div>
 
       <!-- Right side -->
-      <div class="flex items-center gap-1 justify-self-end"></div>
+      <div class="flex items-center gap-1 justify-self-end">
+        <Button :variant="showDancers ? 'default' : 'outline'" size="icon" @click="toggleDancers">
+          <Users class="h-4 w-4" />
+        </Button>
+      </div>
     </header>
 
     <!-- Main content with top padding to account for fixed header -->
-    <main class="pt-12 flex-auto">
+    <main class="pt-16 flex-auto">
       <div
         v-if="!store.hasData"
         class="flex items-center justify-center py-20 text-muted-foreground"
@@ -63,7 +83,7 @@
       <!-- Status Problems -->
       <div
         v-if="dataStatus.status === 'error' && !validationDismissed"
-        class="pointer-events-auto bg-gradient-to-r from-red-50 to-red-100 dark:from-red-950/50 dark:to-red-900/50 border border-red-200 dark:border-red-800 shadow-xl rounded-2xl max-w-lg mx-auto mb-4 relative overflow-hidden backdrop-blur-lg"
+        class="pointer-events-auto bg-gradient-to-r from-red-50 to-red-100 dark:from-red-950/50 dark:to-red-900/50 border border-red-200 dark:border-red-800 shadow-xl rounded-4xl max-w-lg mx-auto mb-4 relative overflow-hidden backdrop-blur-lg"
       >
         <!-- Close button -->
         <Button
@@ -118,26 +138,11 @@
       <div
         v-if="dataStatus.status === 'success' || validationDismissed"
         v-view-transition-name="'FloatingFooter'"
-        class="pointer-events-auto bg-background/70 backdrop-blur-md border-t md:border border-border shadow-sm rounded-t-2xl md:rounded-2xl px-6 py-5 md:p-6 max-w-lg mx-auto"
+        class="pointer-events-auto bg-background/70 backdrop-blur-md border-t md:border border-border shadow-sm rounded-t-4xl md:rounded-4xl px-6 py-5 md:p-6 max-w-lg mx-auto flex flex-col gap-3"
       >
-        <div
-          v-if="dataStatus.status === 'success'"
-          class="flex items-center justify-center gap-2 mb-4"
-        >
-          <div class="w-5 h-5 flex items-center justify-center rounded-full bg-green-500/25">
-            <svg
-              class="w-3 h-3 text-green-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              ></path>
-            </svg>
+        <div v-if="dataStatus.status === 'success'" class="flex items-center justify-center gap-2">
+          <div class="w-5 h-5 flex items-center justify-center rounded-full bg-green-500/25 -my-2">
+            <Check class="size-4 text-green-500" />
           </div>
           <p class="text-sm font-medium text-green-500">Ready to export</p>
         </div>
@@ -166,7 +171,7 @@
         </div>
 
         <!-- Split Export Button -->
-        <div class="flex rounded-lg overflow-hidden border">
+        <div class="flex rounded-full overflow-hidden border">
           <Button size="lg" @click="handleExportDownload" class="flex-1 rounded-r-none border-r-0">
             <span class="flex items-center gap-2">
               <Share class="h-4 w-4" />
@@ -340,7 +345,7 @@
 </template>
 
 <script setup lang="ts">
-import { AlertTriangle, Settings, Share, Table, X } from 'lucide-vue-next'
+import { AlertTriangle, Check, Columns, Settings, Share, Table, Users, X } from 'lucide-vue-next'
 import { computed, onMounted, provide, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
@@ -364,6 +369,7 @@ import { Switch } from '@/components/ui/switch'
 import { fetchDemoCSV } from '@/lib/input'
 import { CATEGORY_CODE_NAMES, INPUT_COLUMNS, type Partition, createPartitions } from '@/lib/input'
 import { type ExportSettings, convertToCSV, generateExportData, downloadCSV } from '@/lib/output'
+import { startViewTransition } from 'vue-view-transitions'
 
 const store = useAppStore()
 const route = useRoute()
@@ -440,6 +446,12 @@ onMounted(async () => {
     }
   }
 })
+
+async function toggleDancers() {
+  const viewTransition = startViewTransition()
+  await viewTransition.captured
+  showDancers.value = !showDancers.value
+}
 
 function handleDataStatusAction() {
   showColumnMappingSheet.value = true

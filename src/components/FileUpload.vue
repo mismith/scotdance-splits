@@ -7,10 +7,10 @@
     <!-- Drop zone overlay -->
     <div
       v-show="isOverDropZone"
-      class="fixed inset-4 border-2 border-dashed border-primary bg-background/50 backdrop-blur-md rounded-2xl pointer-events-none z-50"
+      class="fixed inset-4 border-2 border-dashed border-primary bg-background/50 backdrop-blur-md rounded-4xl pointer-events-none z-50"
     >
       <div class="w-full h-full flex items-center justify-center">
-        <div class="text-2xl font-semibold text-primary animate-pulse">Drop your CSV file here</div>
+        <div class="text-5xl font-semibold text-primary animate-pulse">Drop your CSV file here</div>
       </div>
     </div>
 
@@ -19,7 +19,7 @@
       <!-- Default upload content if no slot provided -->
       <div class="h-full flex items-center justify-center">
         <div class="text-center space-y-4 max-w-md">
-          <div class="text-2xl font-semibold text-foreground">Ready to get started?</div>
+          <div class="text-5xl font-semibold text-foreground">Ready to get started?</div>
           <div class="text-muted-foreground">Drag your CSV file here or click to browse</div>
 
           <Button

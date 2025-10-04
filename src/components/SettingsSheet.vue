@@ -14,7 +14,9 @@
       @click.self="$emit('update:open', false)"
     >
       <!-- Modal content -->
-      <div class="bg-background border rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+      <div
+        class="bg-background border rounded-4xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col"
+      >
         <!-- Header -->
         <div class="flex-shrink-0 p-6 border-b">
           <div class="flex items-center justify-between">
@@ -57,12 +59,8 @@
 
         <!-- Footer -->
         <div class="flex-shrink-0 p-6 border-t flex justify-end gap-3">
-          <Button variant="outline" @click="$emit('update:open', false)">
-            Cancel
-          </Button>
-          <Button @click="$emit('save')">
-            Save Changes
-          </Button>
+          <Button variant="outline" @click="$emit('update:open', false)"> Cancel </Button>
+          <Button @click="$emit('save')"> Save Changes </Button>
         </div>
       </div>
     </div>
@@ -85,5 +83,4 @@ defineEmits<{
   'update:open': [value: boolean]
   save: []
 }>()
-
 </script>

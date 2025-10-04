@@ -9,8 +9,8 @@
       <div class="flex flex-col">
         <!-- Header - Center-aligned logo -->
         <header class="py-16 text-center relative px-6 flex flex-col items-center">
-          <a
-            href="/"
+          <router-link
+            to="/"
             class="will-change-transform flex items-center justify-center gap-4 text-4xl font-semibold text-primary duration-500 hover:tracking-widest transition-all"
           >
             <img
@@ -20,7 +20,7 @@
               v-view-transition-name="'splits-logo'"
             />
             <span v-view-transition-name="'splits-name'">Splits</span>
-          </a>
+          </router-link>
           <p class="text-lg text-muted-foreground mt-4">
             Automatically split dancer registrations into balanced age groups with bib numbers
           </p>
@@ -48,7 +48,7 @@
                 class="flex flex-col items-center gap-2"
               >
                 <div
-                  class="w-20 h-20 rounded-xl bg-white flex items-center justify-center overflow-hidden p-3"
+                  class="w-20 h-20 rounded-full bg-white flex items-center justify-center overflow-hidden p-3"
                 >
                   <img src="/src/assets/eventry-icon.png" alt="Eventry" class="size-full invert" />
                 </div>
@@ -59,12 +59,12 @@
                 class="flex flex-col items-center gap-2"
               >
                 <div
-                  class="w-20 h-20 rounded-xl bg-white flex items-center justify-center overflow-hidden"
+                  class="w-20 h-20 rounded-full bg-white flex items-center justify-center overflow-hidden"
                 >
                   <img
                     src="/src/assets/hdc-icon.png"
                     alt="HDComps"
-                    class="w-full h-full object-contain"
+                    class="w-full h-full object-contain p-2"
                   />
                 </div>
                 <span class="font-semibold text-foreground text-center">HD Comps</span>
@@ -74,7 +74,7 @@
                 class="flex flex-col items-center gap-2"
               >
                 <div
-                  class="w-20 h-20 rounded-xl bg-white flex items-center justify-center overflow-hidden"
+                  class="w-20 h-20 rounded-full bg-white flex items-center justify-center overflow-hidden"
                 >
                   <TextCursorInput class="h-10 w-10 text-gray-600" />
                 </div>
@@ -87,14 +87,14 @@
           <section class="mb-20 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4 items-center">
             <!-- Before: Input table -->
             <div ref="leftTableRef" class="space-y-0">
-              <div class="bg-muted/20 border border-border rounded-xl p-4 shadow-sm">
+              <div class="bg-muted/20 border rounded-4xl p-4 shadow-sm">
                 <div class="mb-4">
                   <h4 class="text-xl font-semibold text-muted-foreground">From:</h4>
                   <p class="text-sm text-muted-foreground">
                     Raw registration data containing dancer info
                   </p>
                 </div>
-                <div class="h-80 w-full rounded-lg overflow-hidden border border-border/50">
+                <div class="h-80 rounded-sm w-full overflow-hidden border">
                   <InputDataTable
                     :data="mockInputDataRows"
                     :headers="mockInputHeaders"
@@ -125,12 +125,12 @@
 
             <!-- After: Output table -->
             <div ref="rightTableRef" class="space-y-0">
-              <div class="bg-primary/5 border border-primary/20 rounded-xl p-4 shadow-sm">
+              <div class="bg-primary/5 border border-primary/20 rounded-4xl p-4 shadow-sm">
                 <div class="mb-4">
                   <h4 class="text-xl font-semibold text-primary">To:</h4>
                   <p class="text-sm text-primary/80">Groups created and bib numbers assigned</p>
                 </div>
-                <div class="h-80 w-full rounded-lg overflow-hidden border border-primary/20">
+                <div class="h-80 w-full rounded-sm overflow-hidden border border-primary/20">
                   <OutputDataTable :data="realOutputData" :height="320" />
                 </div>
                 <div class="space-y-2 mt-6 text-sm">
@@ -161,7 +161,7 @@
                 class="flex flex-col items-center gap-2"
               >
                 <div
-                  class="w-20 h-20 rounded-xl bg-white flex items-center justify-center overflow-hidden"
+                  class="w-20 h-20 rounded-full bg-white flex items-center justify-center overflow-hidden"
                 >
                   <img
                     src="/src/assets/scotdance-icon.png"
@@ -176,12 +176,12 @@
                 class="flex flex-col items-center gap-2"
               >
                 <div
-                  class="w-20 h-20 p-3 rounded-xl bg-white flex items-center justify-center overflow-hidden"
+                  class="w-20 h-20 p-3 rounded-full bg-white flex items-center justify-center overflow-hidden"
                 >
                   <img
                     src="/src/assets/sheets-icon.png"
                     alt="Google Sheets"
-                    class="w-full h-full object-contain"
+                    class="w-full h-full object-contain p-1"
                   />
                 </div>
                 <div class="text-center font-semibold text-foreground">Google Sheets</div>
@@ -191,12 +191,12 @@
                 class="flex flex-col items-center gap-2"
               >
                 <div
-                  class="w-20 h-20 p-3 rounded-xl bg-white flex items-center justify-center overflow-hidden"
+                  class="w-20 h-20 p-3 rounded-full bg-white flex items-center justify-center overflow-hidden"
                 >
                   <img
                     src="/src/assets/excel-icon.png"
                     alt="Excel"
-                    class="w-full h-full object-contain"
+                    class="w-full h-full object-contain p-1"
                   />
                 </div>
                 <div class="text-center font-semibold text-foreground">Microsoft Excel</div>
@@ -213,21 +213,21 @@
           :class="[
             isTriggerVisible
               ? 'mb-12 flex justify-center'
-              : 'fixed bottom-16 md:bottom-24 left-0 right-0 z-30 flex justify-center pb-8',
+              : 'fixed bottom-16 md:bottom-24 left-0 right-0 z-30 flex justify-center pb-18',
           ]"
         >
           <div
             ref="privacyBannerRef"
-            class="bg-accent/20 border border-accent/30 backdrop-blur-lg rounded-xl"
+            class="bg-accent/20 border border-accent/30 backdrop-blur-lg rounded-4xl"
             :class="[
               isTriggerVisible
                 ? 'p-6 max-w-4xl mx-6 md:mx-auto'
-                : 'p-3 pb-8 w-full max-w-lg cursor-pointer hover:bg-accent/30 shadow-lg',
+                : 'p-3 max-w-lg cursor-pointer hover:bg-accent/30 shadow-lg',
             ]"
             @click="!isTriggerVisible && scrollToBottom()"
           >
             <div class="flex items-center gap-4">
-              <div class="bg-accent/10 rounded-lg p-2 shrink-0">
+              <div class="bg-accent/10 rounded-full p-2 shrink-0">
                 <Shield class="h-5 w-5 text-accent" />
               </div>
               <div class="flex-1">
@@ -273,17 +273,15 @@
         <div class="sticky bottom-0 md:bottom-8 z-40 mt-12">
           <div
             v-view-transition-name="'FloatingFooter'"
-            class="bg-background/70 backdrop-blur-md border-t md:border border-border md:rounded-2xl px-6 py-5 md:p-6 md:max-w-lg md:mx-auto md:shadow-sm"
+            class="bg-background/70 backdrop-blur-md border-t md:border border-border md:rounded-4xl px-6 py-5 md:p-6 md:max-w-lg md:mx-auto md:shadow-sm"
           >
             <div class="flex flex-col gap-3 text-center">
               <!-- Instructions -->
               <div>
-                <p class="hidden md:block text-sm text-muted-foreground">
+                <p class="hidden md:block text-sm">
                   To get started, drag your registration data anywhere, or:
                 </p>
-                <p class="md:hidden text-sm text-muted-foreground">
-                  To get started, export your registration data, then
-                </p>
+                <p class="md:hidden text-sm">To get started, export your registration data, then</p>
               </div>
 
               <!-- Buttons -->

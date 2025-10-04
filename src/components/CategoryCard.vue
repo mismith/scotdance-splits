@@ -1,5 +1,5 @@
 <template>
-  <Card class="category-card select-none">
+  <Card class="select-none">
     <CardContent class="px-6">
       <div class="relative">
         <!-- 4-column CSS Grid Layout -->
@@ -106,12 +106,12 @@
 
           <!-- Row 2: Content columns -->
           <!-- Individual ages column -->
-          <div class="flex flex-col gap-2 self-start sticky top-12 will-change-transform">
+          <div class="flex flex-col gap-2 self-start sticky top-16 will-change-transform">
             <div
               v-for="[age, count] in ageCountsArray"
               :key="age"
               ref="leftSideRef"
-              class="p-3 text-sm bg-secondary/50 border border-border rounded-md select-text"
+              class="p-3 text-sm bg-secondary/50 border border-border rounded-4xl select-text"
             >
               <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                 <span class="font-medium">Age {{ age }}</span>
@@ -131,7 +131,7 @@
               ref="rightSideRef"
               v-view-transition-name="`CategoryCard-${id}-AgeGroup-${index}`"
               :style="{ flex: `${count} 1 0` }"
-              class="p-3 text-sm bg-secondary/50 border border-border rounded-md hover:bg-secondary/70 transition-all select-text cursor-pointer"
+              class="p-3 text-sm bg-secondary/50 border border-border rounded-4xl hover:bg-secondary/70 transition-all select-text cursor-pointer"
               @click="openAgeGroupSheet(index)"
             >
               <div class="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -150,7 +150,7 @@
               :key="`preview-${index}`"
               v-view-transition-name="`CategoryCard-${id}-DancerPreview-${index}`"
               :style="{ flex: `${count} 1 0` }"
-              class="p-3 text-sm bg-muted/30 border border-border/50 rounded-md flex flex-col justify-start select-text"
+              class="p-3 text-sm bg-muted/30 border border-border/50 rounded-4xl flex flex-col justify-start select-text"
             >
               <DancerPreview :dancers="getRealDancersForAgeGroup(index)" />
             </div>
@@ -229,7 +229,7 @@
       <div class="overflow-y-auto -mt-4">
         <div
           v-if="selectedAgeGroupIndex !== null"
-          class="p-3 bg-muted/30 border border-border/50 rounded-md"
+          class="p-3 bg-muted/30 border border-border/50 rounded-4xl"
         >
           <DancerPreview :dancers="getRealDancersForAgeGroup(selectedAgeGroupIndex)" />
         </div>
