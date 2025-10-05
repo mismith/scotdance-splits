@@ -2,6 +2,7 @@
   <div class="flex flex-col min-h-screen">
     <!-- Fixed Toolbar -->
     <header
+      style="view-transition-name: match-element"
       class="fixed top-0 left-0 right-0 z-50 grid grid-cols-[1fr_auto_1fr] items-center px-4 h-16 bg-gradient-to-b from-background to-transparent"
     >
       <!-- Left side -->
@@ -44,7 +45,7 @@
       </div>
 
       <!-- Right side -->
-      <div class="flex items-center gap-1 justify-self-end">
+      <div class="hidden md:flex items-center gap-1 justify-self-end">
         <Button :variant="showDancers ? 'default' : 'outline'" size="icon" @click="toggleDancers">
           <Users class="h-4 w-4" />
         </Button>

@@ -1,14 +1,12 @@
 <template>
   <!-- Mobile: Simple text on new line -->
-  <div class="md:hidden">
-    <div class="text-xs text-muted-foreground mt-1">
+  <div>
+    <div class="md:hidden text-xs text-muted-foreground mt-1">
       {{ count }} {{ pluralize(count, 'dancer') }}
     </div>
-  </div>
 
-  <!-- Desktop: Badge with tooltip -->
-  <div class="hidden md:inline-flex">
-    <Tooltip>
+    <!-- Desktop: Badge with tooltip -->
+    <Tooltip class="hidden md:inline-flex">
       <TooltipTrigger as-child>
         <span
           :class="
@@ -28,9 +26,7 @@
             Math.round((count / total) * 100)
           }}%)
         </p>
-        <p v-else>
-          {{ count }} {{ pluralize(count, 'dancer') }} total
-        </p>
+        <p v-else>{{ count }} {{ pluralize(count, 'dancer') }} total</p>
       </TooltipContent>
     </Tooltip>
   </div>
