@@ -374,7 +374,8 @@ import {
   X,
 } from 'lucide-vue-next'
 import { computed, onMounted, provide, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, onBeforeRouteLeave } from 'vue-router'
+import { useEventListener } from '@vueuse/core'
 import { useAppStore } from '@/stores/app'
 import CategoryCard from '@/components/CategoryCard.vue'
 import InputDataTable from '@/components/InputDataTable.vue'
@@ -472,6 +473,32 @@ onMounted(async () => {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load demo data'
       store.setError(errorMessage)
     }
+  }
+})
+
+// Browser close/refresh warning - automatically cleaned up on component unmount
+useEventListener('beforeunload', (event: BeforeUnloadEvent) => {
+  if (store.hasData) {
+    // Cancel the event and show browser's native confirmation dialog
+    event.preventDefault()
+    // Chrome requires returnValue to be set
+    event.returnValue = ''
+  }
+})
+
+// In-app navigation warning
+onBeforeRouteLeave((to, from, next) => {
+  if (store.hasData) {
+    const confirmed = window.confirm(
+      'Are you sure you want to leave this page? All changes will be lost.',
+    )
+    if (confirmed) {
+      next()
+    } else {
+      next(false)
+    }
+  } else {
+    next()
   }
 })
 
