@@ -7,9 +7,16 @@
     >
       <!-- Left side -->
       <div class="flex items-center gap-1 justify-self-start">
-        <Button variant="outline" size="icon" @click="showColumnMappingSheet = true">
-          <Columns class="h-4 w-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <Button variant="outline" size="icon" @click="showColumnMappingSheet = true">
+              <Map class="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Column mapping</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       <!-- Center - Logo -->
@@ -46,9 +53,16 @@
 
       <!-- Right side -->
       <div class="hidden md:flex items-center gap-1 justify-self-end">
-        <Button :variant="showDancers ? 'default' : 'outline'" size="icon" @click="toggleDancers">
-          <Users class="h-4 w-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <Button :variant="showDancers ? 'default' : 'outline'" size="icon" @click="toggleDancers">
+              <Users class="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{{ showDancers ? 'Hide dancers' : 'Show dancers' }}</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
     </header>
 
@@ -346,7 +360,19 @@
 </template>
 
 <script setup lang="ts">
-import { AlertTriangle, Check, Columns, Settings, Share, Table, Users, X } from 'lucide-vue-next'
+import {
+  AlertTriangle,
+  Check,
+  Columns,
+  Columns3,
+  Columns3Cog,
+  Map,
+  Settings,
+  Share,
+  Table,
+  Users,
+  X,
+} from 'lucide-vue-next'
 import { computed, onMounted, provide, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
@@ -367,6 +393,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { fetchDemoCSV } from '@/lib/input'
 import { CATEGORY_CODE_NAMES, INPUT_COLUMNS, type Partition, createPartitions } from '@/lib/input'
 import { type ExportSettings, convertToCSV, generateExportData, downloadCSV } from '@/lib/output'

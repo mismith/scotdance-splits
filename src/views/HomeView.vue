@@ -249,8 +249,8 @@
                 >
                   <p class="text-sm text-muted-foreground leading-relaxed">
                     Everything happens right here in your browser. Your dancer registration data
-                    never gets uploaded to any server, nor does it leave your computer in any way.
-                    It cannot be seen, stored, or accessed remotely in any way.
+                    never gets uploaded to any server, nor does it even leave your computer. It is
+                    not seen, stored, or accessed remotely in any way.
                   </p>
                   <p class="text-sm text-muted-foreground">
                     This tool is fully open source, so you can check
@@ -297,7 +297,7 @@
                 </Button>
 
                 <Button size="lg" variant="outline" as-child class="flex-1">
-                  <router-link to="/demo">Try demo</router-link>
+                  <router-link to="/demo">View demo</router-link>
                 </Button>
               </div>
             </div>
