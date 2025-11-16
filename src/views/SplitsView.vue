@@ -24,7 +24,7 @@
         <Button variant="outline" as-child>
           <router-link
             to="/"
-            class="font-semibold text-primary hover:tracking-widest duration-500 transition-all"
+            class="font-semibold text-primary backdrop-blur hover:tracking-widest duration-500 transition-all"
           >
             <div class="flex items-center gap-2">
               <img
@@ -55,7 +55,11 @@
       <div class="hidden md:flex items-center gap-1 justify-self-end">
         <Tooltip>
           <TooltipTrigger as-child>
-            <Button :variant="showDancers ? 'default' : 'outline'" size="icon" @click="toggleDancers">
+            <Button
+              :variant="showDancers ? 'default' : 'outline'"
+              size="icon"
+              @click="toggleDancers"
+            >
               <Users class="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -95,91 +99,77 @@
 
     <!-- Sticky Footer - Status/Export -->
     <div class="sticky bottom-0 md:bottom-8 z-40 mt-8 pointer-events-none">
-      <!-- Status Problems -->
-      <div
-        v-if="dataStatus.status === 'error' && !validationDismissed"
-        class="pointer-events-auto bg-gradient-to-r from-red-50 to-red-100 dark:from-red-950/50 dark:to-red-900/50 border border-red-200 dark:border-red-800 shadow-xl rounded-4xl max-w-lg mx-auto mb-4 relative overflow-hidden backdrop-blur-lg"
-      >
-        <!-- Close button -->
-        <Button
-          variant="ghost"
-          size="sm"
-          @click.stop="dismissValidationErrors"
-          class="absolute top-4 right-4 w-8 h-8 p-0 z-10 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
-        >
-          <X class="h-4 w-4 text-red-500 dark:text-red-400" />
-        </Button>
-
-        <!-- Main content -->
-        <div class="p-6 pr-16">
-          <div class="flex items-start gap-4">
-            <div
-              class="w-10 h-10 flex items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50 flex-shrink-0 mt-0.5"
-            >
-              <AlertTriangle class="w-5 h-5 text-red-600 dark:text-red-400" />
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="text-base font-semibold text-red-900 dark:text-red-100 mb-1">
-                {{ dataStatus.label }}
-              </h3>
-              <p class="text-sm text-red-700 dark:text-red-300 mb-4">
-                Column mapping issues need to be resolved before exporting your data.
-              </p>
-
-              <!-- Action buttons -->
-              <div class="flex gap-2">
-                <Button
-                  @click.stop="handleDataStatusAction"
-                  size="sm"
-                  class="bg-red-600 hover:bg-red-700 text-white border-0 shadow-sm"
-                >
-                  Fix mapping
-                </Button>
-                <Button
-                  @click.stop="dismissValidationErrors"
-                  variant="ghost"
-                  size="sm"
-                  class="text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/50"
-                >
-                  Dismiss
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      <!-- Validation Banner -->
+      <ValidationBanner
+        v-if="!validationDismissed && allValidationIssues.length > 0"
+        :issues="allValidationIssues"
+        @review="handleReviewErrors"
+        @dismiss="dismissValidationErrors"
+      />
       <!-- Export CTA (hidden when there are unresolved issues) -->
       <div
-        v-if="dataStatus.status === 'success' || validationDismissed"
+        v-if="allValidationIssues.length === 0 || validationDismissed"
         v-view-transition-name="'FloatingFooter'"
         class="pointer-events-auto bg-background/70 backdrop-blur-md border-t md:border border-border shadow-sm rounded-t-4xl md:rounded-4xl px-6 py-5 md:p-6 max-w-lg mx-auto flex flex-col gap-3"
       >
-        <div v-if="dataStatus.status === 'success'" class="flex items-center justify-center gap-2">
+        <div v-if="allValidationIssues.length === 0" class="flex items-center justify-center gap-2">
           <div class="w-5 h-5 flex items-center justify-center rounded-full bg-green-500/25 -my-2">
             <Check class="size-4 text-green-500" />
           </div>
           <p class="text-sm font-medium text-green-500">Ready to export</p>
         </div>
 
-        <!-- Error warning when validation was dismissed - directly above button -->
+        <!-- Error/warning indicator when validation was dismissed - directly above button -->
         <div
-          v-if="validationDismissed && dataStatus.status === 'error'"
-          class="flex items-center gap-3 p-3 mb-3 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-950/30 dark:to-red-900/30 border border-red-200 dark:border-red-800/50 rounded-xl"
+          v-if="validationDismissed && allValidationIssues.length > 0"
+          class="flex items-center gap-3 p-2 mb-3 rounded-3xl"
+          :class="
+            allValidationIssues.some((i) => i.severity === 'error')
+              ? 'bg-gradient-to-r from-red-50 to-red-100 dark:from-red-950/30 dark:to-red-900/30 border border-red-200 dark:border-red-800/50'
+              : 'bg-gradient-to-r from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 border border-primary/30 dark:border-primary/50'
+          "
         >
           <div
-            class="w-6 h-6 flex items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50 flex-shrink-0"
+            class="w-6 h-6 flex items-center justify-center rounded-full flex-shrink-0"
+            :class="
+              allValidationIssues.some((i) => i.severity === 'error')
+                ? 'bg-red-100 dark:bg-red-900/50'
+                : 'bg-primary/20 dark:bg-primary/30'
+            "
           >
-            <AlertTriangle class="h-3 w-3 text-red-600 dark:text-red-400" />
+            <AlertTriangle
+              class="h-3 w-3"
+              :class="
+                allValidationIssues.some((i) => i.severity === 'error')
+                  ? 'text-red-600 dark:text-red-400'
+                  : 'text-primary'
+              "
+            />
           </div>
-          <span class="text-xs text-red-700 dark:text-red-300 flex-1"
-            >Export may not work properly due to data issues</span
+          <span
+            class="text-xs flex-1"
+            :class="
+              allValidationIssues.some((i) => i.severity === 'error')
+                ? 'text-red-700 dark:text-red-300'
+                : 'text-primary/80 dark:text-primary/90'
+            "
           >
+            {{
+              allValidationIssues.some((i) => i.severity === 'error')
+                ? 'Export may not work properly due to data issues'
+                : 'Some data warnings were dismissed'
+            }}
+          </span>
           <Button
             variant="ghost"
             size="sm"
             @click="showValidationErrors"
-            class="h-6 px-2 text-xs text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/50 ml-auto"
+            class="h-6 px-2 text-xs ml-auto"
+            :class="
+              allValidationIssues.some((i) => i.severity === 'error')
+                ? 'text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/50'
+                : 'text-primary hover:bg-primary/10'
+            "
           >
             Review
           </Button>
@@ -204,20 +194,21 @@
       </div>
     </div>
 
-    <!-- Column mapping settings sheet -->
-    <SettingsSheet
+    <!-- Column mapping settings dialog -->
+    <SettingsDialog
       v-model:open="showColumnMappingSheet"
+      v-model:sidebar-collapsed="columnMappingSidebarCollapsed"
       title="Column Mapping"
       description="Map your CSV columns to the correct fields for processing"
       @save="saveColumnMapping"
     >
       <template #preview>
-        <h3 class="text-sm font-medium">Input Data Preview</h3>
-        <div class="border rounded-lg">
+        <div class="border rounded-lg overflow-hidden flex-1">
           <InputDataTable
             :data="store.inputCSV || []"
             :headers="store.inputHeaders"
-            :height="300"
+            :highlight-cells="highlightCells"
+            :affected-rows="affectedRows"
           />
         </div>
       </template>
@@ -232,7 +223,7 @@
               <Switch
                 id="header-row"
                 :model-value="store.hasHeaderRow"
-                @update:model-value="(value) => (store.hasHeaderRow = value)"
+                @update:model-value="handleHeaderRowToggle"
               />
             </label>
           </div>
@@ -264,10 +255,10 @@
           </div>
         </div>
       </template>
-    </SettingsSheet>
+    </SettingsDialog>
 
-    <!-- Export settings sheet -->
-    <SettingsSheet
+    <!-- Export settings dialog -->
+    <SettingsDialog
       v-model:open="showExportSettingsSheet"
       title="Export Settings"
       description="Configure bib numbers and output format options"
@@ -355,7 +346,7 @@
           </div>
         </div>
       </template>
-    </SettingsSheet>
+    </SettingsDialog>
   </div>
 </template>
 
@@ -380,7 +371,8 @@ import { useAppStore } from '@/stores/app'
 import CategoryCard from '@/components/CategoryCard.vue'
 import InputDataTable from '@/components/InputDataTable.vue'
 import OutputDataTable from '@/components/OutputDataTable.vue'
-import SettingsSheet from '@/components/SettingsSheet.vue'
+import SettingsDialog from '@/components/SettingsDialog.vue'
+import ValidationBanner from '@/components/ValidationBanner.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -396,7 +388,13 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { fetchDemoCSV } from '@/lib/input'
-import { CATEGORY_CODE_NAMES, INPUT_COLUMNS, type Partition, createPartitions } from '@/lib/input'
+import {
+  CATEGORY_CODE_NAMES,
+  INPUT_COLUMNS,
+  type Partition,
+  type ValidationIssue,
+  createPartitions,
+} from '@/lib/input'
 import { type ExportSettings, convertToCSV, generateExportData, downloadCSV } from '@/lib/output'
 import { startViewTransition } from 'vue-view-transitions'
 
@@ -405,6 +403,7 @@ const route = useRoute()
 
 const categoryCardRef = ref<(typeof CategoryCard)[]>()
 const showColumnMappingSheet = ref(false)
+const columnMappingSidebarCollapsed = ref(false)
 const showExportSettingsSheet = ref(false)
 const validationDismissed = ref(false)
 const showDancers = ref(false)
@@ -451,6 +450,60 @@ const dataStatus = computed(() => {
   }
 })
 
+// Combined validation issues (dataStatus errors + store.inputErrors)
+const allValidationIssues = computed((): ValidationIssue[] => {
+  const issues: ValidationIssue[] = []
+
+  // Add dataStatus error if exists (column mapping issues)
+  if (dataStatus.value.status === 'error') {
+    issues.push({
+      type: 'missing-headers',
+      severity: 'error',
+      message: dataStatus.value.label,
+    })
+  }
+
+  // Add store validation errors
+  issues.push(...store.inputErrors)
+
+  return issues
+})
+
+// Extract affected rows from validation issues for row-level highlighting
+const affectedRows = computed(() => {
+  // Add offset for header row if present, since errors are indexed on sliced data
+  const rowOffset = store.hasHeaderRow ? 1 : 0
+  const rows = new Set<number>()
+
+  store.inputErrors
+    .filter((error) => error.cells) // Only issues with cell-level details
+    .forEach((error) => {
+      error.cells!.forEach((cell) => {
+        rows.add(cell.rowIndex + rowOffset)
+      })
+    })
+
+  return Array.from(rows)
+})
+
+// Extract highlight cells from validation issues for table display
+const highlightCells = computed(() => {
+  // Add offset for header row if present, since errors are indexed on sliced data
+  const rowOffset = store.hasHeaderRow ? 1 : 0
+
+  const result = store.inputErrors
+    .filter((error) => error.cells) // Only issues with cell-level details
+    .flatMap((error) =>
+      error.cells!.map((cell) => ({
+        rowIndex: cell.rowIndex + rowOffset,
+        colIndex: cell.colIndex,
+        severity: error.severity,
+      })),
+    )
+
+  return result
+})
+
 // Partitions store - maps category code to age ranges
 const partitions = ref<Record<string, Partition[]>>({})
 
@@ -471,7 +524,7 @@ onMounted(async () => {
       await store.loadFile(demoFile)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load demo data'
-      store.setError(errorMessage)
+      store.fileLoadError = errorMessage
     }
   }
 })
@@ -528,6 +581,18 @@ function dismissValidationErrors() {
 
 function showValidationErrors() {
   validationDismissed.value = false
+}
+
+function handleReviewErrors() {
+  // Open column mapping dialog with sidebar collapsed to focus on the highlighted errors in the table
+  columnMappingSidebarCollapsed.value = true
+  showColumnMappingSheet.value = true
+}
+
+function handleHeaderRowToggle(value: boolean) {
+  store.hasHeaderRow = value
+  // Force errors to regenerate with correct row offsets
+  store.updateColIndexes(store.colIndexes)
 }
 
 function updateColIndex(id: string, value: any) {

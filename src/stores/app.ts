@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import {
   INPUT_COLUMNS,
+  type ValidationIssue,
   autoPartitionCategories,
   categorizeData,
   detectColumnMapping,
@@ -31,7 +32,7 @@ export const useAppStore = defineStore('app', () => {
   // File input state
   const inputFiles = ref<File[]>()
   const inputCSV = ref<string[][]>()
-  const inputError = ref<string>()
+  const fileLoadError = ref<string>()
   const isLoadingInputFile = ref(false)
 
   // Processed data
@@ -71,24 +72,62 @@ export const useAppStore = defineStore('app', () => {
     return processedDancers.value.length
   })
 
+  const inputErrors = computed((): ValidationIssue[] => {
+    const errors: ValidationIssue[] = []
+
+    // Include critical file load errors
+    if (fileLoadError.value) {
+      errors.push({
+        type: 'parse-error',
+        severity: 'error',
+        message: fileLoadError.value,
+      })
+      return errors
+    }
+
+    // If no CSV data, no validation errors to show
+    if (!inputCSV.value || inputCSV.value.length === 0) {
+      return []
+    }
+
+    const csvData = inputCSV.value
+
+    // Detect if first row is headers
+    const potentialHeaders = csvData[0]
+    const hasHeaders = potentialHeaders.some((header) =>
+      INPUT_COLUMNS.some((col) => col.regex.test(header)),
+    )
+
+    // Error if headers not detected
+    if (!hasHeaders) {
+      errors.push({
+        type: 'missing-headers',
+        severity: 'error',
+        message: 'Headers not found (expected FirstName, LastName, HighlandScrutineerCode)',
+      })
+    }
+
+    // Extract data rows (skip headers if present)
+    const dataRows = hasHeaders ? csvData.slice(1) : csvData
+
+    // Process data with current column mappings to get validation errors
+    const { errors: categorizeErrors } = categorizeData(dataRows, colIndexes.value)
+
+    // Combine errors
+    errors.push(...categorizeErrors)
+
+    return errors
+  })
+
   // Actions
   function setInputData(files: File[], csvData: string[][]) {
     inputFiles.value = files
     inputCSV.value = csvData
-    inputError.value = undefined
 
     // Auto-detect headers
     if (csvData.length > 0) {
       inputHeaders.value = csvData[0]
     }
-  }
-
-  function setError(error: string) {
-    inputError.value = error
-  }
-
-  function clearError() {
-    inputError.value = undefined
   }
 
   function setLoading(loading: boolean) {
@@ -108,7 +147,7 @@ export const useAppStore = defineStore('app', () => {
   function clearAllData() {
     inputFiles.value = undefined
     inputCSV.value = undefined
-    inputError.value = undefined
+    fileLoadError.value = undefined
     categories.value = undefined
     partitionedCategories.value = undefined
     processedDancers.value = []
@@ -124,6 +163,26 @@ export const useAppStore = defineStore('app', () => {
 
   function updateColIndexes(indexes: Record<string, number>) {
     colIndexes.value = indexes
+    // Errors will automatically recompute via the computed property
+
+    // Reprocess categories with new column mappings
+    if (inputCSV.value && inputCSV.value.length > 0) {
+      const csvData = inputCSV.value
+      const potentialHeaders = csvData[0]
+      const hasHeaders = potentialHeaders.some((header) =>
+        INPUT_COLUMNS.some((col) => col.regex.test(header)),
+      )
+      hasHeaderRow.value = hasHeaders
+
+      const dataRows = hasHeaders ? csvData.slice(1) : csvData
+      const { categories: cats } = categorizeData(dataRows, colIndexes.value)
+      const partitionedCats = autoPartitionCategories(cats)
+
+      setProcessedData(cats, partitionedCats)
+
+      const defaultMaxBib = calculateDefaultMaxBib(csvData, colIndexes.value, hasHeaders)
+      updateExportSettings({ maxBibNumber: defaultMaxBib })
+    }
   }
 
   function updateRowFiltering(config: {
@@ -168,7 +227,7 @@ export const useAppStore = defineStore('app', () => {
   }
 
   async function loadFile(file: File) {
-    clearError()
+    fileLoadError.value = undefined
     setLoading(true)
 
     try {
@@ -180,7 +239,10 @@ export const useAppStore = defineStore('app', () => {
         })
       })
 
-      const csvData = results.data as string[][]
+      // Filter out completely empty rows (e.g., trailing newlines)
+      const csvData = (results.data as string[][]).filter(row =>
+        row.some(cell => cell && cell.trim() !== '')
+      )
       if (!csvData || csvData.length === 0) {
         throw new Error('CSV file is empty')
       }
@@ -188,38 +250,21 @@ export const useAppStore = defineStore('app', () => {
       // Set basic input data
       setInputData([file], csvData)
 
-      // Detect if first row is headers
+      // Auto-detect column mappings
       const potentialHeaders = csvData[0]
       const hasHeaders = potentialHeaders.some((header) =>
         INPUT_COLUMNS.some((col) => col.regex.test(header)),
       )
-      hasHeaderRow.value = hasHeaders
-
-      // Auto-detect column mappings
       const headers = hasHeaders ? potentialHeaders : []
       const colIndexes = detectColumnMapping(headers)
+
+      // Update column indexes (this will reprocess data)
       updateColIndexes(colIndexes)
-
-      // Extract data rows (skip headers if present)
-      const dataRows = hasHeaders ? csvData.slice(1) : csvData
-
-      // Process data into categories
-      const cats = categorizeData(dataRows, colIndexes)
-
-      // Auto-partition categories into age groups
-      const partitionedCats = autoPartitionCategories(cats)
-
-      // Update store with processed data
-      setProcessedData(cats, partitionedCats)
-
-      // Calculate default max bib number using shared logic
-      const defaultMaxBib = calculateDefaultMaxBib(csvData, colIndexes, hasHeaders)
-      updateExportSettings({ maxBibNumber: defaultMaxBib })
 
       return true
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to parse CSV file'
-      setError(errorMessage)
+      fileLoadError.value = errorMessage
       return false
     } finally {
       setLoading(false)
@@ -230,7 +275,8 @@ export const useAppStore = defineStore('app', () => {
     // State
     inputFiles,
     inputCSV,
-    inputError,
+    fileLoadError,
+    inputErrors,
     isLoadingInputFile,
     categories,
     partitionedCategories,
@@ -251,8 +297,6 @@ export const useAppStore = defineStore('app', () => {
 
     // Actions
     setInputData,
-    setError,
-    clearError,
     setLoading,
     setProcessedData,
     clearAllData,

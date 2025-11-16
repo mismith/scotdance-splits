@@ -48,33 +48,17 @@
       @change="handleFileChange"
       class="hidden"
     />
-
-    <!-- Error display -->
-    <div
-      v-if="error"
-      class="absolute bottom-4 right-4 p-4 bg-destructive text-destructive-foreground rounded-md shadow-lg max-w-md z-20"
-    >
-      <div class="flex items-center gap-2">
-        <AlertTriangle class="h-4 w-4" />
-        <span class="text-sm">{{ error }}</span>
-        <button @click="$emit('error-dismiss')" class="ml-auto hover:opacity-70">
-          <X class="h-4 w-4" />
-        </button>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useDropZone } from '@vueuse/core'
-import { AlertTriangle, X } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { Button } from '@/components/ui/button'
 
 interface Props {
   accept?: string
   isLoading?: boolean
-  error?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -84,7 +68,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   'file-selected': [file: File]
-  'error-dismiss': []
 }>()
 
 const dropZoneRef = ref<HTMLElement>()
@@ -92,11 +75,8 @@ const fileInputRef = ref<HTMLInputElement>()
 
 const { isOverDropZone } = useDropZone(dropZoneRef, {
   onDrop(files) {
-    emit('error-dismiss')
     if (files?.length === 1 && files[0].type === props.accept) {
       emit('file-selected', files[0])
-    } else {
-      // Error will be handled by parent component
     }
   },
 })

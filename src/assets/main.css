@@ -145,6 +145,19 @@
       height: 0;
     }
   }
+
+  --animate-shimmer: shimmer 6s linear infinite;
+
+  @keyframes shimmer {
+    0%,
+    50% {
+      background-position: 100% center;
+    }
+    100% {
+      background-position: 0% center;
+    }
+  }
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -153,6 +166,23 @@
 
 /* Handsontable z-index overrides - bring into Tailwind's 0-50 range */
 @layer utilities {
+  /* Shimmer text effect */
+  .shimmer-text {
+    background: linear-gradient(
+      80deg,
+      currentColor 0%,
+      currentColor 45%,
+      var(--color-accent) 50%,
+      currentColor 55%,
+      currentColor 100%
+    );
+    background-size: 600% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: var(--animate-shimmer);
+  }
+
   /* Highest priority elements: menus, dropdowns, autocomplete (9999, 1070, 1060, 1059 → 40-45) */
   .htAutocompleteArrow,
   .htAutocomplete,
@@ -192,10 +222,30 @@
   }
 
   /* Catch-all for any other Handsontable elements with high z-index */
-  .handsontable [style*="z-index: 9999"],
-  .handsontable [style*="z-index: 1060"],
-  .handsontable [style*="z-index: 1059"],
-  .handsontable [style*="z-index: 1070"] {
+  .handsontable [style*='z-index: 9999'],
+  .handsontable [style*='z-index: 1060'],
+  .handsontable [style*='z-index: 1059'],
+  .handsontable [style*='z-index: 1070'] {
     z-index: 45 !important;
+  }
+
+  /* Cell validation highlighting - three-tier approach */
+
+  /* Tier 1: Row-level context - Subtle highlighting for any row with validation issues */
+  .handsontable .cell-highlight,
+  .handsontable .htDimmed.cell-highlight {
+    background-color: color-mix(in srgb, var(--color-primary), transparent 75%) !important;
+  }
+
+  /* Tier 2: Cell-level warnings - Amber color with left border */
+  .handsontable .cell-warning,
+  .handsontable .htDimmed.cell-warning {
+    box-shadow: inset 0 0 0 2px var(--color-primary) !important;
+  }
+
+  /* Tier 3: Cell-level errors - Red color with left border */
+  .handsontable .cell-error,
+  .handsontable .htDimmed.cell-error {
+    box-shadow: inset 0 0 0 2px var(--color-destructive) !important;
   }
 }
