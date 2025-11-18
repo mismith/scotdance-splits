@@ -1,6 +1,9 @@
 <template>
   <FileUpload :is-loading="store.isLoadingInputFile" @file-selected="handleFileSelected">
     <template #default="{ chooseFile }">
+      <header
+        class="fixed top-0 inset-x-0 h-24 bg-gradient-to-b from-background to-transparent z-20"
+      ></header>
       <div class="flex flex-col">
         <!-- Section 1: Hero (100vh) -->
         <section
@@ -10,7 +13,7 @@
           <div class="flex-1 flex items-center justify-center w-full">
             <div class="max-w-4xl mx-auto text-center space-y-8">
               <!-- Logo (will become fixed on scroll) -->
-              <div ref="logoWrapperRef" class="flex justify-center mb-8 w-full">
+              <div ref="logoWrapperRef" class="flex justify-center mb-8 w-full relative z-30">
                 <Button variant="outline" as-child ref="logoRef">
                   <router-link
                     to="/"
@@ -685,6 +688,11 @@ function captureInitialBounds() {
   }
 }
 
+// Recapture bounds on window resize
+function handleResize() {
+  captureInitialBounds()
+}
+
 // Calculate transforms based on scroll position
 function updateHeaderTransforms() {
   currentScrollY = window.scrollY
@@ -789,12 +797,15 @@ function updateHeaderTransforms() {
     const chooseFileNaturalTop = initialChooseFileTop.value - currentScrollY
     const scaledLogoHeight = initialLogoHeight.value * logoScale
 
-    // Calculate where centers should be
-    const logoCenterY = TARGET_TOP + scaledLogoHeight / 2
-    const buttonInitialCenterY = chooseFileNaturalTop + initialChooseFileHeight.value / 2
-    const targetCenterY = logoCenterY - scaledButtonHeight / 2
+    // Calculate target top position for button (to center with logo)
+    const targetButtonTop = TARGET_TOP + (scaledLogoHeight - scaledButtonHeight) / 2
 
-    const buttonTranslateY = (targetCenterY - chooseFileNaturalTop) * easedZipperProgress
+    // Account for center-origin scaling shift (scaling down makes top edge move down)
+    const scaleShift = ((1 - buttonScale) * scaledButtonHeight) / 2
+
+    // Apply both the positioning and scale shift compensation (with 2px adjustment)
+    const buttonTranslateY =
+      (targetButtonTop - chooseFileNaturalTop - scaleShift - 2) * easedZipperProgress
 
     // Transform wrapper only (position and scale)
     chooseFileWrapperEl.style.position = 'relative'
@@ -825,12 +836,15 @@ function updateHeaderTransforms() {
     const viewDemoNaturalTop = initialViewDemoTop.value - currentScrollY
     const scaledLogoHeight = initialLogoHeight.value * logoScale
 
-    // Calculate where centers should be
-    const logoCenterY = TARGET_TOP + scaledLogoHeight / 2
-    const buttonInitialCenterY = viewDemoNaturalTop + initialViewDemoHeight.value / 2
-    const targetCenterY = logoCenterY - scaledButtonHeight / 2
+    // Calculate target top position for button (to center with logo)
+    const targetButtonTop = TARGET_TOP + (scaledLogoHeight - scaledButtonHeight) / 2
 
-    const buttonTranslateY = (targetCenterY - viewDemoNaturalTop) * easedZipperProgress
+    // Account for center-origin scaling shift (scaling down makes top edge move down)
+    const scaleShift = ((1 - buttonScale) * scaledButtonHeight) / 2
+
+    // Apply both the positioning and scale shift compensation (with 2px adjustment)
+    const buttonTranslateY =
+      (targetButtonTop - viewDemoNaturalTop - scaleShift - 2) * easedZipperProgress
 
     // Transform wrapper only (position and scale)
     viewDemoWrapperEl.style.position = 'relative'
@@ -858,12 +872,14 @@ onMounted(async () => {
   await loadMockData()
   captureInitialBounds()
   rafLoop()
+  window.addEventListener('resize', handleResize)
 })
 
 onUnmounted(() => {
   if (rafId !== null) {
     cancelAnimationFrame(rafId)
   }
+  window.removeEventListener('resize', handleResize)
 })
 
 // Load mock data for preview tables

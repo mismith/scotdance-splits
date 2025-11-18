@@ -157,7 +157,8 @@ export function categorizeData(
   const totalSkipped = invalidCodeCells.length + missingCodeCells.length
 
   // Combine invalid and missing codes into single issue with examples
-  if (totalSkipped > 0) {
+  // Only create warning if we have SOME valid codes (otherwise no-valid-codes error will handle it)
+  if (totalSkipped > 0 && validCodeCount > 0) {
     // Get examples from invalid codes first, then missing if needed
     const exampleCells = [
       ...invalidCodeCells.slice(0, 3),
@@ -182,6 +183,7 @@ export function categorizeData(
       type: 'no-valid-codes',
       severity: 'error',
       message: 'No valid dancer codes found. Ensure codes start with P, B, N, I, R, or X followed by exactly 2 digits',
+      cells: [...invalidCodeCells, ...missingCodeCells],
     })
   }
 
