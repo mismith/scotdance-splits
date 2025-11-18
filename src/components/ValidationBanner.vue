@@ -46,7 +46,7 @@
 
           <!-- Action buttons -->
           <div class="flex gap-2">
-            <Button size="sm" @click="$emit('review')" :class="actionButtonClass"> View & Fix </Button>
+            <Button size="sm" @click="$emit('review')" :class="actionButtonClass">Review</Button>
             <Button size="sm" variant="ghost" @click="handleDismiss" :class="dismissButtonClass">
               Dismiss
             </Button>

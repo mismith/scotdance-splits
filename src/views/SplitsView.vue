@@ -157,13 +157,13 @@
             {{
               allValidationIssues.some((i) => i.severity === 'error')
                 ? 'Export may not work properly due to data issues'
-                : 'Some data warnings were dismissed'
+                : `${allValidationIssues.length} warning${allValidationIssues.length !== 1 ? 's' : ''} dismissed`
             }}
           </span>
           <Button
             variant="ghost"
             size="sm"
-            @click="showValidationErrors"
+            @click="handleReviewErrors"
             class="h-6 px-2 text-xs ml-auto"
             :class="
               allValidationIssues.some((i) => i.severity === 'error')
@@ -577,10 +577,6 @@ function saveExportSettings() {
 
 function dismissValidationErrors() {
   validationDismissed.value = true
-}
-
-function showValidationErrors() {
-  validationDismissed.value = false
 }
 
 function handleReviewErrors() {
