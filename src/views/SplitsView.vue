@@ -531,7 +531,7 @@ onMounted(async () => {
 
 // Browser close/refresh warning - automatically cleaned up on component unmount
 useEventListener('beforeunload', (event: BeforeUnloadEvent) => {
-  if (store.hasData) {
+  if (store.hasData && !isDemoMode.value) {
     // Cancel the event and show browser's native confirmation dialog
     event.preventDefault()
     // Chrome requires returnValue to be set
@@ -541,7 +541,7 @@ useEventListener('beforeunload', (event: BeforeUnloadEvent) => {
 
 // In-app navigation warning
 onBeforeRouteLeave((to, from, next) => {
-  if (store.hasData) {
+  if (store.hasData && !isDemoMode.value) {
     const confirmed = window.confirm(
       'Are you sure you want to leave this page? All changes will be lost.',
     )
