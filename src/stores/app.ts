@@ -10,14 +10,6 @@ import {
 } from '@/lib/input'
 import { calculateDefaultMaxBib } from '@/lib/output'
 
-export interface FilterConfig {
-  id: string
-  mode: 'include' | 'exclude'
-  column: 'all' | string
-  term: string
-  caseSensitive: boolean
-}
-
 export interface DancerData {
   firstName: string
   lastName: string
@@ -47,15 +39,6 @@ export const useAppStore = defineStore('app', () => {
   const hasHeaderRow = ref(true)
   const inputHeaders = ref<string[]>([])
   const colIndexes = ref<Record<string, number>>({})
-  const rowFilteringConfig = ref<{
-    enabled: boolean
-    showDimmed: boolean
-    filters: FilterConfig[]
-  }>({
-    enabled: false,
-    showDimmed: true,
-    filters: [],
-  })
 
   // Export configuration
   const maxBibNumber = ref<number>(100)
@@ -153,11 +136,6 @@ export const useAppStore = defineStore('app', () => {
     processedDancers.value = []
     inputHeaders.value = []
     colIndexes.value = {}
-    rowFilteringConfig.value = {
-      enabled: false,
-      showDimmed: true,
-      filters: [],
-    }
     manualPartitions.value = {}
   }
 
@@ -183,14 +161,6 @@ export const useAppStore = defineStore('app', () => {
       const defaultMaxBib = calculateDefaultMaxBib(csvData, colIndexes.value, hasHeaders)
       updateExportSettings({ maxBibNumber: defaultMaxBib })
     }
-  }
-
-  function updateRowFiltering(config: {
-    enabled: boolean
-    showDimmed: boolean
-    filters: FilterConfig[]
-  }) {
-    rowFilteringConfig.value = config
   }
 
   function updateExportSettings(settings: {
@@ -285,7 +255,6 @@ export const useAppStore = defineStore('app', () => {
     hasHeaderRow,
     inputHeaders,
     colIndexes,
-    rowFilteringConfig,
     maxBibNumber,
     isPrintingYears,
     includeCountry,
@@ -301,7 +270,6 @@ export const useAppStore = defineStore('app', () => {
     setProcessedData,
     clearAllData,
     updateColIndexes,
-    updateRowFiltering,
     updateExportSettings,
     hasManualAdjustments,
     setManualPartitions,
