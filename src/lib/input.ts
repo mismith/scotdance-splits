@@ -1,4 +1,5 @@
 import partition from 'linear-partitioning'
+import { detectHeaders, validateCodes, type ValidationIssue } from './validation'
 
 // Highland dance category code names
 export const CATEGORY_CODE_NAMES: Record<string, string> = {
@@ -94,18 +95,6 @@ export function detectColumnMapping(headers: string[]): Record<string, number> {
   return colIndexes
 }
 
-// Validation issue with optional cell-level details
-export interface ValidationIssue {
-  type: 'invalid-codes' | 'missing-codes' | 'no-valid-codes' | 'missing-headers' | 'parse-error'
-  severity: 'error' | 'warning'
-  message: string  // Summary message with examples: "2 rows skipped (invalid codes like 'Z17', 'B1')"
-  cells?: {        // Optional - only for cell-level issues
-    rowIndex: number  // 0-based index in data array
-    colIndex: number  // Column position in CSV
-    value: string     // The problematic value
-  }[]
-}
-
 // Age categorization result with validation errors
 export interface CategorizeDataResult {
   categories: Record<string, Record<string, number>>
@@ -117,75 +106,30 @@ export function categorizeData(
   data: string[][],
   colIndexes: Record<string, number>,
 ): CategorizeDataResult {
-  const errors: ValidationIssue[] = []
+  // Validate codes only if code column is mapped
+  const validationResult =
+    colIndexes.code !== -1
+      ? validateCodes(data, colIndexes.code)
+      : { errors: [], validCodeCount: 0, invalidCodeCells: [], missingCodeCells: [] }
 
-  // Collection phase - track all problematic cells
-  const invalidCodeCells: { rowIndex: number; colIndex: number; value: string }[] = []
-  const missingCodeCells: { rowIndex: number; colIndex: number; value: string }[] = []
-  let validCodeCount = 0
+  const { errors, validCodeCount, invalidCodeCells, missingCodeCells } = validationResult
 
+  // Categorization - build category -> age -> count map
   const categories = data.reduce(
     (acc, row, index) => {
-      // Use Highland Scrutineer code format (e.g., P08, B12)
       const cell = row[colIndexes.code]
 
-      if (!cell || cell.trim() === '') {
-        missingCodeCells.push({
-          rowIndex: index,
-          colIndex: colIndexes.code,
-          value: cell || '',
-        })
-      } else if (/^[PBNIRX]\d{2}$/.test(cell)) {
+      // Only process valid Highland Scrutineer codes (e.g., P08, B12)
+      if (cell && /^[PBNIRX]\d{2}$/.test(cell)) {
         const categoryCode = cell.substring(0, 1)
         const age = cell.substring(1)
         acc[categoryCode] = acc[categoryCode] || {}
         acc[categoryCode][age] = (acc[categoryCode][age] || 0) + 1
-        validCodeCount++
-      } else {
-        invalidCodeCells.push({
-          rowIndex: index,
-          colIndex: colIndexes.code,
-          value: cell,
-        })
       }
       return acc
     },
     {} as Record<string, Record<string, number>>,
   )
-
-  // Generation phase - create ValidationIssue objects with messages and cells
-  const totalSkipped = invalidCodeCells.length + missingCodeCells.length
-
-  // Combine invalid and missing codes into single issue with examples
-  // Only create warning if we have SOME valid codes (otherwise no-valid-codes error will handle it)
-  if (totalSkipped > 0 && validCodeCount > 0) {
-    // Get examples from invalid codes first, then missing if needed
-    const exampleCells = [
-      ...invalidCodeCells.slice(0, 3),
-      ...missingCodeCells.slice(0, Math.max(0, 3 - invalidCodeCells.length)),
-    ].slice(0, 3)
-
-    const examples = exampleCells
-      .map((c) => `"${c.value || '(empty)'}"`)
-      .join(', ')
-
-    errors.push({
-      type: 'invalid-codes',
-      severity: 'warning',
-      message: `${totalSkipped} row${totalSkipped > 1 ? 's' : ''} skipped (invalid codes like ${examples})`,
-      cells: [...invalidCodeCells, ...missingCodeCells],
-    })
-  }
-
-  // Critical error: no valid codes at all (blocking)
-  if (validCodeCount === 0 && data.length > 0) {
-    errors.push({
-      type: 'no-valid-codes',
-      severity: 'error',
-      message: 'No valid dancer codes found. Ensure codes start with P, B, N, I, R, or X followed by exactly 2 digits',
-      cells: [...invalidCodeCells, ...missingCodeCells],
-    })
-  }
 
   return { categories, errors }
 }
@@ -328,11 +272,9 @@ export function processCSVData(csvData: string[][]): ProcessedData {
 
   const errors: ValidationIssue[] = []
 
-  // Detect if first row is headers
+  // Detect if first row is headers using centralized validation
   const potentialHeaders = csvData[0]
-  const hasHeaderRow = potentialHeaders.some((header) =>
-    INPUT_COLUMNS.some((col: InputColumn) => col.regex.test(header)),
-  )
+  const hasHeaderRow = detectHeaders(potentialHeaders)
 
   // Error if headers not detected
   if (!hasHeaderRow) {

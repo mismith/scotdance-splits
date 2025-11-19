@@ -3,11 +3,11 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import {
   INPUT_COLUMNS,
-  type ValidationIssue,
   autoPartitionCategories,
   categorizeData,
   detectColumnMapping,
 } from '@/lib/input'
+import { detectHeaders, validateColumnMapping, type ValidationIssue } from '@/lib/validation'
 import { calculateDefaultMaxBib } from '@/lib/output'
 
 export interface DancerData {
@@ -75,11 +75,9 @@ export const useAppStore = defineStore('app', () => {
 
     const csvData = inputCSV.value
 
-    // Detect if first row is headers
+    // Detect if first row is headers using centralized function
     const potentialHeaders = csvData[0]
-    const hasHeaders = potentialHeaders.some((header) =>
-      INPUT_COLUMNS.some((col) => col.regex.test(header)),
-    )
+    const hasHeaders = detectHeaders(potentialHeaders)
 
     // Error if headers not detected
     if (!hasHeaders) {
@@ -90,10 +88,14 @@ export const useAppStore = defineStore('app', () => {
       })
     }
 
+    // Validate column mapping completeness
+    const columnMappingErrors = validateColumnMapping(colIndexes.value)
+    errors.push(...columnMappingErrors)
+
     // Extract data rows (skip headers if present)
     const dataRows = hasHeaders ? csvData.slice(1) : csvData
 
-    // Process data with current column mappings to get validation errors
+    // Get validation errors from categorizeData (which uses validation utilities)
     const { errors: categorizeErrors } = categorizeData(dataRows, colIndexes.value)
 
     // Combine errors
@@ -147,9 +149,7 @@ export const useAppStore = defineStore('app', () => {
     if (inputCSV.value && inputCSV.value.length > 0) {
       const csvData = inputCSV.value
       const potentialHeaders = csvData[0]
-      const hasHeaders = potentialHeaders.some((header) =>
-        INPUT_COLUMNS.some((col) => col.regex.test(header)),
-      )
+      const hasHeaders = detectHeaders(potentialHeaders)
       hasHeaderRow.value = hasHeaders
 
       const dataRows = hasHeaders ? csvData.slice(1) : csvData
@@ -222,9 +222,7 @@ export const useAppStore = defineStore('app', () => {
 
       // Auto-detect column mappings
       const potentialHeaders = csvData[0]
-      const hasHeaders = potentialHeaders.some((header) =>
-        INPUT_COLUMNS.some((col) => col.regex.test(header)),
-      )
+      const hasHeaders = detectHeaders(potentialHeaders)
       const headers = hasHeaders ? potentialHeaders : []
       const colIndexes = detectColumnMapping(headers)
 

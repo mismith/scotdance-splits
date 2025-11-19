@@ -411,63 +411,8 @@ const showDancers = ref(false)
 // Demo mode detection
 const isDemoMode = computed(() => route.name === 'demo')
 
-// Data quality status
-const dataStatus = computed(() => {
-  const inputData = store.inputCSV?.slice(store.hasHeaderRow ? 1 : 0) || []
-  const totalEntries = inputData.length
-
-  // Check column mapping completeness - only require what's actually in INPUT_COLUMNS
-  const requiredColumns = INPUT_COLUMNS.filter((col) => col.required).map((col) => col.id)
-  const unmappedColumns = requiredColumns.filter((col) => store.colIndexes[col] === -1)
-
-  const hasMissingColumns = unmappedColumns.length > 0
-
-  if (hasMissingColumns) {
-    // Create specific error message with missing column names
-    const missingNames = unmappedColumns.map((col) => {
-      const inputCol = INPUT_COLUMNS.find((c) => c.id === col)
-      return inputCol?.name || col
-    })
-
-    const missingText =
-      missingNames.length === 1
-        ? missingNames[0]
-        : missingNames.length === 2
-          ? `${missingNames[0]} and ${missingNames[1]}`
-          : `${missingNames.slice(0, -1).join(', ')}, and ${missingNames[missingNames.length - 1]}`
-
-    return {
-      status: 'error' as const,
-      label: `Missing ${missingText} column mapping`,
-      actionLabel: 'Fix mapping',
-    }
-  }
-
-  return {
-    status: 'success' as const,
-    label: `Data: ${totalEntries} entries, ready`,
-    actionLabel: undefined,
-  }
-})
-
-// Combined validation issues (dataStatus errors + store.inputErrors)
-const allValidationIssues = computed((): ValidationIssue[] => {
-  const issues: ValidationIssue[] = []
-
-  // Add dataStatus error if exists (column mapping issues)
-  if (dataStatus.value.status === 'error') {
-    issues.push({
-      type: 'missing-headers',
-      severity: 'error',
-      message: dataStatus.value.label,
-    })
-  }
-
-  // Add store validation errors
-  issues.push(...store.inputErrors)
-
-  return issues
-})
+// Validation issues from store (now includes all validation: headers, column mapping, codes)
+const allValidationIssues = computed(() => store.inputErrors)
 
 // Extract affected rows from validation issues for row-level highlighting
 const affectedRows = computed(() => {
