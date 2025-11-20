@@ -7,8 +7,9 @@ import {
   categorizeData,
   detectColumnMapping,
 } from '@/lib/input'
-import { detectHeaders, validateColumnMapping, type ValidationIssue } from '@/lib/validation'
+import { detectHeaders, validateColumnMapping, validateCodes, type ValidationIssue } from '@/lib/validation'
 import { calculateDefaultMaxBib } from '@/lib/output'
+import type { Cell } from '@/lib/types'
 
 export interface DancerData {
   firstName: string
@@ -23,7 +24,7 @@ export interface DancerData {
 export const useAppStore = defineStore('app', () => {
   // File input state
   const inputFiles = ref<File[]>()
-  const inputCSV = ref<string[][]>()
+  const inputCSV = ref<Cell[][]>()
   const fileLoadError = ref<string>()
   const isLoadingInputFile = ref(false)
 
@@ -73,10 +74,12 @@ export const useAppStore = defineStore('app', () => {
       return []
     }
 
-    const csvData = inputCSV.value
+    const cellData = inputCSV.value
+    // Extract raw string values for validation
+    const rawData = cellData.map(row => row.map(cell => cell.value))
 
     // Detect if first row is headers using centralized function
-    const potentialHeaders = csvData[0]
+    const potentialHeaders = rawData[0]
     const hasHeaders = detectHeaders(potentialHeaders)
 
     // Error if headers not detected
@@ -93,7 +96,7 @@ export const useAppStore = defineStore('app', () => {
     errors.push(...columnMappingErrors)
 
     // Extract data rows (skip headers if present)
-    const dataRows = hasHeaders ? csvData.slice(1) : csvData
+    const dataRows = hasHeaders ? rawData.slice(1) : rawData
 
     // Get validation errors from categorizeData (which uses validation utilities)
     const { errors: categorizeErrors } = categorizeData(dataRows, colIndexes.value)
@@ -105,13 +108,13 @@ export const useAppStore = defineStore('app', () => {
   })
 
   // Actions
-  function setInputData(files: File[], csvData: string[][]) {
+  function setInputData(files: File[], cellData: Cell[][]) {
     inputFiles.value = files
-    inputCSV.value = csvData
+    inputCSV.value = cellData
 
-    // Auto-detect headers
-    if (csvData.length > 0) {
-      inputHeaders.value = csvData[0]
+    // Auto-detect headers (extract values from first row)
+    if (cellData.length > 0) {
+      inputHeaders.value = cellData[0].map(cell => cell.value)
     }
   }
 
@@ -147,18 +150,21 @@ export const useAppStore = defineStore('app', () => {
 
     // Reprocess categories with new column mappings
     if (inputCSV.value && inputCSV.value.length > 0) {
-      const csvData = inputCSV.value
-      const potentialHeaders = csvData[0]
+      const cellData = inputCSV.value
+      // Extract raw string values for processing
+      const rawData = cellData.map(row => row.map(cell => cell.value))
+
+      const potentialHeaders = rawData[0]
       const hasHeaders = detectHeaders(potentialHeaders)
       hasHeaderRow.value = hasHeaders
 
-      const dataRows = hasHeaders ? csvData.slice(1) : csvData
+      const dataRows = hasHeaders ? rawData.slice(1) : rawData
       const { categories: cats } = categorizeData(dataRows, colIndexes.value)
       const partitionedCats = autoPartitionCategories(cats)
 
       setProcessedData(cats, partitionedCats)
 
-      const defaultMaxBib = calculateDefaultMaxBib(csvData, colIndexes.value, hasHeaders)
+      const defaultMaxBib = calculateDefaultMaxBib(rawData, colIndexes.value, hasHeaders)
       updateExportSettings({ maxBibNumber: defaultMaxBib })
     }
   }
@@ -210,24 +216,55 @@ export const useAppStore = defineStore('app', () => {
       })
 
       // Filter out completely empty rows (e.g., trailing newlines)
-      const csvData = (results.data as string[][]).filter(row =>
+      const rawData = (results.data as string[][]).filter(row =>
         row.some(cell => cell && cell.trim() !== '')
       )
-      if (!csvData || csvData.length === 0) {
+      if (!rawData || rawData.length === 0) {
         throw new Error('CSV file is empty')
       }
 
-      // Set basic input data
-      setInputData([file], csvData)
-
       // Auto-detect column mappings
-      const potentialHeaders = csvData[0]
+      const potentialHeaders = rawData[0]
       const hasHeaders = detectHeaders(potentialHeaders)
       const headers = hasHeaders ? potentialHeaders : []
-      const colIndexes = detectColumnMapping(headers)
+      const detectedColIndexes = detectColumnMapping(headers)
+
+      // Get data rows for validation (skip headers if present)
+      const dataRows = hasHeaders ? rawData.slice(1) : rawData
+
+      // Run validation to get error cells
+      const { invalidCodeCells, missingCodeCells } =
+        detectedColIndexes.code !== -1
+          ? validateCodes(dataRows, detectedColIndexes.code)
+          : { invalidCodeCells: [], missingCodeCells: [] }
+
+      // Create a map of error cells for O(1) lookup
+      const errorCellMap = new Map<string, 'error' | 'warning'>()
+      ;[...invalidCodeCells, ...missingCodeCells].forEach(({ rowIndex, colIndex }) => {
+        // Adjust rowIndex to account for header row
+        const actualRowIndex = hasHeaders ? rowIndex + 1 : rowIndex
+        errorCellMap.set(`${actualRowIndex},${colIndex}`, 'warning')
+      })
+
+      // Convert string[][] to Cell[][] with validation flags
+      const cellData: Cell[][] = rawData.map((row, rowIndex) =>
+        row.map((value, colIndex) => {
+          const key = `${rowIndex},${colIndex}`
+          const severity = errorCellMap.get(key)
+
+          return {
+            value,
+            error: severity === 'error',
+            warning: severity === 'warning',
+          }
+        })
+      )
+
+      // Set enriched cell data
+      setInputData([file], cellData)
 
       // Update column indexes (this will reprocess data)
-      updateColIndexes(colIndexes)
+      updateColIndexes(detectedColIndexes)
 
       return true
     } catch (error) {

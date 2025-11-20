@@ -14,12 +14,11 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "@handsontable/vue3": "^16.0.1",
     "@tailwindcss/vite": "^4.1.11",
+    "@tanstack/vue-table": "^8.21.3",
     "@vueuse/core": "^13.9.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "handsontable": "^16.0.1",
     "linear-partitioning": "^0.3.2",
     "lucide-vue-next": "^0.536.0",
     "papaparse": "^5.5.3",

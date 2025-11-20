@@ -103,6 +103,7 @@
       <ValidationBanner
         v-if="!validationDismissed && allValidationIssues.length > 0"
         :issues="allValidationIssues"
+        v-trans="'validation-banner'"
         @review="handleReviewErrors"
         @dismiss="dismissValidationErrors"
       />
@@ -204,12 +205,7 @@
     >
       <template #preview>
         <div class="border rounded-lg overflow-hidden flex-1">
-          <InputDataTable
-            :data="store.inputCSV || []"
-            :headers="store.inputHeaders"
-            :highlight-cells="highlightCells"
-            :affected-rows="affectedRows"
-          />
+          <CellTable :data="store.inputCSV || []" :headers="store.inputHeaders" />
         </div>
       </template>
       <template #settings>
@@ -265,18 +261,13 @@
       @save="saveExportSettings"
     >
       <template #preview>
-        <h3 class="text-sm font-medium">Export Preview</h3>
         <div class="border rounded-lg">
-          <OutputDataTable :data="exportPreviewData" :height="300" />
+          <CellTable :data="exportPreviewData" :show-headers="false" :show-row-headers="false" />
         </div>
-        <p class="text-xs text-muted-foreground">
-          Preview of your export data. Changes to settings will update this preview in real-time.
-        </p>
       </template>
       <template #settings>
         <div class="space-y-6">
           <div class="space-y-4">
-            <h3 class="text-sm font-semibold">Output Format</h3>
             <div class="space-y-4">
               <div class="flex items-center justify-between">
                 <div class="w-full">
@@ -369,8 +360,7 @@ import { useRoute, onBeforeRouteLeave } from 'vue-router'
 import { useEventListener } from '@vueuse/core'
 import { useAppStore } from '@/stores/app'
 import CategoryCard from '@/components/CategoryCard.vue'
-import InputDataTable from '@/components/InputDataTable.vue'
-import OutputDataTable from '@/components/OutputDataTable.vue'
+import CellTable from '@/components/CellTable.vue'
 import SettingsDialog from '@/components/SettingsDialog.vue'
 import ValidationBanner from '@/components/ValidationBanner.vue'
 import { Badge } from '@/components/ui/badge'
@@ -413,41 +403,6 @@ const isDemoMode = computed(() => route.name === 'demo')
 
 // Validation issues from store (now includes all validation: headers, column mapping, codes)
 const allValidationIssues = computed(() => store.inputErrors)
-
-// Extract affected rows from validation issues for row-level highlighting
-const affectedRows = computed(() => {
-  // Add offset for header row if present, since errors are indexed on sliced data
-  const rowOffset = store.hasHeaderRow ? 1 : 0
-  const rows = new Set<number>()
-
-  store.inputErrors
-    .filter((error) => error.cells) // Only issues with cell-level details
-    .forEach((error) => {
-      error.cells!.forEach((cell) => {
-        rows.add(cell.rowIndex + rowOffset)
-      })
-    })
-
-  return Array.from(rows)
-})
-
-// Extract highlight cells from validation issues for table display
-const highlightCells = computed(() => {
-  // Add offset for header row if present, since errors are indexed on sliced data
-  const rowOffset = store.hasHeaderRow ? 1 : 0
-
-  const result = store.inputErrors
-    .filter((error) => error.cells) // Only issues with cell-level details
-    .flatMap((error) =>
-      error.cells!.map((cell) => ({
-        rowIndex: cell.rowIndex + rowOffset,
-        colIndex: cell.colIndex,
-        severity: error.severity,
-      })),
-    )
-
-  return result
-})
 
 // Partitions store - maps category code to age ranges
 const partitions = ref<Record<string, Partition[]>>({})
@@ -574,6 +529,9 @@ function handlePartition(categoryCode: string, partitionedAgeRanges: number[][])
 const exportPreviewData = computed(() => {
   if (!store.inputCSV) return []
 
+  // Extract raw string values for processing
+  const rawData = store.inputCSV.map((row) => row.map((cell) => cell.value))
+
   const settings: ExportSettings = {
     maxBibNumber: store.maxBibNumber,
     isPrintingYears: store.isPrintingYears,
@@ -581,18 +539,25 @@ const exportPreviewData = computed(() => {
     combineNames: store.combineNames,
   }
 
-  return generateExportData(
-    store.inputCSV,
+  const exportData = generateExportData(
+    rawData,
     store.colIndexes,
     partitions.value,
     settings,
     store.hasHeaderRow,
   )
+
+  // Convert (string | number)[][] to Cell[][] for display
+  return exportData.map((row) =>
+    row.map((value) => ({ value: String(value), error: false, warning: false })),
+  )
 })
 
 // Export function using shared logic
 function handleExportDownload() {
-  const csvContent = convertToCSV(exportPreviewData.value)
+  // Extract raw values from Cell[][] for CSV conversion
+  const rawData = exportPreviewData.value.map((row) => row.map((cell) => cell.value))
+  const csvContent = convertToCSV(rawData)
   downloadCSV(csvContent, 'splits-export')
 }
 </script>

@@ -85,14 +85,14 @@
           </div>
         </section>
 
-        <!-- Section 2: The Transformation - Parallax Slide-Up -- >
+        <!-- Section 2: The Transformation - Parallax Slide-Up -->
         <section
           ref="transformationSectionRef"
           class="relative min-h-[150vh] px-6 bg-muted/20"
           style="perspective: 2000px"
         >
           <div class="max-w-6xl mx-auto" style="transform-style: preserve-3d">
-            <!-- Before Table (Sticky, stays in view) -- >
+            <!-- Before Table (Sticky, stays in view) -->
             <div
               class="sticky top-24 py-12 max-w-[92%] mx-auto"
               style="transform-style: preserve-3d"
@@ -111,15 +111,12 @@
                   class="rounded-xl overflow-x-auto overflow-y-hidden border max-h-[500px] will-change-transform"
                   style="backface-visibility: hidden"
                 >
-                  <InputDataTable
-                    :data="mockInputDataRows.slice(0, 20)"
-                    :headers="mockInputHeaders"
-                  />
+                  <CellTable :data="mockInputDataRows.slice(0, 20)" :headers="mockInputHeaders" />
                 </div>
               </div>
             </div>
 
-            <!-- After Table (Slides up from below to cover Before) -- >
+            <!-- After Table (Slides up from below to cover Before) -->
             <div
               class="relative py-24 -mt-32 max-w-[92%] mx-auto"
               style="transform-style: preserve-3d"
@@ -140,12 +137,16 @@
                   class="rounded-xl overflow-x-auto overflow-y-hidden border-2 border-primary/30 max-h-[500px] will-change-transform"
                   style="backface-visibility: hidden"
                 >
-                  <OutputDataTable :data="filteredOutputData" />
+                  <CellTable
+                    :data="filteredOutputData"
+                    :show-headers="false"
+                    :show-row-headers="false"
+                  />
                 </div>
               </div>
             </div>
           </div>
-        </section>-->
+        </section>
 
         <!-- Section 3: How It Works -->
         <section class="px-6 py-24 md:py-32">
@@ -609,15 +610,15 @@ import { useScroll } from '@vueuse/core'
 import { useAppStore } from '@/stores/app'
 import { fetchDemoCSV, type ValidationIssue } from '@/lib/input'
 import FileUpload from '@/components/FileUpload.vue'
-import InputDataTable from '@/components/InputDataTable.vue'
-import OutputDataTable from '@/components/OutputDataTable.vue'
+import CellTable from '@/components/CellTable.vue'
 import ValidationBanner from '@/components/ValidationBanner.vue'
 import { Button } from '@/components/ui/button'
 import { createPartitions, processCSVData } from '@/lib/input'
 import { type ExportSettings, calculateDefaultMaxBib, generateExportData } from '@/lib/output'
+import type { Cell } from '@/lib/types'
 
 // Dynamic mock data loaded from CSV
-const mockInputData = ref<string[][]>([])
+const mockInputData = ref<Cell[][]>([])
 const mockInputHeaders = ref<string[]>([])
 const isLoadingMockData = ref(true)
 
@@ -898,7 +899,10 @@ async function loadMockData() {
     const csvData = results.data as string[][]
     if (csvData && csvData.length > 0) {
       mockInputHeaders.value = csvData[0]
-      mockInputData.value = csvData
+      // Convert string[][] to Cell[][] (no validation for demo data)
+      mockInputData.value = csvData.map((row) =>
+        row.map((value) => ({ value, error: false, warning: false })),
+      )
     }
   } catch (error) {
     console.error('Failed to load mock data:', error)
@@ -919,7 +923,9 @@ const mockProcessedData = computed(() => {
     return null
   }
   try {
-    return processCSVData(mockInputData.value)
+    // Extract raw string values for processing
+    const rawData = mockInputData.value.map((row) => row.map((cell) => cell.value))
+    return processCSVData(rawData)
   } catch (error) {
     console.error('Failed to process mock data:', error)
     return null
@@ -940,8 +946,11 @@ const realOutputData = computed(() => {
     return []
   }
 
+  // Extract raw string values for processing
+  const rawData = mockInputData.value.map((row) => row.map((cell) => cell.value))
+
   const defaultMaxBib = calculateDefaultMaxBib(
-    mockInputData.value,
+    rawData,
     mockProcessedData.value.colIndexes,
     mockProcessedData.value.hasHeaderRow,
   )
@@ -954,7 +963,7 @@ const realOutputData = computed(() => {
   }
 
   return generateExportData(
-    mockInputData.value,
+    rawData,
     mockProcessedData.value.colIndexes,
     mockPartitions.value,
     settings,
@@ -963,11 +972,12 @@ const realOutputData = computed(() => {
 })
 
 // Filter output data to show only first 3 groups
-const filteredOutputData = computed(() => {
+const filteredOutputData = computed((): Cell[][] => {
   const data = realOutputData.value
   if (data.length === 0) return []
 
   let groupCount = 0
+  let filteredData: (string | number)[][] = data
 
   for (let i = 0; i < data.length; i++) {
     const row = data[i]
@@ -977,12 +987,16 @@ const filteredOutputData = computed(() => {
       if (groupCount > 3) {
         // Return everything up to (but not including) this 4th group header
         // Also exclude the separator row before it (i-1)
-        return data.slice(0, Math.max(0, i - 1))
+        filteredData = data.slice(0, Math.max(0, i - 1))
+        break
       }
     }
   }
 
-  return data // Less than 3 groups, return all
+  // Convert (string | number)[][] to Cell[][]
+  return filteredData.map((row) =>
+    row.map((value) => ({ value: String(value), error: false, warning: false })),
+  )
 })
 
 // Scroll-based rotation angles for parallax effect
