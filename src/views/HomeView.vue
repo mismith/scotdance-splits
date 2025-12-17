@@ -150,6 +150,11 @@
 
         <!-- Section 3: How It Works -->
         <section class="px-6 py-24 md:py-32">
+          <header class="flex mb-16">
+            <h2 class="text-[10px] uppercase tracking-widest mx-auto text-muted-foreground">
+              How it works
+            </h2>
+          </header>
           <div class="max-w-3xl mx-auto text-center space-y-16">
             <div class="space-y-24">
               <!-- Step 1: Choose -->
@@ -167,7 +172,7 @@
                 <p class="text-lg md:text-xl text-muted-foreground">
                   Start with your dancer registration data.
                 </p>
-                <p class="text-sm text-muted-foreground/70 max-w-xl mx-auto">
+                <p class="text-sm text-muted-foreground/70 max-w-lg mx-auto">
                   Choose a CSV file exported from
                   <a
                     href="http://eventry.net"
@@ -186,53 +191,6 @@
                     HD Comps</a
                   >, Google Forms, or whatever tool you use to gather dancer registrations.
                 </p>
-
-                <!-- Integration Badges -->
-                <div class="flex items-center justify-center gap-3">
-                  <!-- Eventry Badge -->
-                  <a
-                    href="http://eventry.net"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="inline-flex items-center gap-3 px-2 py-1 rounded-sm border-2 bg-background border-border hover:bg-muted/50 transition-all shadow-md hover:shadow-lg min-w-[150px]"
-                  >
-                    <img
-                      src="/src/assets/eventry-icon.png"
-                      alt="Eventry"
-                      class="w-8 h-8 object-contain"
-                    />
-                    <div class="flex flex-col items-start -space-y-0.5">
-                      <span
-                        class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide"
-                      >
-                        Made for
-                      </span>
-                      <span class="text-base font-semibold text-foreground">Eventry</span>
-                    </div>
-                  </a>
-
-                  <!-- HD Comps Badge -->
-                  <a
-                    href="https://hdcomps.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="inline-flex items-center gap-3 px-2 py-1 rounded-sm border-2 bg-background border-border hover:bg-muted/50 transition-all shadow-md hover:shadow-lg min-w-[150px]"
-                  >
-                    <img
-                      src="/src/assets/hdc-icon.png"
-                      alt="HD Comps"
-                      class="w-8 h-8 object-contain"
-                    />
-                    <div class="flex flex-col items-start -space-y-0.5">
-                      <span
-                        class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide"
-                      >
-                        Made for
-                      </span>
-                      <span class="text-base font-semibold text-foreground">HD Comps</span>
-                    </div>
-                  </a>
-                </div>
               </div>
 
               <!-- Step 2: Split -->
@@ -251,7 +209,7 @@
                   Balance groups automatically—or adjust manually.
                 </p>
 
-                <p class="text-sm text-muted-foreground/70 max-w-xl mx-auto">
+                <p class="text-sm text-muted-foreground/70 max-w-lg mx-auto">
                   Each age group gets as close to an equal number of dancers as possible. Bib
                   numbers count down from your highest number in reverse registration order. You can
                   tweak these settings and/or drag to resize groups as needed.
@@ -520,7 +478,7 @@
                 <p class="text-lg md:text-xl text-muted-foreground">
                   Export—and carry on organizing your competition.
                 </p>
-                <p class="text-sm text-muted-foreground/70 max-w-xl mx-auto">
+                <p class="text-sm text-muted-foreground/70 max-w-lg mx-auto">
                   Download a CSV file to import into
                   <a
                     href="https://scotdance.app"
