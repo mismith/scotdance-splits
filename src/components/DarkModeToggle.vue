@@ -4,9 +4,9 @@
       <Button
         variant="ghost"
         size="sm"
-        v-view-transition-name="'DarkModeToggle'"
         @click="toggleDarkMode"
         class="w-9 h-9 p-0"
+        :class="'[view-transition-name:DarkModeToggle]'"
       >
         <Sun v-if="isDark" class="h-4 w-4" />
         <Moon v-else class="h-4 w-4" />

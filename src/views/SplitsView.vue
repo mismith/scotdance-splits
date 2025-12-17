@@ -2,7 +2,6 @@
   <div class="flex flex-col min-h-screen">
     <!-- Fixed Toolbar -->
     <header
-      style="view-transition-name: match-element"
       class="fixed top-0 left-0 right-0 z-50 grid grid-cols-[1fr_auto_1fr] items-center px-4 h-16 bg-gradient-to-b from-background to-transparent"
     >
       <!-- Left side -->
@@ -31,11 +30,11 @@
                 src="/touchicon.png"
                 alt="Splits Logo"
                 class="size-4"
-                v-view-transition-name="'splits-logo'"
+                :class="'[view-transition-name:splits-logo]'"
               />
               <span
                 class="text-sm font-semibold text-primary"
-                v-view-transition-name="'splits-name'"
+                :class="'[view-transition-name:splits-name]'"
               >
                 Splits
               </span>
@@ -103,14 +102,12 @@
       <ValidationBanner
         v-if="!validationDismissed && allValidationIssues.length > 0"
         :issues="allValidationIssues"
-        v-trans="'validation-banner'"
         @review="handleReviewErrors"
         @dismiss="dismissValidationErrors"
       />
       <!-- Export CTA (hidden when there are unresolved issues) -->
       <div
         v-if="allValidationIssues.length === 0 || validationDismissed"
-        v-view-transition-name="'FloatingFooter'"
         class="pointer-events-auto bg-background/70 backdrop-blur-md border-t md:border border-border shadow-sm rounded-t-4xl md:rounded-4xl px-6 py-5 md:p-6 max-w-lg mx-auto flex flex-col gap-3"
       >
         <div v-if="allValidationIssues.length === 0" class="flex items-center justify-center gap-2">

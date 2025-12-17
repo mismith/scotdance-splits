@@ -43,16 +43,16 @@
             <!-- Center controls -->
             <div class="flex items-center gap-2">
               <Button
-                v-view-transition-name="'match-element'"
                 variant="outline"
                 size="sm"
                 @click="decrementGroups"
                 :disabled="numAgeGroups <= 1"
                 class="w-6 h-6 rounded-full p-0"
+                :class="'[view-transition-name:match-element]'"
               >
                 <Minus class="h-3 w-3" />
               </Button>
-              <div v-view-transition-name="'match-element'" class="flex items-center gap-2">
+              <div class="flex items-center gap-2" :class="'[view-transition-name:match-element]'">
                 <input
                   ref="groupsInputRef"
                   type="number"
@@ -72,12 +72,12 @@
                 </span>
               </div>
               <Button
-                v-view-transition-name="'match-element'"
                 variant="outline"
                 size="sm"
                 @click="incrementGroups"
                 :disabled="numAgeGroups >= ageCountsArray.length"
                 class="w-6 h-6 rounded-full p-0"
+                :class="'[view-transition-name:match-element]'"
               >
                 <Plus class="h-3 w-3" />
               </Button>
@@ -112,12 +112,12 @@
               v-for="[age, count] in ageCountsArray"
               :key="age"
               ref="leftSideRef"
-              v-view-transition-name="'match-element'"
-              style="view-transition-class: fixed-height"
               class="p-3 text-sm bg-secondary/50 border border-border rounded-3xl select-text"
+              :class="'[view-transition-name:match-element]'"
+              style="view-transition-class: fixed-height"
             >
               <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-                <span v-view-transition-name="'match-element'" class="font-medium">
+                <span class="font-medium" :class="'[view-transition-name:match-element]'">
                   Age {{ age }}
                 </span>
                 <DancerCount
@@ -139,16 +139,16 @@
               v-for="([[minAge, maxAge], count], index) in partitionedAgeCountsArray"
               :key="index"
               ref="rightSideRef"
-              v-view-transition-name="'match-element'"
+              class="p-3 text-sm bg-secondary/50 border border-border rounded-3xl hover:bg-secondary/70 transition-all select-text cursor-pointer"
+              :class="'[view-transition-name:match-element]'"
               style="view-transition-class: fixed-height"
               :style="{ flex: `${count} 1 0` }"
-              class="p-3 text-sm bg-secondary/50 border border-border rounded-3xl hover:bg-secondary/70 transition-all select-text cursor-pointer"
               @click="openAgeGroupSheet(index)"
             >
               <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                 <span
-                  v-view-transition-name="'match-element'"
                   class="font-semibold text-foreground"
+                  :class="'[view-transition-name:match-element]'"
                 >
                   {{ getAgeGroupName(minAge, maxAge, isPrintingYears) }}
                 </span>
@@ -170,18 +170,22 @@
             >
               <div
                 v-if="showDancers"
-                v-view-transition-name="`CategoryCard-${id}-DancersColumn-${index}`"
-                style="view-transition-class: fixed-height"
-                :style="{ flex: `${count} 1 0` }"
+                :style="{
+                  flex: `${count} 1 0`,
+                  viewTransitionName: `CategoryCard-${id}-DancersColumn-${index}`,
+                  viewTransitionClass: 'fixed-height',
+                }"
                 class="p-3 text-sm bg-muted/30 border border-border/50 rounded-3xl flex flex-col justify-start select-text"
               >
                 <DancerPreview :dancers="getRealDancersForAgeGroup(index)" />
               </div>
               <div
                 v-else
-                v-view-transition-name="`CategoryCard-${id}-DancersColumn-${index}`"
-                style="view-transition-class: fixed-height"
-                :style="{ flex: `${count} 1 0` }"
+                :style="{
+                  flex: `${count} 1 0`,
+                  viewTransitionName: `CategoryCard-${id}-DancersColumn-${index}`,
+                  viewTransitionClass: 'fixed-height',
+                }"
               ></div>
             </template>
           </div>

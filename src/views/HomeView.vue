@@ -24,11 +24,11 @@
                         src="/touchicon.png"
                         alt="Splits Logo"
                         class="size-4"
-                        v-view-transition-name="'splits-logo'"
+                        :class="'[view-transition-name:splits-logo]'"
                       />
                       <span
                         class="text-sm font-semibold text-primary"
-                        v-view-transition-name="'splits-name'"
+                        :class="'[view-transition-name:splits-name]'"
                       >
                         Splits
                       </span>
