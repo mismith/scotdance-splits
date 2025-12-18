@@ -513,11 +513,11 @@ import { Shield } from 'lucide-vue-next'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { type ValidationIssue } from '@/lib/input'
 import FileUpload from '@/components/FileUpload.vue'
 import TransformationSection from '@/components/TransformationSection.vue'
 import ValidationBanner from '@/components/ValidationBanner.vue'
 import { Button } from '@/components/ui/button'
+import { type ValidationIssue } from '@/lib/input'
 
 // RAF-based header animation
 // Refs for wrapper elements (for transforms) and inner elements (for styling/measurement)

@@ -7,9 +7,14 @@ import {
   categorizeData,
   detectColumnMapping,
 } from '@/lib/input'
-import { detectHeaders, validateColumnMapping, validateCodes, type ValidationIssue } from '@/lib/validation'
 import { calculateDefaultMaxBib } from '@/lib/output'
 import type { Cell } from '@/lib/types'
+import {
+  type ValidationIssue,
+  detectHeaders,
+  validateCodes,
+  validateColumnMapping,
+} from '@/lib/validation'
 
 export interface DancerData {
   firstName: string
@@ -76,7 +81,7 @@ export const useAppStore = defineStore('app', () => {
 
     const cellData = inputCSV.value
     // Extract raw string values for validation
-    const rawData = cellData.map(row => row.map(cell => cell.value))
+    const rawData = cellData.map((row) => row.map((cell) => cell.value))
 
     // Detect if first row is headers using centralized function
     const potentialHeaders = rawData[0]
@@ -114,7 +119,7 @@ export const useAppStore = defineStore('app', () => {
 
     // Auto-detect headers (extract values from first row)
     if (cellData.length > 0) {
-      inputHeaders.value = cellData[0].map(cell => cell.value)
+      inputHeaders.value = cellData[0].map((cell) => cell.value)
     }
   }
 
@@ -152,7 +157,7 @@ export const useAppStore = defineStore('app', () => {
     if (inputCSV.value && inputCSV.value.length > 0) {
       const cellData = inputCSV.value
       // Extract raw string values for processing
-      const rawData = cellData.map(row => row.map(cell => cell.value))
+      const rawData = cellData.map((row) => row.map((cell) => cell.value))
 
       const potentialHeaders = rawData[0]
       const hasHeaders = detectHeaders(potentialHeaders)
@@ -216,8 +221,8 @@ export const useAppStore = defineStore('app', () => {
       })
 
       // Filter out completely empty rows (e.g., trailing newlines)
-      const rawData = (results.data as string[][]).filter(row =>
-        row.some(cell => cell && cell.trim() !== '')
+      const rawData = (results.data as string[][]).filter((row) =>
+        row.some((cell) => cell && cell.trim() !== ''),
       )
       if (!rawData || rawData.length === 0) {
         throw new Error('CSV file is empty')
@@ -257,7 +262,7 @@ export const useAppStore = defineStore('app', () => {
             error: severity === 'error',
             warning: severity === 'warning',
           }
-        })
+        }),
       )
 
       // Set enriched cell data
