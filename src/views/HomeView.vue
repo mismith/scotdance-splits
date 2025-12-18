@@ -7,7 +7,7 @@
       <div class="flex flex-col">
         <!-- Section 1: Hero (100vh) -->
         <section
-          class="min-h-screen flex flex-col items-center justify-between px-6 py-24 relative"
+          class="min-h-screen flex flex-col items-center justify-between px-6 py-24 relative bg-gradient-to-b from-transparent to-background/25"
         >
           <!-- Hero content -->
           <div class="flex-1 flex items-center justify-center w-full">
@@ -89,7 +89,7 @@
         <TransformationSection />
 
         <!-- Section 3: How It Works -->
-        <section class="px-6 py-24 md:py-32">
+        <section class="px-6 py-24 md:py-32 bg-gradient-to-b from-transparent to-background/25">
           <header class="flex mb-16">
             <h2 class="text-[10px] uppercase tracking-widest mx-auto text-muted-foreground">
               How it works
@@ -100,14 +100,17 @@
               <!-- Step 1: Choose -->
               <div class="space-y-6">
                 <div class="flex items-center justify-center gap-4">
+                  <div class="flex-1 flex justify-end">
                     <div
                       class="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full bg-foreground/10 text-foreground font-semibold text-sm md:text-base leading-none flex-shrink-0 mt-0.5"
                     >
                       1
                     </div>
+                  </div>
                   <h2 class="text-4xl md:text-5xl font-semibold tracking-tight text-foreground">
                     Gather
                   </h2>
+                  <span class="flex-1" />
                 </div>
                 <p class="text-lg md:text-xl text-muted-foreground">
                   Start with your dancer registration data.
@@ -136,14 +139,17 @@
               <!-- Step 2: Split -->
               <div class="space-y-6">
                 <div class="flex items-center justify-center gap-4">
+                  <div class="flex-1 flex justify-end">
                     <div
                       class="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full bg-primary/20 text-primary font-semibold text-sm md:text-base leading-none flex-shrink-0 mt-0.5"
                     >
                       2
                     </div>
+                  </div>
                   <h2 class="text-4xl md:text-5xl font-semibold tracking-tight text-primary">
                     Split
                   </h2>
+                  <span class="flex-1" />
                 </div>
                 <p class="text-lg md:text-xl text-muted-foreground">
                   Balance groups automatically—or adjust manually.
@@ -406,14 +412,17 @@
               <!-- Step 3: Go -->
               <div class="space-y-6">
                 <div class="flex items-center justify-center gap-4">
+                  <div class="flex-1 flex justify-end">
                     <div
                       class="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full bg-foreground/10 text-foreground font-semibold text-sm md:text-base leading-none flex-shrink-0 mt-0.5"
                     >
                       3
                     </div>
+                  </div>
                   <h2 class="text-4xl md:text-5xl font-semibold tracking-tight text-foreground">
                     Go
                   </h2>
+                  <span class="flex-1" />
                 </div>
                 <p class="text-lg md:text-xl text-muted-foreground">
                   Export—and carry on organizing your competition.
@@ -457,7 +466,7 @@
         </section>
 
         <!-- Section 4: Privacy -->
-        <section class="px-6 py-24 md:py-32 bg-muted/20">
+        <section class="px-6 py-24 md:py-32 bg-gradient-to-b from-transparent to-background/25">
           <div class="max-w-2xl mx-auto text-center space-y-6">
             <div class="space-y-6">
               <div
