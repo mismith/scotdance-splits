@@ -1,62 +1,3 @@
-<template>
-  <div
-    v-if="props.issues.length > 0 && !isDismissed"
-    class="pointer-events-auto max-w-lg mx-auto mb-4 relative overflow-hidden backdrop-blur-lg rounded-4xl shadow-xl border transition-all duration-300"
-    :class="bannerColorClass"
-  >
-    <!-- Close button -->
-    <Button
-      variant="ghost"
-      size="sm"
-      @click="handleDismiss"
-      class="absolute top-4 right-4 w-8 h-8 p-0 z-10 rounded-full transition-colors"
-      :class="closeButtonClass"
-    >
-      <X class="h-4 w-4" :class="textColorClass" />
-    </Button>
-
-    <!-- Main content -->
-    <div class="p-6 pr-16">
-      <div class="flex items-start gap-4">
-        <!-- Icon -->
-        <div
-          class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center mt-0.5"
-          :class="iconBgClass"
-        >
-          <AlertTriangle class="w-5 h-5" :class="iconColorClass" />
-        </div>
-
-        <!-- Content -->
-        <div class="flex-1 min-w-0">
-          <h3 class="text-base font-semibold mb-1" :class="headingColorClass">
-            {{ issueCount }} data issue{{ issueCount > 1 ? 's' : '' }}
-          </h3>
-
-          <!-- Show all issue messages -->
-          <div class="space-y-2 mb-4">
-            <p
-              v-for="(issue, index) in props.issues"
-              :key="index"
-              class="text-sm"
-              :class="textColorClass"
-            >
-              {{ issue.message }}
-            </p>
-          </div>
-
-          <!-- Action buttons -->
-          <div class="flex gap-2">
-            <Button size="sm" @click="$emit('review')" :class="actionButtonClass">Review</Button>
-            <Button size="sm" variant="ghost" @click="handleDismiss" :class="dismissButtonClass">
-              Dismiss
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { AlertTriangle, X } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
@@ -143,3 +84,62 @@ function handleDismiss() {
   emit('dismiss')
 }
 </script>
+
+<template>
+  <div
+    v-if="props.issues.length > 0 && !isDismissed"
+    class="pointer-events-auto max-w-lg mx-auto mb-4 relative overflow-hidden backdrop-blur-lg rounded-4xl shadow-xl border transition-all duration-300"
+    :class="bannerColorClass"
+  >
+    <!-- Close button -->
+    <Button
+      variant="ghost"
+      size="sm"
+      @click="handleDismiss"
+      class="absolute top-4 right-4 w-8 h-8 p-0 z-10 rounded-full transition-colors"
+      :class="closeButtonClass"
+    >
+      <X class="h-4 w-4" :class="textColorClass" />
+    </Button>
+
+    <!-- Main content -->
+    <div class="p-6 pr-16">
+      <div class="flex items-start gap-4">
+        <!-- Icon -->
+        <div
+          class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center mt-0.5"
+          :class="iconBgClass"
+        >
+          <AlertTriangle class="w-5 h-5" :class="iconColorClass" />
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1 min-w-0">
+          <h3 class="text-base font-semibold mb-1" :class="headingColorClass">
+            {{ issueCount }} data issue{{ issueCount > 1 ? 's' : '' }}
+          </h3>
+
+          <!-- Show all issue messages -->
+          <div class="space-y-2 mb-4">
+            <p
+              v-for="(issue, index) in props.issues"
+              :key="index"
+              class="text-sm"
+              :class="textColorClass"
+            >
+              {{ issue.message }}
+            </p>
+          </div>
+
+          <!-- Action buttons -->
+          <div class="flex gap-2">
+            <Button size="sm" @click="$emit('review')" :class="actionButtonClass">Review</Button>
+            <Button size="sm" variant="ghost" @click="handleDismiss" :class="dismissButtonClass">
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

@@ -1,3 +1,42 @@
+<script setup lang="ts">
+import { useDropZone } from '@vueuse/core'
+import { ref } from 'vue'
+import { Button } from '@/components/ui/button'
+
+interface Props {
+  accept?: string
+  isLoading?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  accept: 'text/csv',
+  isLoading: false,
+})
+
+const emit = defineEmits<{
+  'file-selected': [file: File]
+}>()
+
+const dropZoneRef = ref<HTMLElement>()
+const fileInputRef = ref<HTMLInputElement>()
+
+const { isOverDropZone } = useDropZone(dropZoneRef, {
+  onDrop(files) {
+    if (files?.length === 1 && files[0].type === props.accept) {
+      emit('file-selected', files[0])
+    }
+  },
+})
+
+function handleFileChange(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (file) {
+    emit('file-selected', file)
+  }
+}
+</script>
+
 <template>
   <div
     ref="dropZoneRef"
@@ -50,42 +89,3 @@
     />
   </div>
 </template>
-
-<script setup lang="ts">
-import { useDropZone } from '@vueuse/core'
-import { ref } from 'vue'
-import { Button } from '@/components/ui/button'
-
-interface Props {
-  accept?: string
-  isLoading?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  accept: 'text/csv',
-  isLoading: false,
-})
-
-const emit = defineEmits<{
-  'file-selected': [file: File]
-}>()
-
-const dropZoneRef = ref<HTMLElement>()
-const fileInputRef = ref<HTMLInputElement>()
-
-const { isOverDropZone } = useDropZone(dropZoneRef, {
-  onDrop(files) {
-    if (files?.length === 1 && files[0].type === props.accept) {
-      emit('file-selected', files[0])
-    }
-  },
-})
-
-function handleFileChange(event: Event) {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (file) {
-    emit('file-selected', file)
-  }
-}
-</script>

@@ -1,76 +1,11 @@
-<template>
-  <!-- Section 2: The Transformation - Parallax Slide-Up -->
-  <section
-    ref="transformationSectionRef"
-    class="relative min-h-[150vh] px-6 bg-muted/20"
-    style="perspective: 2000px"
-  >
-    <div class="max-w-6xl mx-auto" style="transform-style: preserve-3d">
-      <!-- Before Table (Sticky, stays in view) -->
-      <div
-        class="sticky top-24 py-12 max-w-[92%] mx-auto"
-        style="transform-style: preserve-3d"
-      >
-        <div
-          class="bg-background border rounded-3xl p-6 md:p-8 shadow-lg relative z-10"
-          :style="{ transform: `rotateX(${beforeRotation}deg) scale(0.95)` }"
-        >
-          <div class="flex items-baseline justify-between mb-6">
-            <h3 class="text-base md:text-lg font-semibold text-muted-foreground">Before</h3>
-            <p class="text-sm md:text-base text-muted-foreground/80 font-medium">
-              Unsorted. Unbalanced. Hours of work ahead.
-            </p>
-          </div>
-          <div
-            class="rounded-xl overflow-x-auto overflow-y-hidden border max-h-[500px] will-change-transform"
-            style="backface-visibility: hidden"
-          >
-            <CellTable :data="mockInputDataRows.slice(0, 20)" :headers="mockInputHeaders" />
-          </div>
-        </div>
-      </div>
-
-      <!-- After Table (Slides up from below to cover Before) -->
-      <div
-        class="relative py-24 -mt-32 max-w-[92%] mx-auto"
-        style="transform-style: preserve-3d"
-      >
-        <div
-          class="bg-primary/5 backdrop-blur-2xl border-2 border-primary/30 rounded-3xl p-6 md:p-8 shadow-2xl relative z-20"
-          :style="{
-            transform: `rotateX(-${afterRotation}deg) translateZ(300px) scale(0.95)`,
-          }"
-        >
-          <div class="flex items-baseline justify-between mb-6">
-            <h3 class="text-base md:text-lg font-semibold text-primary">After</h3>
-            <p class="text-sm md:text-base text-primary/90 font-medium">
-              Balanced groups. Assigned bibs. Done in seconds.
-            </p>
-          </div>
-          <div
-            class="rounded-xl overflow-x-auto overflow-y-hidden border-2 border-primary/30 max-h-[500px] will-change-transform"
-            style="backface-visibility: hidden"
-          >
-            <CellTable
-              :data="filteredOutputData"
-              :show-headers="false"
-              :show-row-headers="false"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-</template>
-
 <script setup lang="ts">
+import { useScroll } from '@vueuse/core'
 import { parse } from 'papaparse'
 import { computed, onMounted, ref } from 'vue'
-import { useScroll } from '@vueuse/core'
-import { fetchDemoCSV, processCSVData, createPartitions } from '@/lib/input'
+import CellTable from '@/components/CellTable.vue'
+import { createPartitions, fetchDemoCSV, processCSVData } from '@/lib/input'
 import { type ExportSettings, calculateDefaultMaxBib, generateExportData } from '@/lib/output'
 import type { Cell } from '@/lib/types'
-import CellTable from '@/components/CellTable.vue'
 
 // Dynamic mock data loaded from CSV
 const mockInputData = ref<Cell[][]>([])
@@ -243,3 +178,58 @@ onMounted(() => {
   loadMockData()
 })
 </script>
+
+<template>
+  <!-- Section 2: The Transformation - Parallax Slide-Up -->
+  <section
+    ref="transformationSectionRef"
+    class="relative min-h-[150vh] px-6 bg-muted/20"
+    style="perspective: 2000px"
+  >
+    <div class="max-w-6xl mx-auto" style="transform-style: preserve-3d">
+      <!-- Before Table (Sticky, stays in view) -->
+      <div class="sticky top-24 py-12 max-w-[92%] mx-auto" style="transform-style: preserve-3d">
+        <div
+          class="bg-background border rounded-3xl p-6 md:p-8 shadow-lg relative z-10"
+          :style="{ transform: `rotateX(${beforeRotation}deg) scale(0.95)` }"
+        >
+          <div class="flex items-baseline justify-between mb-6">
+            <h3 class="text-base md:text-lg font-semibold text-muted-foreground">Before</h3>
+            <p class="text-sm md:text-base text-muted-foreground/80 font-medium">
+              Unsorted. Unbalanced. Hours of work ahead.
+            </p>
+          </div>
+          <div
+            class="rounded-xl overflow-x-auto overflow-y-hidden border max-h-[500px] will-change-transform"
+            style="backface-visibility: hidden"
+          >
+            <CellTable :data="mockInputDataRows.slice(0, 20)" :headers="mockInputHeaders" />
+          </div>
+        </div>
+      </div>
+
+      <!-- After Table (Slides up from below to cover Before) -->
+      <div class="relative py-24 -mt-32 max-w-[92%] mx-auto" style="transform-style: preserve-3d">
+        <div
+          class="bg-primary/5 backdrop-blur-2xl border-2 border-primary/30 rounded-3xl p-6 md:p-8 shadow-2xl relative z-20"
+          :style="{
+            transform: `rotateX(-${afterRotation}deg) translateZ(300px) scale(0.95)`,
+          }"
+        >
+          <div class="flex items-baseline justify-between mb-6">
+            <h3 class="text-base md:text-lg font-semibold text-primary">After</h3>
+            <p class="text-sm md:text-base text-primary/90 font-medium">
+              Balanced groups. Assigned bibs. Done in seconds.
+            </p>
+          </div>
+          <div
+            class="rounded-xl overflow-x-auto overflow-y-hidden border-2 border-primary/30 max-h-[500px] will-change-transform"
+            style="backface-visibility: hidden"
+          >
+            <CellTable :data="filteredOutputData" :show-headers="false" :show-row-headers="false" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</template>
