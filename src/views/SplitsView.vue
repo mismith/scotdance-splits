@@ -1,3 +1,202 @@
+<script setup lang="ts">
+import { useEventListener, useLocalStorage } from '@vueuse/core'
+import { AlertTriangle, Check, Map, Share, Table, Users } from 'lucide-vue-next'
+import { computed, nextTick, onMounted, provide, ref } from 'vue'
+import { onBeforeRouteLeave, useRoute } from 'vue-router'
+import { startViewTransition } from 'vue-view-transitions'
+import { useAppStore } from '@/stores/app'
+import CategoryCard from '@/components/CategoryCard.vue'
+import CellTable from '@/components/CellTable.vue'
+import DialogWithSidebar from '@/components/DialogWithSidebar.vue'
+import ValidationBanner from '@/components/ValidationBanner.vue'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { fetchDemoCSV } from '@/lib/input'
+import { CATEGORY_CODE_NAMES, INPUT_COLUMNS, type Partition, createPartitions } from '@/lib/input'
+import { type ExportSettings, convertToCSV, downloadCSV, generateExportData } from '@/lib/output'
+
+const store = useAppStore()
+const route = useRoute()
+
+const showColumnMappingSheet = ref(false)
+const columnMappingShowSidebar = useLocalStorage(
+  'scotdance.splits.columnMappingDialog.showSidebar',
+  true,
+)
+const showExportSettingsSheet = ref(false)
+const exportShowSidebar = useLocalStorage('scotdance.splits.exportDialog.showSidebar', false)
+const validationDismissed = ref(false)
+const showDancers = ref(false)
+
+// Demo mode detection
+const isDemoMode = computed(() => route.name === 'demo')
+
+// Validation issues from store (now includes all validation: headers, column mapping, codes)
+const allValidationIssues = computed(() => store.inputErrors)
+
+// Partitions store - maps category code to age ranges
+const partitions = ref<Record<string, Partition[]>>({})
+
+// Provide for CategoryCard components
+provide(
+  'isPrintingYears',
+  computed(() => store.isPrintingYears),
+)
+provide('showDancers', showDancers)
+
+// Navigation functions
+// Auto-load demo data if in demo mode and no data exists
+onMounted(async () => {
+  if (isDemoMode.value && !store.hasData) {
+    try {
+      const csvText = await fetchDemoCSV()
+      const demoFile = new File([csvText], 'demo.csv', { type: 'text/csv' })
+      await store.loadFile(demoFile)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load demo data'
+      store.fileLoadError = errorMessage
+    }
+  }
+})
+
+// Browser close/refresh warning - automatically cleaned up on component unmount
+useEventListener('beforeunload', (event: BeforeUnloadEvent) => {
+  if (store.hasData && !isDemoMode.value) {
+    // Cancel the event and show browser's native confirmation dialog
+    event.preventDefault()
+    // Chrome requires returnValue to be set
+    event.returnValue = ''
+  }
+})
+
+// In-app navigation warning
+onBeforeRouteLeave((to, from, next) => {
+  if (store.hasData && !isDemoMode.value) {
+    const confirmed = window.confirm(
+      'Are you sure you want to leave this page? All changes will be lost.',
+    )
+    if (confirmed) {
+      next()
+    } else {
+      next(false)
+    }
+  } else {
+    next()
+  }
+})
+
+const isTransitioningShowDancers = ref(false)
+async function toggleDancers() {
+  isTransitioningShowDancers.value = true
+  await nextTick()
+
+  const viewTransition = startViewTransition()
+  await viewTransition.captured
+  showDancers.value = !showDancers.value
+
+  await viewTransition.finished
+  isTransitioningShowDancers.value = false
+}
+
+function dismissValidationErrors() {
+  validationDismissed.value = true
+}
+
+function handleReviewErrors() {
+  // Open column mapping dialog with sidebar collapsed to focus on the highlighted errors in the table
+  columnMappingShowSidebar.value = false
+  showColumnMappingSheet.value = true
+}
+
+function handleHeaderRowToggle(value: boolean) {
+  store.hasHeaderRow = value
+  // Force errors to regenerate with correct row offsets
+  store.updateColIndexes(store.colIndexes)
+}
+
+function updateColIndex(id: string, value: any) {
+  const newIndexes = { ...store.colIndexes }
+  const stringValue = String(value || 'none')
+  newIndexes[id] = stringValue === 'none' ? -1 : store.inputHeaders.indexOf(stringValue)
+  store.updateColIndexes(newIndexes)
+}
+
+function isFieldValid(fieldId: string) {
+  const column = INPUT_COLUMNS.find((col) => col.id === fieldId)
+  if (column?.required) {
+    return store.colIndexes[fieldId] >= 0
+  }
+  return true
+}
+
+function handlePartition(categoryCode: string, partitionedAgeRanges: number[][]) {
+  // Update the store's partitioned categories first
+  const newPartitionedCategories = {
+    ...store.partitionedCategories,
+    [categoryCode]: partitionedAgeRanges.map(
+      ([minAge, maxAge]) => [minAge, maxAge] as [number, number],
+    ),
+  }
+  store.setProcessedData(store.categories!, newPartitionedCategories)
+
+  // Use shared function to create partitions for this category
+  const categoryPartitions = createPartitions(
+    { [categoryCode]: store.categories?.[categoryCode] || {} },
+    { [categoryCode]: newPartitionedCategories[categoryCode] },
+  )
+
+  partitions.value[categoryCode] = categoryPartitions[categoryCode] || []
+}
+
+// Generate export preview data
+const exportPreviewData = computed(() => {
+  if (!store.inputCSV) return []
+
+  // Extract raw string values for processing
+  const rawData = store.inputCSV.map((row) => row.map((cell) => cell.value))
+
+  const settings: ExportSettings = {
+    maxBibNumber: store.maxBibNumber,
+    isPrintingYears: store.isPrintingYears,
+    includeCountry: store.includeCountry,
+    combineNames: store.combineNames,
+  }
+
+  const exportData = generateExportData(
+    rawData,
+    store.colIndexes,
+    partitions.value,
+    settings,
+    store.hasHeaderRow,
+  )
+
+  // Convert (string | number)[][] to Cell[][] for display
+  return exportData.map((row) =>
+    row.map((value) => ({ value: String(value), error: false, warning: false })),
+  )
+})
+
+// Export function using shared logic
+function handleExportDownload() {
+  // Extract raw values from Cell[][] for CSV conversion
+  const rawData = exportPreviewData.value.map((row) => row.map((cell) => cell.value))
+  const csvContent = convertToCSV(rawData)
+  downloadCSV(csvContent, 'splits-export')
+}
+</script>
+
 <template>
   <div class="flex flex-col min-h-screen">
     <!-- Fixed Toolbar -->
@@ -91,6 +290,7 @@
           ref="categoryCardRef"
           :name="CATEGORY_CODE_NAMES[categoryCode]"
           :ages="store.categories?.[categoryCode] || {}"
+          :transitioning="isTransitioningShowDancers"
           @partition="handlePartition(categoryCode, $event)"
         />
       </div>
@@ -173,39 +373,27 @@
           </Button>
         </div>
 
-        <!-- Split Export Button -->
-        <div class="flex rounded-full overflow-hidden border">
-          <Button size="lg" @click="handleExportDownload" class="flex-1 rounded-r-none border-r-0">
-            <span class="flex items-center gap-2">
-              <Share class="h-4 w-4" />
-              Export
-            </span>
-          </Button>
-          <Button
-            size="lg"
-            @click="showExportSettingsSheet = true"
-            class="px-3 rounded-l-none border-l"
-          >
-            <Settings class="h-4 w-4" />
-          </Button>
-        </div>
+        <!-- Export Button -->
+        <Button size="lg" @click="showExportSettingsSheet = true">
+          <span class="flex items-center gap-2">Export →</span>
+        </Button>
       </div>
     </div>
 
     <!-- Column mapping settings dialog -->
-    <SettingsDialog
+    <DialogWithSidebar
       v-model:open="showColumnMappingSheet"
-      v-model:sidebar-collapsed="columnMappingSidebarCollapsed"
+      v-model:show-sidebar="columnMappingShowSidebar"
       title="Column Mapping"
       description="Map your CSV columns to the correct fields for processing"
-      @save="saveColumnMapping"
     >
-      <template #preview>
-        <div class="border rounded-lg overflow-hidden flex-1">
-          <CellTable :data="store.inputCSV || []" :headers="store.inputHeaders" />
-        </div>
-      </template>
-      <template #settings>
+      <CellTable
+        :data="store.inputCSV || []"
+        :headers="store.inputHeaders"
+        wrapper-class="border rounded-3xl h-full bg-muted/50"
+      />
+
+      <template #sidebar>
         <div class="space-y-4">
           <div class="space-y-2">
             <Label for="header-row">Header row</Label>
@@ -248,313 +436,102 @@
           </div>
         </div>
       </template>
-    </SettingsDialog>
+
+      <template #submit="{ close }">
+        <Button @click="close()">Save</Button>
+      </template>
+    </DialogWithSidebar>
 
     <!-- Export settings dialog -->
-    <SettingsDialog
+    <DialogWithSidebar
       v-model:open="showExportSettingsSheet"
+      v-model:show-sidebar="exportShowSidebar"
       title="Export Settings"
       description="Configure bib numbers and output format options"
-      @save="saveExportSettings"
     >
-      <template #preview>
-        <div class="border rounded-lg">
-          <CellTable :data="exportPreviewData" :show-headers="false" :show-row-headers="false" />
-        </div>
-      </template>
-      <template #settings>
-        <div class="space-y-6">
-          <div class="space-y-4">
-            <div class="space-y-4">
-              <div class="flex items-center justify-between">
-                <div class="w-full">
-                  <Label for="max-bib">Highest bib number</Label>
-                  <p class="text-xs text-muted-foreground">
-                    Bib numbers will count down from this number
-                  </p>
-                </div>
-                <Input
-                  id="max-bib"
-                  type="number"
-                  :model-value="store.maxBibNumber"
-                  class="w-24"
-                  @update:model-value="
-                    (value) => store.updateExportSettings({ maxBibNumber: Number(value) })
-                  "
-                />
-              </div>
-              <div class="flex items-center justify-between">
-                <div>
-                  <Label for="printing-years">Include "Years" in age group names</Label>
-                  <p class="text-xs text-muted-foreground">
-                    e.g., "Premier 6-8 Years" vs "Premier 6-8"
-                  </p>
-                </div>
-                <Switch
-                  id="printing-years"
-                  :model-value="store.isPrintingYears"
-                  @update:model-value="
-                    (value) => store.updateExportSettings({ isPrintingYears: value })
-                  "
-                />
-              </div>
+      <CellTable
+        :data="exportPreviewData"
+        :show-headers="false"
+        :show-row-headers="false"
+        wrapper-class="border rounded-3xl h-full bg-muted/50"
+      />
 
-              <div class="flex items-center justify-between">
-                <div>
-                  <Label for="combine-names">Combine names</Label>
-                  <p class="text-xs text-muted-foreground">
-                    Use one column for full name instead of separate first/last name columns
-                  </p>
-                </div>
-                <Switch
-                  id="combine-names"
-                  :model-value="store.combineNames"
-                  @update:model-value="
-                    (value) => store.updateExportSettings({ combineNames: value })
-                  "
-                />
-              </div>
-
-              <div class="flex items-center justify-between">
-                <div>
-                  <Label for="include-country">Include country</Label>
-                  <p class="text-xs text-muted-foreground">
-                    Add country to dancer locations when available
-                  </p>
-                </div>
-                <Switch
-                  id="include-country"
-                  :model-value="store.includeCountry"
-                  @update:model-value="
-                    (value) => store.updateExportSettings({ includeCountry: value })
-                  "
-                />
-              </div>
+      <template #sidebar>
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="w-full">
+              <Label for="max-bib">Highest bib number</Label>
+              <p class="text-xs text-muted-foreground">
+                Bib numbers will count down from this number
+              </p>
             </div>
+            <Input
+              id="max-bib"
+              type="number"
+              :model-value="store.maxBibNumber"
+              class="w-24"
+              @update:model-value="
+                (value) => store.updateExportSettings({ maxBibNumber: Number(value) })
+              "
+            />
+          </div>
+          <div class="flex items-center justify-between">
+            <div>
+              <Label for="printing-years">Include "Years" in age group names</Label>
+              <p class="text-xs text-muted-foreground">
+                e.g., "Premier 6-8 Years" vs "Premier 6-8"
+              </p>
+            </div>
+            <Switch
+              id="printing-years"
+              :model-value="store.isPrintingYears"
+              @update:model-value="
+                (value) => store.updateExportSettings({ isPrintingYears: value })
+              "
+            />
+          </div>
+
+          <div class="flex items-center justify-between">
+            <div>
+              <Label for="combine-names">Combine names</Label>
+              <p class="text-xs text-muted-foreground">
+                Use one column for full name instead of separate first/last name columns
+              </p>
+            </div>
+            <Switch
+              id="combine-names"
+              :model-value="store.combineNames"
+              @update:model-value="(value) => store.updateExportSettings({ combineNames: value })"
+            />
+          </div>
+
+          <div class="flex items-center justify-between">
+            <div>
+              <Label for="include-country">Include country</Label>
+              <p class="text-xs text-muted-foreground">
+                Add country to dancer locations when available
+              </p>
+            </div>
+            <Switch
+              id="include-country"
+              :model-value="store.includeCountry"
+              @update:model-value="(value) => store.updateExportSettings({ includeCountry: value })"
+            />
           </div>
         </div>
       </template>
-    </SettingsDialog>
+
+      <template #submit="{ close }">
+        <Button
+          @click="
+            () => {
+              handleExportDownload()
+              close()
+            }
+          "
+          >Export</Button
+        >
+      </template>
+    </DialogWithSidebar>
   </div>
 </template>
-
-<script setup lang="ts">
-import {
-  AlertTriangle,
-  Check,
-  Columns,
-  Columns3,
-  Columns3Cog,
-  Map,
-  Settings,
-  Share,
-  Table,
-  Users,
-  X,
-} from 'lucide-vue-next'
-import { computed, onMounted, provide, ref } from 'vue'
-import { useRoute, onBeforeRouteLeave } from 'vue-router'
-import { useEventListener } from '@vueuse/core'
-import { useAppStore } from '@/stores/app'
-import CategoryCard from '@/components/CategoryCard.vue'
-import CellTable from '@/components/CellTable.vue'
-import SettingsDialog from '@/components/SettingsDialog.vue'
-import ValidationBanner from '@/components/ValidationBanner.vue'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { fetchDemoCSV } from '@/lib/input'
-import {
-  CATEGORY_CODE_NAMES,
-  INPUT_COLUMNS,
-  type Partition,
-  type ValidationIssue,
-  createPartitions,
-} from '@/lib/input'
-import { type ExportSettings, convertToCSV, generateExportData, downloadCSV } from '@/lib/output'
-import { startViewTransition } from 'vue-view-transitions'
-
-const store = useAppStore()
-const route = useRoute()
-
-const categoryCardRef = ref<(typeof CategoryCard)[]>()
-const showColumnMappingSheet = ref(false)
-const columnMappingSidebarCollapsed = ref(false)
-const showExportSettingsSheet = ref(false)
-const validationDismissed = ref(false)
-const showDancers = ref(false)
-
-// Demo mode detection
-const isDemoMode = computed(() => route.name === 'demo')
-
-// Validation issues from store (now includes all validation: headers, column mapping, codes)
-const allValidationIssues = computed(() => store.inputErrors)
-
-// Partitions store - maps category code to age ranges
-const partitions = ref<Record<string, Partition[]>>({})
-
-// Provide for CategoryCard components
-provide(
-  'isPrintingYears',
-  computed(() => store.isPrintingYears),
-)
-provide('showDancers', showDancers)
-
-// Navigation functions
-// Auto-load demo data if in demo mode and no data exists
-onMounted(async () => {
-  if (isDemoMode.value && !store.hasData) {
-    try {
-      const csvText = await fetchDemoCSV()
-      const demoFile = new File([csvText], 'demo.csv', { type: 'text/csv' })
-      await store.loadFile(demoFile)
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load demo data'
-      store.fileLoadError = errorMessage
-    }
-  }
-})
-
-// Browser close/refresh warning - automatically cleaned up on component unmount
-useEventListener('beforeunload', (event: BeforeUnloadEvent) => {
-  if (store.hasData && !isDemoMode.value) {
-    // Cancel the event and show browser's native confirmation dialog
-    event.preventDefault()
-    // Chrome requires returnValue to be set
-    event.returnValue = ''
-  }
-})
-
-// In-app navigation warning
-onBeforeRouteLeave((to, from, next) => {
-  if (store.hasData && !isDemoMode.value) {
-    const confirmed = window.confirm(
-      'Are you sure you want to leave this page? All changes will be lost.',
-    )
-    if (confirmed) {
-      next()
-    } else {
-      next(false)
-    }
-  } else {
-    next()
-  }
-})
-
-async function toggleDancers() {
-  const viewTransition = startViewTransition()
-  await viewTransition.captured
-  showDancers.value = !showDancers.value
-}
-
-function handleDataStatusAction() {
-  showColumnMappingSheet.value = true
-}
-
-function saveColumnMapping() {
-  showColumnMappingSheet.value = false
-  // Column mapping changes are already applied through store updates
-}
-
-function saveExportSettings() {
-  showExportSettingsSheet.value = false
-  // Export settings changes are already applied through store updates
-}
-
-function dismissValidationErrors() {
-  validationDismissed.value = true
-}
-
-function handleReviewErrors() {
-  // Open column mapping dialog with sidebar collapsed to focus on the highlighted errors in the table
-  columnMappingSidebarCollapsed.value = true
-  showColumnMappingSheet.value = true
-}
-
-function handleHeaderRowToggle(value: boolean) {
-  store.hasHeaderRow = value
-  // Force errors to regenerate with correct row offsets
-  store.updateColIndexes(store.colIndexes)
-}
-
-function updateColIndex(id: string, value: any) {
-  const newIndexes = { ...store.colIndexes }
-  const stringValue = String(value || 'none')
-  newIndexes[id] = stringValue === 'none' ? -1 : store.inputHeaders.indexOf(stringValue)
-  store.updateColIndexes(newIndexes)
-}
-
-function isFieldValid(fieldId: string) {
-  const column = INPUT_COLUMNS.find((col) => col.id === fieldId)
-  if (column?.required) {
-    return store.colIndexes[fieldId] >= 0
-  }
-  return true
-}
-
-function handlePartition(categoryCode: string, partitionedAgeRanges: number[][]) {
-  // Update the store's partitioned categories first
-  const newPartitionedCategories = {
-    ...store.partitionedCategories,
-    [categoryCode]: partitionedAgeRanges.map(
-      ([minAge, maxAge]) => [minAge, maxAge] as [number, number],
-    ),
-  }
-  store.setProcessedData(store.categories!, newPartitionedCategories)
-
-  // Use shared function to create partitions for this category
-  const categoryPartitions = createPartitions(
-    { [categoryCode]: store.categories?.[categoryCode] || {} },
-    { [categoryCode]: newPartitionedCategories[categoryCode] },
-  )
-
-  partitions.value[categoryCode] = categoryPartitions[categoryCode] || []
-}
-
-// Generate export preview data
-const exportPreviewData = computed(() => {
-  if (!store.inputCSV) return []
-
-  // Extract raw string values for processing
-  const rawData = store.inputCSV.map((row) => row.map((cell) => cell.value))
-
-  const settings: ExportSettings = {
-    maxBibNumber: store.maxBibNumber,
-    isPrintingYears: store.isPrintingYears,
-    includeCountry: store.includeCountry,
-    combineNames: store.combineNames,
-  }
-
-  const exportData = generateExportData(
-    rawData,
-    store.colIndexes,
-    partitions.value,
-    settings,
-    store.hasHeaderRow,
-  )
-
-  // Convert (string | number)[][] to Cell[][] for display
-  return exportData.map((row) =>
-    row.map((value) => ({ value: String(value), error: false, warning: false })),
-  )
-})
-
-// Export function using shared logic
-function handleExportDownload() {
-  // Extract raw values from Cell[][] for CSV conversion
-  const rawData = exportPreviewData.value.map((row) => row.map((cell) => cell.value))
-  const csvContent = convertToCSV(rawData)
-  downloadCSV(csvContent, 'splits-export')
-}
-</script>

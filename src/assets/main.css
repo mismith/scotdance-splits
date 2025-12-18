@@ -183,15 +183,8 @@
     animation: var(--animate-shimmer);
   }
 
-  /* Cell validation highlighting */
-
-  /* Cell-level warnings - Primary color border */
-  .cell-warning {
-    box-shadow: inset 0 0 0 2px hsl(var(--primary)) !important;
-  }
-
-  /* Cell-level errors - Destructive color border */
-  .cell-error {
-    box-shadow: inset 0 0 0 2px hsl(var(--destructive)) !important;
+  ::view-transition-old(.fixed-height),
+  ::view-transition-new(.fixed-height) {
+    height: 100%;
   }
 }
