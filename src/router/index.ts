@@ -1,3 +1,4 @@
+import { nextTick } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { startViewTransition } from 'vue-view-transitions'
 
@@ -28,8 +29,22 @@ router.beforeResolve(async (to, from) => {
     return
   }
 
+  // Determine slide direction: home=0, splits/demo=1
+  const fromCol = from.name === 'home' ? 0 : 1
+  const toCol = to.name === 'home' ? 0 : 1
+  const direction = toCol > fromCol ? 'slide-left' : 'slide-right'
+
+  // Set view-transition-name on document element
+  document.documentElement.style.viewTransitionName = direction
+  await nextTick()
+
   const transition = startViewTransition()
   await transition.captured
+
+  // Clear after transition completes
+  transition.finished.finally(() => {
+    document.documentElement.style.viewTransitionName = ''
+  })
 })
 
 export default router
