@@ -1,9 +1,66 @@
 <template>
   <FileUpload :is-loading="store.isLoadingInputFile" @file-selected="handleFileSelected">
     <template #default="{ chooseFile }">
+      <!-- Sticky Logo (no background, sticks when logo reaches top) -->
+      <div
+        class="fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300"
+        :class="isLogoSticky ? 'opacity-100 scale-100' : 'opacity-0 scale-150 pointer-events-none'"
+      >
+        <Button
+          variant="outline"
+          class="backdrop-blur font-semibold text-primary hover:tracking-widest duration-500 transition-all"
+          @click="scrollToTop"
+        >
+          <div class="flex items-center gap-2">
+            <img
+              src="/touchicon.png"
+              alt="Splits Logo"
+              class="size-4"
+              :class="{ '[view-transition-name:splits-logo]': isLogoSticky }"
+            />
+            <span
+              class="text-sm font-semibold text-primary"
+              :class="{ '[view-transition-name:splits-name]': isLogoSticky }"
+            >
+              Splits
+            </span>
+          </div>
+        </Button>
+      </div>
+
+      <!-- Sticky Buttons (stick to corners when buttons reach top) -->
+      <div
+        class="fixed top-6 left-6 z-50 transition-all duration-500 origin-left"
+        :class="
+          isButtonsSticky ? 'opacity-100 scale-100' : 'opacity-0 scale-150 pointer-events-none'
+        "
+      >
+        <Button
+          size="sm"
+          :disabled="store.isLoadingInputFile"
+          :loading="store.isLoadingInputFile"
+          @click="chooseFile"
+          class="rounded-full"
+        >
+          Choose file →
+        </Button>
+      </div>
+      <div
+        class="fixed top-6 right-6 z-50 transition-all duration-500 origin-right"
+        :class="
+          isButtonsSticky ? 'opacity-100 scale-100' : 'opacity-0 scale-150 pointer-events-none'
+        "
+      >
+        <Button size="sm" variant="outline" as-child class="rounded-full">
+          <router-link to="/demo">View demo</router-link>
+        </Button>
+      </div>
+
+      <!-- Gradient header background -->
       <header
-        class="fixed top-0 inset-x-0 h-24 bg-gradient-to-b from-background to-transparent z-20"
+        class="fixed top-0 inset-x-0 h-24 bg-gradient-to-b from-background to-transparent z-20 pointer-events-none"
       ></header>
+
       <div class="flex flex-col">
         <!-- Section 1: Hero (100vh) -->
         <section
@@ -12,28 +69,34 @@
           <!-- Hero content -->
           <div class="flex-1 flex items-center justify-center w-full">
             <div class="max-w-4xl mx-auto text-center space-y-8">
-              <!-- Logo (will become fixed on scroll) -->
-              <div ref="logoWrapperRef" class="flex justify-center mb-8 w-full relative z-30">
-                <Button variant="outline" as-child ref="logoRef">
-                  <router-link
-                    to="/"
-                    class="font-semibold text-primary backdrop-blur hover:tracking-widest duration-500 transition-all"
-                  >
-                    <div class="flex items-center gap-2">
-                      <img
-                        src="/touchicon.png"
-                        alt="Splits Logo"
-                        class="size-4"
-                        :class="'[view-transition-name:splits-logo]'"
-                      />
-                      <span
-                        class="text-sm font-semibold text-primary"
-                        :class="'[view-transition-name:splits-name]'"
-                      >
-                        Splits
-                      </span>
-                    </div>
-                  </router-link>
+              <!-- Large Logo (scales down and fades out when sticky) -->
+              <div
+                ref="logoRef"
+                class="flex justify-center mb-8 w-full relative z-30 transition-all duration-500"
+                :class="
+                  isLogoSticky ? 'opacity-0 scale-50 pointer-events-none' : 'opacity-100 scale-100'
+                "
+              >
+                <Button
+                  variant="outline"
+                  size="lg"
+                  class="p-8 font-semibold text-primary backdrop-blur hover:tracking-widest duration-500 transition-all"
+                  @click="scrollToTop"
+                >
+                  <div class="flex items-center gap-3">
+                    <img
+                      src="/touchicon.png"
+                      alt="Splits Logo"
+                      class="size-8"
+                      :class="{ '[view-transition-name:splits-logo]': !isLogoSticky }"
+                    />
+                    <span
+                      class="text-2xl font-semibold text-primary"
+                      :class="{ '[view-transition-name:splits-name]': !isLogoSticky }"
+                    >
+                      Splits
+                    </span>
+                  </div>
                 </Button>
               </div>
 
@@ -49,32 +112,36 @@
                 Organize dancers into balanced groups with proper bib numbers.
               </p>
 
-              <!-- CTAs (will become fixed on scroll) -->
-              <div class="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
+              <!-- CTAs (scale down and fade out when buttons become sticky) -->
+              <div
+                ref="buttonsRef"
+                class="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4 transition-all duration-500"
+                :class="
+                  isButtonsSticky
+                    ? 'opacity-0 scale-50 pointer-events-none'
+                    : 'opacity-100 scale-100'
+                "
+              >
                 <!-- Left: Choose file button -->
-                <div ref="chooseFileWrapperRef">
-                  <Button
-                    size="lg"
-                    :disabled="store.isLoadingInputFile"
-                    :loading="store.isLoadingInputFile"
-                    @click="chooseFile"
-                    class="text-lg px-8 py-6 rounded-full backdrop-blur"
-                  >
-                    Choose file →
-                  </Button>
-                </div>
+                <Button
+                  size="lg"
+                  :disabled="store.isLoadingInputFile"
+                  :loading="store.isLoadingInputFile"
+                  @click="chooseFile"
+                  class="text-lg px-8 py-6 rounded-full backdrop-blur"
+                >
+                  Choose file →
+                </Button>
 
                 <!-- Right: View demo button -->
-                <div ref="viewDemoWrapperRef">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    as-child
-                    class="text-lg px-8 py-6 rounded-full backdrop-blur"
-                  >
-                    <router-link to="/demo">View demo</router-link>
-                  </Button>
-                </div>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  as-child
+                  class="text-lg px-8 py-6 rounded-full backdrop-blur"
+                >
+                  <router-link to="/demo">View demo</router-link>
+                </Button>
               </div>
             </div>
           </div>
@@ -86,7 +153,7 @@
         </section>
 
         <!-- Section 2: The Transformation - Parallax Slide-Up -->
-        <TransformationSection />
+        <!-- <TransformationSection /> -->
 
         <!-- Section 3: How It Works -->
         <section class="px-6 py-24 md:py-32 bg-gradient-to-b from-transparent to-background/25">
@@ -509,271 +576,37 @@
 </template>
 
 <script setup lang="ts">
+import { useElementBounding } from '@vueuse/core'
 import { Shield } from 'lucide-vue-next'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import FileUpload from '@/components/FileUpload.vue'
-import TransformationSection from '@/components/TransformationSection.vue'
 import ValidationBanner from '@/components/ValidationBanner.vue'
 import { Button } from '@/components/ui/button'
 import { type ValidationIssue } from '@/lib/input'
 
-// RAF-based header animation
-// Refs for wrapper elements (for transforms) and inner elements (for styling/measurement)
-const logoWrapperRef = ref<HTMLElement>()
+// Refs for measuring element positions
 const logoRef = ref<HTMLElement>()
-const chooseFileWrapperRef = ref<HTMLElement>()
-const viewDemoWrapperRef = ref<HTMLElement>()
+const buttonsRef = ref<HTMLElement>()
 
-// Initial positions captured on mount (absolute page positions)
-const initialLogoTop = ref<number>(0)
-const initialLogoWidth = ref<number>(0)
-const initialLogoHeight = ref<number>(0)
-const initialChooseFileTop = ref<number>(0)
-const initialChooseFileLeft = ref<number>(0)
-const initialChooseFileWidth = ref<number>(0)
-const initialChooseFileHeight = ref<number>(0)
-const initialViewDemoTop = ref<number>(0)
-const initialViewDemoLeft = ref<number>(0)
-const initialViewDemoWidth = ref<number>(0)
-const initialViewDemoHeight = ref<number>(0)
+// Get element bounds reactively
+const logoBounds = useElementBounding(logoRef)
+const buttonsBounds = useElementBounding(buttonsRef)
 
-// Current scroll position (updated via RAF, not reactive)
-let currentScrollY = 0
-let rafId: number | null = null
+// Sticky threshold (distance from top of viewport)
+const STICKY_TOP = 24 // 1.5rem = top-6
 
-// Easing function
-const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+// Logo becomes sticky when its top reaches STICKY_TOP
+// Check height > 0 to ensure element has been measured (avoids flash on initial load)
+const isLogoSticky = computed(
+  () => logoBounds.height.value > 0 && logoBounds.top.value <= STICKY_TOP,
+)
 
-// Animation constants
-const TARGET_TOP = 24 // top-6 in pixels (1.5rem)
-const LOGO_TRANSFORM_DURATION = 300 // px of scroll for logo to fully transform
-const BUTTON_COLLISION_DISTANCE = 100 // px before buttons start moving
-
-// Capture initial element positions
-function captureInitialBounds() {
-  const logoEl = logoRef.value?.$el || logoRef.value
-  const chooseFileWrapperEl = chooseFileWrapperRef.value
-  const viewDemoWrapperEl = viewDemoWrapperRef.value
-
-  const currentScroll = window.scrollY
-
-  // Capture absolute page positions (viewport position + current scroll)
-  if (logoEl && logoEl.getBoundingClientRect) {
-    const logoRect = logoEl.getBoundingClientRect()
-    initialLogoTop.value = logoRect.top + currentScroll
-    initialLogoWidth.value = logoRect.width
-    initialLogoHeight.value = logoRect.height
-  }
-  if (chooseFileWrapperEl && chooseFileWrapperEl.getBoundingClientRect) {
-    const chooseFileRect = chooseFileWrapperEl.getBoundingClientRect()
-    initialChooseFileTop.value = chooseFileRect.top + currentScroll
-    initialChooseFileLeft.value = chooseFileRect.left
-    initialChooseFileWidth.value = chooseFileRect.width
-    initialChooseFileHeight.value = chooseFileRect.height
-  }
-  if (viewDemoWrapperEl && viewDemoWrapperEl.getBoundingClientRect) {
-    const viewDemoRect = viewDemoWrapperEl.getBoundingClientRect()
-    initialViewDemoTop.value = viewDemoRect.top + currentScroll
-    initialViewDemoLeft.value = viewDemoRect.left
-    initialViewDemoWidth.value = viewDemoRect.width
-    initialViewDemoHeight.value = viewDemoRect.height
-  }
-}
-
-// Recapture bounds on window resize
-function handleResize() {
-  captureInitialBounds()
-}
-
-// Calculate transforms based on scroll position
-function updateHeaderTransforms() {
-  currentScrollY = window.scrollY
-
-  // Get wrapper DOM elements (for transforms)
-  const logoWrapperEl = logoWrapperRef.value as HTMLElement
-  const chooseFileWrapperEl = chooseFileWrapperRef.value as HTMLElement
-  const viewDemoWrapperEl = viewDemoWrapperRef.value as HTMLElement
-
-  // Get inner elements (for styling)
-  const logoEl = (logoRef.value?.$el || logoRef.value) as HTMLElement
-
-  if (
-    !logoWrapperEl ||
-    !logoEl ||
-    !chooseFileWrapperEl ||
-    !viewDemoWrapperEl ||
-    !initialLogoTop.value ||
-    !initialChooseFileTop.value ||
-    !initialViewDemoTop.value
-  ) {
-    return
-  }
-
-  // PHASE 1: Calculate when logo reaches the top (using absolute page position)
-  const logoNaturalTop = initialLogoTop.value - currentScrollY
-  const logoShouldBeFixed = logoNaturalTop <= TARGET_TOP
-
-  // PHASE 2: Logo transform progress (after it becomes fixed)
-  let logoTransformProgress = 0
-  if (logoShouldBeFixed) {
-    const scrollWhenLogoFixed = initialLogoTop.value - TARGET_TOP
-    const scrollSinceFixed = currentScrollY - scrollWhenLogoFixed
-    logoTransformProgress = Math.max(0, Math.min(1, scrollSinceFixed / LOGO_TRANSFORM_DURATION))
-  }
-
-  // PHASE 3: Button collision detection (using absolute page position)
-  const chooseFileNaturalTop = initialChooseFileTop.value - currentScrollY
-  const chooseFileDistanceToLogo = chooseFileNaturalTop - TARGET_TOP
-  const chooseFileShouldBeFixed =
-    logoShouldBeFixed && chooseFileDistanceToLogo <= BUTTON_COLLISION_DISTANCE
-
-  const zipperProgress = chooseFileShouldBeFixed
-    ? Math.max(0, Math.min(1, 1 - chooseFileDistanceToLogo / BUTTON_COLLISION_DISTANCE))
-    : 0
-
-  // Apply easing
-  const easedLogoProgress = easeOutCubic(logoTransformProgress)
-  const easedZipperProgress = easeOutCubic(zipperProgress)
-
-  // Calculate shared values used by multiple elements
-  // Inverted logic: start large (2.5x) → scale down to normal (1x)
-  const logoScale = 2.5 - (2.5 - 1) * easedLogoProgress
-  // Border & background opacity: starts transparent → becomes visible
-  const logoBorderOpacity = easedLogoProgress
-  const logoBgOpacity = easedLogoProgress
-
-  // Button scale: calculate to match logo's final height
-  const logoFinalHeight = initialLogoHeight.value * 1.0 // logo at 1x scale
-  const buttonInitialHeight = initialChooseFileHeight.value
-  const targetButtonScale = logoFinalHeight / buttonInitialHeight
-  // Interpolate from 1.0 (natural) to target scale
-  const buttonScale = 1.0 - (1.0 - targetButtonScale) * easedZipperProgress
-
-  // DIRECT DOM MANIPULATION - NO VUE REACTIVITY
-
-  // LOGO WRAPPER & ELEMENT
-  // Always apply border and background color opacity to logo element
-  logoEl.style.borderColor = `oklch(from var(--input) L C H / ${logoBorderOpacity})`
-  logoEl.style.backgroundColor = `oklch(from var(--input) L C H / ${logoBgOpacity / 3})`
-
-  if (logoShouldBeFixed) {
-    const logoTranslateY = TARGET_TOP - logoNaturalTop
-
-    // Transform the wrapper (position + scale to avoid transition jank)
-    logoWrapperEl.style.position = 'relative'
-    logoWrapperEl.style.zIndex = '50'
-    logoWrapperEl.style.transform = `translate3d(0, ${logoTranslateY}px, 0) scale(${logoScale})`
-    logoWrapperEl.style.transformOrigin = 'center'
-    logoWrapperEl.style.willChange = 'transform'
-  } else {
-    // Reset wrapper but keep scale applied
-    logoWrapperEl.style.position = ''
-    logoWrapperEl.style.zIndex = ''
-    logoWrapperEl.style.transform = `scale(${logoScale})`
-    logoWrapperEl.style.transformOrigin = 'center'
-    logoWrapperEl.style.willChange = ''
-  }
-
-  // CHOOSE FILE BUTTON WRAPPER
-  if (chooseFileShouldBeFixed) {
-    // Scaled button dimensions
-    const scaledButtonWidth = initialChooseFileWidth.value * buttonScale
-    const scaledButtonHeight = initialChooseFileHeight.value * buttonScale
-
-    // Horizontal positioning: position button center at (TARGET_TOP + half scaled width) from left edge
-    const targetCenterX = TARGET_TOP + scaledButtonWidth / 2
-    const initialCenterX = initialChooseFileLeft.value + initialChooseFileWidth.value / 2
-    const chooseFileTranslateX = (targetCenterX - initialCenterX) * easedZipperProgress
-
-    // Vertical positioning: align button center with logo center
-    const chooseFileNaturalTop = initialChooseFileTop.value - currentScrollY
-    const scaledLogoHeight = initialLogoHeight.value * logoScale
-
-    // Calculate target top position for button (to center with logo)
-    const targetButtonTop = TARGET_TOP + (scaledLogoHeight - scaledButtonHeight) / 2
-
-    // Account for center-origin scaling shift (scaling down makes top edge move down)
-    const scaleShift = ((1 - buttonScale) * scaledButtonHeight) / 2
-
-    // Apply both the positioning and scale shift compensation (with 2px adjustment)
-    const buttonTranslateY =
-      (targetButtonTop - chooseFileNaturalTop - scaleShift - 2) * easedZipperProgress
-
-    // Transform wrapper only (position and scale)
-    chooseFileWrapperEl.style.position = 'relative'
-    chooseFileWrapperEl.style.zIndex = '50'
-    chooseFileWrapperEl.style.transform = `translate3d(${chooseFileTranslateX}px, ${buttonTranslateY}px, 0) scale(${buttonScale})`
-    chooseFileWrapperEl.style.transformOrigin = 'center'
-    chooseFileWrapperEl.style.willChange = 'transform'
-  } else {
-    chooseFileWrapperEl.style.position = ''
-    chooseFileWrapperEl.style.zIndex = ''
-    chooseFileWrapperEl.style.transform = ''
-    chooseFileWrapperEl.style.transformOrigin = ''
-    chooseFileWrapperEl.style.willChange = ''
-  }
-
-  // VIEW DEMO BUTTON WRAPPER
-  if (chooseFileShouldBeFixed) {
-    // Scaled button dimensions
-    const scaledButtonWidth = initialViewDemoWidth.value * buttonScale
-    const scaledButtonHeight = initialViewDemoHeight.value * buttonScale
-
-    // Horizontal positioning: position button center at (viewport width - TARGET_TOP - half scaled width) from left edge
-    const targetCenterX = window.innerWidth - TARGET_TOP - scaledButtonWidth / 2
-    const initialCenterX = initialViewDemoLeft.value + initialViewDemoWidth.value / 2
-    const viewDemoTranslateX = (targetCenterX - initialCenterX) * easedZipperProgress
-
-    // Vertical positioning: align button center with logo center
-    const viewDemoNaturalTop = initialViewDemoTop.value - currentScrollY
-    const scaledLogoHeight = initialLogoHeight.value * logoScale
-
-    // Calculate target top position for button (to center with logo)
-    const targetButtonTop = TARGET_TOP + (scaledLogoHeight - scaledButtonHeight) / 2
-
-    // Account for center-origin scaling shift (scaling down makes top edge move down)
-    const scaleShift = ((1 - buttonScale) * scaledButtonHeight) / 2
-
-    // Apply both the positioning and scale shift compensation (with 2px adjustment)
-    const buttonTranslateY =
-      (targetButtonTop - viewDemoNaturalTop - scaleShift - 2) * easedZipperProgress
-
-    // Transform wrapper only (position and scale)
-    viewDemoWrapperEl.style.position = 'relative'
-    viewDemoWrapperEl.style.zIndex = '50'
-    viewDemoWrapperEl.style.transform = `translate3d(${viewDemoTranslateX}px, ${buttonTranslateY}px, 0) scale(${buttonScale})`
-    viewDemoWrapperEl.style.transformOrigin = 'center'
-    viewDemoWrapperEl.style.willChange = 'transform'
-  } else {
-    viewDemoWrapperEl.style.position = ''
-    viewDemoWrapperEl.style.zIndex = ''
-    viewDemoWrapperEl.style.transform = ''
-    viewDemoWrapperEl.style.transformOrigin = ''
-    viewDemoWrapperEl.style.willChange = ''
-  }
-}
-
-// RAF loop
-function rafLoop() {
-  updateHeaderTransforms()
-  rafId = requestAnimationFrame(rafLoop)
-}
-
-// Start/stop RAF on mount/unmount
-onMounted(() => {
-  captureInitialBounds()
-  rafLoop()
-  window.addEventListener('resize', handleResize)
-})
-
-onUnmounted(() => {
-  if (rafId !== null) {
-    cancelAnimationFrame(rafId)
-  }
-  window.removeEventListener('resize', handleResize)
-})
+// Buttons become sticky when their top reaches STICKY_TOP
+const isButtonsSticky = computed(
+  () => buttonsBounds.height.value > 0 && buttonsBounds.top.value <= STICKY_TOP,
+)
 
 const store = useAppStore()
 const router = useRouter()
@@ -793,5 +626,9 @@ async function handleFileSelected(file: File) {
 
 function handleErrorDismiss() {
   store.fileLoadError = undefined
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 </script>
