@@ -4,6 +4,13 @@ import { startViewTransition } from 'vue-view-transitions'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior(_to, _from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition
+    } else {
+      return { top: 0, left: 0 }
+    }
+  },
   routes: [
     {
       path: '/',
