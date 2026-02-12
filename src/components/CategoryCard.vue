@@ -440,56 +440,48 @@ async function decrementGroups() {
 
 // Get real dancers for the specified age group from CSV data
 function getRealDancersForAgeGroup(ageGroupIndex: number) {
-  const inputData = store.inputCSV?.slice(store.hasHeaderRow ? 1 : 0) || []
+  const inputData = (store.inputCSV?.slice(store.hasHeaderRow ? 1 : 0) || []).map((row) =>
+    row.map((cell) => cell.value),
+  )
   const ageRange = partitionedAgeCountsArray.value[ageGroupIndex]?.[0]
 
   if (!ageRange || !inputData.length) return []
 
   const [minAge, maxAge] = ageRange
+  const codeCol = store.colIndexes.code ?? -1
+  const timestampCol = store.colIndexes.timestamp ?? -1
+  const firstNameCol = store.colIndexes.firstName ?? 0
+  const lastNameCol = store.colIndexes.lastName ?? 0
+
+  if (codeCol === -1) return []
+
+  // Find the Highland Scrutineer code that matches our category name
+  const expectedCode =
+    Object.keys(CATEGORY_CODE_NAMES).find((code) => CATEGORY_CODE_NAMES[code] === props.name) ||
+    props.name.charAt(0)
 
   // First, create a global sorted list of all valid dancers for bib number calculation
   const allValidDancers = inputData
-    .filter((row) => {
-      const codeCol = store.colIndexes.code || -1
-      if (codeCol === -1) return false
-      const code = String(row[codeCol] || '')
-      return /^[PBNIRX]\d{2}$/.test(code)
-    })
+    .filter((row) => /^[PBNIRX]\d{2}$/.test(row[codeCol]))
     .sort((a, b) => {
-      const timestampCol = store.colIndexes.timestamp || -1
       if (timestampCol === -1) return 0
-      return String(a[timestampCol] || '').localeCompare(String(b[timestampCol] || ''))
+      return (a[timestampCol] || '').localeCompare(b[timestampCol] || '')
     })
 
   // Filter dancers that fall within this age group
   const dancersInGroup = inputData
     .filter((row) => {
-      const codeCol = store.colIndexes.code || -1
-
-      if (codeCol === -1) return false
-
-      const code = String(row[codeCol] || '')
-      // Extract age and category from Highland Scrutineer code (e.g., P08 → P and 08)
+      const code = row[codeCol]
       if (/^[PBNIRX]\d{2}$/.test(code)) {
-        const categoryCode = code.charAt(0)
+        const cat = code.charAt(0)
         const age = parseInt(code.substring(1))
-
-        // Check if this row matches our category and age range
-        // Find the Highland Scrutineer code that matches our category name
-        const expectedCode =
-          Object.keys(CATEGORY_CODE_NAMES).find(
-            (code) => CATEGORY_CODE_NAMES[code] === props.name,
-          ) || props.name.charAt(0)
-        return age >= minAge && age <= maxAge && categoryCode === expectedCode
+        return age >= minAge && age <= maxAge && cat === expectedCode
       }
-
       return false
     })
     .sort((a, b) => {
-      // Sort by timestamp (registration order)
-      const timestampCol = store.colIndexes.timestamp || -1
       if (timestampCol === -1) return 0
-      return String(a[timestampCol] || '').localeCompare(String(b[timestampCol] || ''))
+      return (a[timestampCol] || '').localeCompare(b[timestampCol] || '')
     })
     .map((row) => {
       // Build location from available columns
@@ -507,17 +499,14 @@ function getRealDancersForAgeGroup(ageGroupIndex: number) {
       // Find this dancer's position in the overall sorted list to calculate bib number
       const globalIndex = allValidDancers.findIndex(
         (r) =>
-          String(r[store.colIndexes.timestamp || 0] || '') ===
-            String(row[store.colIndexes.timestamp || 0] || '') &&
-          String(r[store.colIndexes.firstName || 0] || '') ===
-            String(row[store.colIndexes.firstName || 0] || '') &&
-          String(r[store.colIndexes.lastName || 0] || '') ===
-            String(row[store.colIndexes.lastName || 0] || ''),
+          (timestampCol === -1 || r[timestampCol] === row[timestampCol]) &&
+          r[firstNameCol] === row[firstNameCol] &&
+          r[lastNameCol] === row[lastNameCol],
       )
 
       return {
-        firstName: String(row[store.colIndexes.firstName || 0] || ''),
-        lastName: String(row[store.colIndexes.lastName || 0] || ''),
+        firstName: row[firstNameCol] || '',
+        lastName: row[lastNameCol] || '',
         location: locationParts.filter(Boolean).join(', ') || 'Unknown',
         bibNumber: (store.maxBibNumber || 100) - (globalIndex !== -1 ? globalIndex : 0),
       }
