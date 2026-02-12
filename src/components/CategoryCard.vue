@@ -1081,25 +1081,17 @@ async function openAgeGroupSheet(ageGroupIndex: number) {
     showDancers.value = !showDancers.value
 
     const ageGroupElement = rightSideRef.value?.[ageGroupIndex]
-    const HIGHLIGHT_CLASS = 'shadow-[0_0_100px_color-mix(in_srgb,var(--primary),transparent_80%)]'
-    if (ageGroupElement) {
-      ageGroupElement.classList.add(HIGHLIGHT_CLASS)
-    }
 
     // Wait for transition to complete, then smooth scroll to the tapped element
     await viewTransition.finished
 
     // Find and scroll to the tapped age group element
     if (ageGroupElement) {
+      await nextTick()
       ageGroupElement.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
       })
-
-      // Remove highlight after 2 seconds
-      setTimeout(() => {
-        ageGroupElement.classList.remove(HIGHLIGHT_CLASS)
-      }, 1000)
     }
   } else {
     // Mobile: Open sheet
