@@ -8,7 +8,7 @@
           :class="`grid gap-y-4 grid-cols-[1fr_2rem_1fr_0] md:grid-cols-[1fr_80px_1fr_0] ${showDancers ? 'md:!grid-cols-[1fr_80px_1fr_1fr]' : ''}`"
         >
           <!-- Row 1: Header with title and controls -->
-          <div class="flex items-center col-span-2 gap-2">
+          <div class="flex items-end flex-wrap content-end gap-2">
             <div class="flex flex-col md:flex-row md:items-center space-x-3">
               <CardTitle class="text-xl font-bold">
                 {{ name }}
@@ -31,17 +31,16 @@
                 </TooltipContent>
               </Tooltip>
             </div>
-
-            <!-- Flexible spacer to avoid curve gap -->
-            <div class="shrink-0 w-6 md:w-22"></div>
           </div>
 
-          <div class="grid grid-cols-[1fr_auto_1fr] items-center">
-            <!-- Left spacer -->
-            <div></div>
+          <div />
+
+          <div class="flex flex-wrap content-end items-end gap-2">
+            <!-- Left spacer (desktop only) -->
+            <div class="flex-1"></div>
 
             <!-- Center controls -->
-            <div class="flex items-center gap-2">
+            <div class="flex-auto flex items-center justify-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -79,7 +78,7 @@
             </div>
 
             <!-- Right reset button -->
-            <div class="flex justify-end">
+            <div class="flex-1 flex justify-end">
               <Tooltip v-if="hasNonStandardGroupCount">
                 <TooltipTrigger asChild>
                   <div
