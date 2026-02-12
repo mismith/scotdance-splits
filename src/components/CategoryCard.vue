@@ -1,5 +1,5 @@
 <template>
-  <Card class="select-none py-3 md:py-6">
+  <Card class="select-none py-3 md:py-6 [view-transition-name:match-element]">
     <CardContent class="px-3 md:px-6">
       <div class="relative">
         <!-- 4-column CSS Grid Layout -->
@@ -102,7 +102,7 @@
 
           <!-- Row 2: Content columns -->
           <!-- Individual ages column -->
-          <div class="flex flex-col gap-2 self-start sticky top-16 will-change-transform">
+          <div class="flex flex-col gap-2 self-start">
             <div
               v-for="[age, count] in ageCountsArray"
               :key="age"
@@ -151,7 +151,6 @@
                 :style="{
                   flex: `${count} 1 0`,
                   viewTransitionName: `CategoryCard-${id}-DancersColumn-${index}`,
-                  viewTransitionClass: 'fixed-height',
                 }"
                 class="p-3 text-sm bg-muted/30 border border-border/50 rounded-3xl flex flex-col justify-start select-text"
               >
@@ -162,7 +161,6 @@
                 :style="{
                   flex: `${count} 1 0`,
                   viewTransitionName: `CategoryCard-${id}-DancersColumn-${index}`,
-                  viewTransitionClass: 'fixed-height',
                 }"
               ></div>
             </template>
@@ -173,7 +171,7 @@
         <svg
           v-if="rightSideRef?.length > 1"
           ref="svgRef"
-          class="absolute inset-0 w-full h-full pointer-events-none will-change-auto"
+          class="absolute inset-0 w-full h-full pointer-events-none"
           style="overflow: visible"
         ></svg>
 
@@ -252,9 +250,10 @@
 </template>
 
 <script lang="ts" setup>
+import { useResizeObserver } from '@vueuse/core'
 import partition from 'linear-partitioning'
 import { Delete, Minus, Plus } from 'lucide-vue-next'
-import { computed, inject, nextTick, onMounted, onUnmounted, ref, useId, watch } from 'vue'
+import { computed, inject, nextTick, ref, useId, watch } from 'vue'
 import { startViewTransition } from 'vue-view-transitions'
 import { useAppStore } from '@/stores/app'
 import DancerCount from '@/components/DancerCount.vue'
@@ -423,8 +422,9 @@ async function incrementGroups() {
     const viewTransition = startViewTransition()
     await viewTransition.captured
     numAgeGroups.value++
-    // Clear manual adjustments when changing group count
     store.clearManualPartitions(categoryCode.value)
+    await viewTransition.finished
+    repaint()
   }
 }
 
@@ -433,8 +433,9 @@ async function decrementGroups() {
     const viewTransition = startViewTransition()
     await viewTransition.captured
     numAgeGroups.value--
-    // Clear manual adjustments when changing group count
     store.clearManualPartitions(categoryCode.value)
+    await viewTransition.finished
+    repaint()
   }
 }
 
@@ -532,9 +533,7 @@ const dragPreviewY = ref<number | null>(null)
 const showDragHandle = ref(false)
 const dragHandlePositions = ref<Array<{ left: number; top: number; width: number }>>([])
 const hoveredBoundaryIndex = ref(-1)
-const isScrolling = ref(false)
 let hideHandleTimeout: ReturnType<typeof setTimeout> | null = null
-let scrollTimeout: ReturnType<typeof setTimeout> | null = null
 
 // Function to select the input text when clicking the label
 function selectGroupsInput() {
@@ -548,6 +547,8 @@ async function resetToDefaults() {
   const viewTransition = startViewTransition()
   await viewTransition.captured
   store.clearManualPartitions(categoryCode.value)
+  await viewTransition.finished
+  repaint()
 }
 
 // Reset only the group count to default
@@ -555,6 +556,8 @@ async function resetGroupCount() {
   const viewTransition = startViewTransition()
   await viewTransition.captured
   numAgeGroups.value = getDefaultNumAgeGroups()
+  await viewTransition.finished
+  repaint()
 }
 
 function getCurvePath(rightSide: HTMLElement, rightSideIndex: number) {
@@ -608,7 +611,7 @@ function getCurvePath(rightSide: HTMLElement, rightSideIndex: number) {
 
 // Boundary hover and drag handlers
 function onBoundaryHover(boundaryIndex: number) {
-  if (isDragging.value || isScrolling.value) return
+  if (isDragging.value) return
 
   // Clear any pending hide timeout
   if (hideHandleTimeout) {
@@ -700,44 +703,6 @@ function updateAllDragHandlePositions() {
   dragHandlePositions.value = positions
 }
 
-// Scroll detection
-function onScroll() {
-  // Hide drag handle immediately when scrolling starts
-  if (showDragHandle.value && !isDragging.value) {
-    showDragHandle.value = false
-    hoveredBoundaryIndex.value = -1
-  }
-
-  // Mark as scrolling
-  isScrolling.value = true
-
-  // Clear existing timeout
-  if (scrollTimeout) {
-    clearTimeout(scrollTimeout)
-  }
-
-  // Reset scrolling state after scroll ends
-  scrollTimeout = setTimeout(() => {
-    isScrolling.value = false
-    scrollTimeout = null
-  }, 150)
-}
-
-// Continuous drag handle position updates
-function updateDragHandlePositionContinuously() {
-  if (!isActive) {
-    dragHandleRafId = requestAnimationFrame(updateDragHandlePositionContinuously)
-    return
-  }
-
-  // Always update all positions (unless dragging or scrolling)
-  if (!isDragging.value && !isScrolling.value) {
-    updateAllDragHandlePositions()
-  }
-
-  dragHandleRafId = requestAnimationFrame(updateDragHandlePositionContinuously)
-}
-
 function onDragStart(event: MouseEvent | TouchEvent, boundaryIndex: number) {
   event.preventDefault()
   isDragging.value = true
@@ -783,34 +748,50 @@ function onDragStart(event: MouseEvent | TouchEvent, boundaryIndex: number) {
         dragHandlePositions.value[boundaryIndex].top = lastValidY
       }
     }
+
+    // Repaint curves to follow the dragged handle
+    repaint()
   }
 
   async function onEnd() {
     if (!isDragging.value) return
-
-    // Use the last valid age that was tracked during drag
-    if (lastValidAge !== null && isValidBoundaryChange(draggingBoundaryIndex.value, lastValidAge)) {
-      // Create new partition array
-      const newPartitions = createNewPartitions(draggingBoundaryIndex.value, lastValidAge)
-      if (newPartitions) {
-        const viewTransition = startViewTransition()
-        await viewTransition.captured
-        store.setManualPartitions(categoryCode.value, newPartitions)
-      }
-    }
-
-    // Reset drag state
-    isDragging.value = false
-    draggingBoundaryIndex.value = -1
-    dragPreviewY.value = null
-    showDragHandle.value = false
-    hoveredBoundaryIndex.value = -1
 
     // Remove both mouse and touch listeners
     document.removeEventListener('mousemove', onMove)
     document.removeEventListener('mouseup', onEnd)
     document.removeEventListener('touchmove', onMove)
     document.removeEventListener('touchend', onEnd)
+
+    // Commit the partition change with a view transition
+    if (lastValidAge !== null && isValidBoundaryChange(draggingBoundaryIndex.value, lastValidAge)) {
+      const newPartitions = createNewPartitions(draggingBoundaryIndex.value, lastValidAge)
+      if (newPartitions) {
+        const viewTransition = startViewTransition()
+        await viewTransition.captured
+
+        // Reset drag state before committing so repaint reads final positions
+        isDragging.value = false
+        draggingBoundaryIndex.value = -1
+        dragPreviewY.value = null
+        showDragHandle.value = false
+        hoveredBoundaryIndex.value = -1
+
+        store.setManualPartitions(categoryCode.value, newPartitions)
+
+        // Wait for the view transition to finish, then repaint with final DOM positions
+        await viewTransition.finished
+        repaint()
+        return
+      }
+    }
+
+    // No partition change — just reset drag state and repaint
+    isDragging.value = false
+    draggingBoundaryIndex.value = -1
+    dragPreviewY.value = null
+    showDragHandle.value = false
+    hoveredBoundaryIndex.value = -1
+    repaint()
   }
 
   // Add both mouse and touch listeners
@@ -932,16 +913,9 @@ function createNewPartitions(boundaryIndex: number, newAge: number): [number[], 
   return newPartitions
 }
 
-// Direct DOM manipulation - no Vue reactivity needed
-let rafId: number | null = null
-let dragHandleRafId: number | null = null
-let isActive = false
-
-function updateCurvesDirectly() {
-  if (!isActive || !rightSideRef.value?.length || !svgRef.value) {
-    rafId = requestAnimationFrame(updateCurvesDirectly)
-    return
-  }
+// Repaint SVG curves and drag handle positions
+function repaint() {
+  if (!rightSideRef.value?.length || !svgRef.value) return
 
   const svg = svgRef.value
   const curvesToRender = rightSideRef.value.slice(0, -1)
@@ -956,21 +930,18 @@ function updateCurvesDirectly() {
     path.setAttribute('data-boundary-index', currentIndex.toString())
 
     if (isHitArea) {
-      // Invisible thick hit area
       path.setAttribute('class', 'fill-none stroke-transparent')
       path.setAttribute('stroke-width', '12')
       path.setAttribute('stroke-linecap', 'round')
       path.setAttribute('pointer-events', 'stroke')
       path.setAttribute('data-hit-area', 'true')
 
-      // Add hover events only to hit area
       path.addEventListener('mouseenter', () => {
         const boundaryIndex = parseInt(path.getAttribute('data-boundary-index') || '0')
         onBoundaryHover(boundaryIndex)
       })
       path.addEventListener('mouseleave', onBoundaryLeave)
     } else {
-      // Visible thin yellow line
       path.setAttribute('class', 'stroke-primary fill-none stroke-2')
       path.setAttribute('stroke-linecap', 'round')
       path.setAttribute('pointer-events', 'none')
@@ -989,22 +960,17 @@ function updateCurvesDirectly() {
   curvesToRender.forEach((el, index) => {
     const newPath = getCurvePath(el, index)
 
-    // Update hit area path (even indices: 0, 2, 4...)
     const hitAreaElement = svg.children[index * 2] as SVGPathElement
     if (hitAreaElement.getAttribute('d') !== newPath) {
       hitAreaElement.setAttribute('d', newPath)
     }
 
-    // Update visible line path (odd indices: 1, 3, 5...)
     const visibleLineElement = svg.children[index * 2 + 1] as SVGPathElement
     if (visibleLineElement.getAttribute('d') !== newPath) {
       visibleLineElement.setAttribute('d', newPath)
     }
 
-    // Check if this boundary is manual (either dragged or due to non-standard group count)
     const isThisBoundaryManual = isBoundaryManual(index)
-
-    // Update stroke color for this specific line (accent for manual, primary for default)
     const strokeClass = isThisBoundaryManual
       ? 'stroke-accent fill-none stroke-2'
       : 'stroke-primary fill-none stroke-2'
@@ -1013,34 +979,14 @@ function updateCurvesDirectly() {
     }
   })
 
-  rafId = requestAnimationFrame(updateCurvesDirectly)
+  // Update drag handle positions (skip during drag so the handle follows the user)
+  if (!isDragging.value) {
+    updateAllDragHandlePositions()
+  }
 }
 
-onMounted(async () => {
-  // Start continuous RAF loops for direct DOM updates
-  await nextTick() // Wait for SVG ref to be available
-  isActive = true
-  rafId = requestAnimationFrame(updateCurvesDirectly)
-  dragHandleRafId = requestAnimationFrame(updateDragHandlePositionContinuously)
-
-  // Add scroll listener to window
-  window.addEventListener('scroll', onScroll, { passive: true })
-})
-onUnmounted(() => {
-  isActive = false
-  if (rafId) {
-    cancelAnimationFrame(rafId)
-  }
-  if (dragHandleRafId) {
-    cancelAnimationFrame(dragHandleRafId)
-  }
-  if (scrollTimeout) {
-    clearTimeout(scrollTimeout)
-  }
-
-  // Remove scroll listener
-  window.removeEventListener('scroll', onScroll)
-})
+// Repaint when grid container resizes (covers window resize, initial mount, layout shifts)
+useResizeObserver(colsRef, () => repaint())
 
 // Age group interaction functions
 async function openAgeGroupSheet(ageGroupIndex: number) {
@@ -1052,10 +998,10 @@ async function openAgeGroupSheet(ageGroupIndex: number) {
 
     const ageGroupElement = rightSideRef.value?.[ageGroupIndex]
 
-    // Wait for transition to complete, then smooth scroll to the tapped element
+    // Wait for transition to complete, then repaint curves and scroll to tapped element
     await viewTransition.finished
+    repaint()
 
-    // Find and scroll to the tapped age group element
     if (ageGroupElement) {
       await nextTick()
       ageGroupElement.scrollIntoView({
