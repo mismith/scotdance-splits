@@ -187,6 +187,11 @@
   ::view-transition-new(.fixed-height) {
     height: 100%;
   }
+  ::view-transition-old(.fit),
+  ::view-transition-new(.fit) {
+    object-fit: none;
+    object-position: top left;
+  }
 
   /* Slide transition keyframes */
   @keyframes slide-out-to-left {

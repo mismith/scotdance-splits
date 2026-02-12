@@ -10,10 +10,10 @@
           <!-- Row 1: Header with title and controls -->
           <div class="flex items-center col-span-2 gap-2">
             <div class="flex flex-col md:flex-row md:items-center space-x-3">
-              <CardTitle class="text-xl font-bold" style="view-transition-name: match-element">
+              <CardTitle class="text-xl font-bold">
                 {{ name }}
               </CardTitle>
-              <DancerCount :count="totalDancers" style="view-transition-name: match-element" />
+              <DancerCount :count="totalDancers" />
             </div>
 
             <!-- Manual adjustment indicator -->
@@ -48,11 +48,10 @@
                 @click="decrementGroups"
                 :disabled="numAgeGroups <= 1"
                 class="w-6 h-6 rounded-full p-0"
-                :class="'[view-transition-name:match-element]'"
               >
                 <Minus class="h-3 w-3" />
               </Button>
-              <div class="flex items-center gap-2" :class="'[view-transition-name:match-element]'">
+              <div class="flex items-center gap-2">
                 <input
                   ref="groupsInputRef"
                   type="number"
@@ -74,7 +73,6 @@
                 @click="incrementGroups"
                 :disabled="numAgeGroups >= ageCountsArray.length"
                 class="w-6 h-6 rounded-full p-0"
-                :class="'[view-transition-name:match-element]'"
               >
                 <Plus class="h-3 w-3" />
               </Button>
@@ -110,19 +108,11 @@
               :key="age"
               ref="leftSideRef"
               class="p-3 text-sm bg-secondary/50 border border-border rounded-3xl select-text"
-              :class="'[view-transition-name:match-element]'"
-              style="view-transition-class: fixed-height"
+              :class="'[view-transition-name:match-element] [view-transition-class:fixed-height_fit]'"
             >
               <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-                <span class="font-medium" :class="'[view-transition-name:match-element]'">
-                  Age {{ age }}
-                </span>
-                <DancerCount
-                  :count="count"
-                  :total="totalDancers"
-                  size="x-small"
-                  style="view-transition-name: match-element"
-                />
+                <span class="font-medium"> Age {{ age }} </span>
+                <DancerCount :count="count" :total="totalDancers" size="x-small" />
               </div>
             </div>
           </div>
@@ -137,24 +127,15 @@
               :key="index"
               ref="rightSideRef"
               class="p-3 text-sm bg-secondary/50 border border-border rounded-3xl hover:bg-secondary/70 transition-all select-text"
-              :class="'[view-transition-name:match-element]'"
-              style="view-transition-class: fixed-height"
+              :class="'[view-transition-name:match-element] [view-transition-class:fixed-height_fit]'"
               :style="{ flex: `${count} 1 0` }"
               @click="openAgeGroupSheet(index)"
             >
               <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-                <span
-                  class="font-semibold text-foreground"
-                  :class="'[view-transition-name:match-element]'"
-                >
+                <span class="font-semibold text-foreground">
                   {{ getAgeGroupName(minAge, maxAge, isPrintingYears) }}
                 </span>
-                <DancerCount
-                  :count="count"
-                  :total="totalDancers"
-                  size="x-small"
-                  style="view-transition-name: match-element"
-                />
+                <DancerCount :count="count" :total="totalDancers" size="x-small" />
               </div>
             </div>
           </div>
