@@ -27,28 +27,30 @@ const sizeClasses = {
     </div>
 
     <!-- Desktop: Badge with tooltip -->
-    <Tooltip class="hidden md:inline-flex">
-      <TooltipTrigger as-child>
-        <span
-          :class="
-            cn(
-              'inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors',
-              'bg-secondary text-secondary-foreground',
-              sizeClasses[size],
-            )
-          "
-        >
-          {{ count }}
-        </span>
-      </TooltipTrigger>
-      <TooltipContent side="right">
-        <p v-if="total">
-          {{ count }} out of {{ total }} {{ pluralize(total, 'dancer') }} ({{
-            Math.round((count / total) * 100)
-          }}%)
-        </p>
-        <p v-else>{{ count }} {{ pluralize(count, 'dancer') }} total</p>
-      </TooltipContent>
-    </Tooltip>
+    <span class="hidden md:inline-flex">
+      <Tooltip>
+        <TooltipTrigger as-child>
+          <span
+            :class="
+              cn(
+                'inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors',
+                'bg-secondary text-secondary-foreground',
+                sizeClasses[size],
+              )
+            "
+          >
+            {{ count }}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="right">
+          <p v-if="total">
+            {{ count }} out of {{ total }} {{ pluralize(total, 'dancer') }} ({{
+              Math.round((count / total) * 100)
+            }}%)
+          </p>
+          <p v-else>{{ count }} {{ pluralize(count, 'dancer') }} total</p>
+        </TooltipContent>
+      </Tooltip>
+    </span>
   </div>
 </template>
