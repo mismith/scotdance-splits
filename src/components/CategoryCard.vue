@@ -408,12 +408,14 @@ const hasNonStandardGroupCount = computed(() => {
   return numAgeGroups.value !== getDefaultNumAgeGroups()
 })
 
-// Check if a specific boundary is manual (only for dragged partitions, not group count changes)
+// Cache default partitions so isBoundaryManual doesn't re-run the partition algorithm per boundary
+const defaultPartitions = computed(() =>
+  getPartitionedAgeCounts(ageCountsArray.value, numAgeGroups.value),
+)
+
 function isBoundaryManual(boundaryIndex: number): boolean {
-  // Only check if this specific boundary differs from default (ignore group count changes)
-  const defaultPartitions = getPartitionedAgeCounts(ageCountsArray.value, numAgeGroups.value)
   const currentBoundary = partitionedAgeCountsArray.value[boundaryIndex]?.[0]?.[1]
-  const defaultBoundary = defaultPartitions[boundaryIndex]?.[0]?.[1]
+  const defaultBoundary = defaultPartitions.value[boundaryIndex]?.[0]?.[1]
   return currentBoundary !== defaultBoundary
 }
 
