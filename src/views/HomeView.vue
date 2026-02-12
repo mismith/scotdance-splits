@@ -153,7 +153,7 @@
         </section>
 
         <!-- Section 2: The Transformation - Parallax Slide-Up -->
-        <!-- <TransformationSection /> -->
+        <TransformationSection class="bg-gradient-to-b from-transparent to-background/25" />
 
         <!-- Section 3: How It Works -->
         <section class="px-6 py-24 md:py-32 bg-gradient-to-b from-transparent to-background/25">
@@ -582,6 +582,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import FileUpload from '@/components/FileUpload.vue'
+import TransformationSection from '@/components/TransformationSection.vue'
 import ValidationBanner from '@/components/ValidationBanner.vue'
 import { Button } from '@/components/ui/button'
 import { type ValidationIssue } from '@/lib/input'

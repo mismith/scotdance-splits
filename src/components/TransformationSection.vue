@@ -1,232 +1,165 @@
 <script setup lang="ts">
-import { useScroll } from '@vueuse/core'
-import { parse } from 'papaparse'
-import { computed, onMounted, ref } from 'vue'
-import CellTable from '@/components/CellTable.vue'
-import { createPartitions, fetchDemoCSV, processCSVData } from '@/lib/input'
-import { type ExportSettings, calculateDefaultMaxBib, generateExportData } from '@/lib/output'
-import type { Cell } from '@/lib/types'
+import { useIntersectionObserver } from '@vueuse/core'
+import { ArrowDown, ArrowRight } from 'lucide-vue-next'
+import { ref } from 'vue'
 
-// Dynamic mock data loaded from CSV
-const mockInputData = ref<Cell[][]>([])
-const mockInputHeaders = ref<string[]>([])
-const isLoadingMockData = ref(true)
+const sectionRef = ref<HTMLElement>()
+const isVisible = ref(false)
 
-// Scroll-based parallax rotation
-const transformationSectionRef = ref<HTMLElement>()
-const { y } = useScroll(window)
-
-// Load mock data for preview tables
-async function loadMockData() {
-  try {
-    const csvText = await fetchDemoCSV()
-
-    const results = await new Promise<{ data: string[][] }>((resolve, reject) => {
-      parse(csvText, {
-        worker: true,
-        complete: resolve,
-        error: reject,
-      })
-    })
-
-    const csvData = results.data as string[][]
-    if (csvData && csvData.length > 0) {
-      mockInputHeaders.value = csvData[0]
-      // Convert string[][] to Cell[][] (no validation for demo data)
-      mockInputData.value = csvData.map((row) =>
-        row.map((value) => ({ value, error: false, warning: false })),
-      )
+useIntersectionObserver(
+  sectionRef,
+  ([entry]) => {
+    if (entry?.isIntersecting) {
+      isVisible.value = true
     }
-  } catch (error) {
-    console.error('Failed to load mock data:', error)
-  } finally {
-    isLoadingMockData.value = false
-  }
+  },
+  { threshold: 0.1 },
+)
+
+// Generate dates spread over the last ~80 days, ascending
+const formatDate = (d: Date) =>
+  d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+const daysAgo = (n: number) => {
+  const d = new Date()
+  d.setDate(d.getDate() - n)
+  return formatDate(d)
 }
 
-// Extract just the data rows for table display (without headers)
-const mockInputDataRows = computed(() => {
-  if (mockInputData.value.length <= 1) return []
-  return mockInputData.value.slice(1)
-})
+const beforeData = [
+  { name: 'Isla Morrison', category: 'Beginner', age: 7, date: daysAgo(72) },
+  { name: 'Angus Clark', category: 'Premier', age: 17, date: daysAgo(64) },
+  { name: 'Grace Brown', category: 'Beginner', age: 8, date: daysAgo(55) },
+  { name: 'Freya Scott', category: 'Premier', age: 15, date: daysAgo(48) },
+  { name: 'Sophie King', category: 'Beginner', age: 10, date: daysAgo(40) },
+  { name: 'Ruby Walker', category: 'Premier', age: 21, date: daysAgo(33) },
+  { name: 'Olivia Hill', category: 'Beginner', age: 9, date: daysAgo(27) },
+  { name: 'Isabella Clark', category: 'Beginner', age: 10, date: daysAgo(21) },
+  { name: 'Hannah Scott', category: 'Beginner', age: 11, date: daysAgo(15) },
+  { name: 'Megan Grant', category: 'Premier', age: 15, date: daysAgo(10) },
+  { name: 'Lily Wright', category: 'Beginner', age: 9, date: daysAgo(5) },
+  { name: 'Hannah Martin', category: 'Beginner', age: 11, date: daysAgo(1) },
+]
 
-// Process mock data using shared transformation logic
-const mockProcessedData = computed(() => {
-  if (isLoadingMockData.value || mockInputData.value.length === 0) {
-    return null
-  }
-  try {
-    // Extract raw string values for processing
-    const rawData = mockInputData.value.map((row) => row.map((cell) => cell.value))
-    return processCSVData(rawData)
-  } catch (error) {
-    console.error('Failed to process mock data:', error)
-    return null
-  }
-})
-
-const mockPartitions = computed(() => {
-  if (!mockProcessedData.value) return {}
-  return createPartitions(
-    mockProcessedData.value.categories,
-    mockProcessedData.value.partitionedCategories,
-  )
-})
-
-// Generate actual output data using shared export logic
-const realOutputData = computed(() => {
-  if (!mockProcessedData.value || mockInputData.value.length === 0) {
-    return []
-  }
-
-  // Extract raw string values for processing
-  const rawData = mockInputData.value.map((row) => row.map((cell) => cell.value))
-
-  const defaultMaxBib = calculateDefaultMaxBib(
-    rawData,
-    mockProcessedData.value.colIndexes,
-    mockProcessedData.value.hasHeaderRow,
-  )
-
-  const settings: ExportSettings = {
-    maxBibNumber: defaultMaxBib,
-    isPrintingYears: true,
-    includeCountry: false,
-    combineNames: false,
-  }
-
-  return generateExportData(
-    rawData,
-    mockProcessedData.value.colIndexes,
-    mockPartitions.value,
-    settings,
-    mockProcessedData.value.hasHeaderRow,
-  )
-})
-
-// Filter output data to show only first 3 groups
-const filteredOutputData = computed((): Cell[][] => {
-  const data = realOutputData.value
-  if (data.length === 0) return []
-
-  let groupCount = 0
-  let filteredData: (string | number)[][] = data
-
-  for (let i = 0; i < data.length; i++) {
-    const row = data[i]
-    // Group header: first cell has text, others empty (but not all empty for separator)
-    if (row[0] && !row[1] && !row[2] && !row[3]) {
-      groupCount++
-      if (groupCount > 3) {
-        // Return everything up to (but not including) this 4th group header
-        // Also exclude the separator row before it (i-1)
-        filteredData = data.slice(0, Math.max(0, i - 1))
-        break
-      }
-    }
-  }
-
-  // Convert (string | number)[][] to Cell[][]
-  return filteredData.map((row) =>
-    row.map((value) => ({ value: String(value), error: false, warning: false })),
-  )
-})
-
-// Scroll-based rotation angles for parallax effect
-const beforeRotation = computed(() => {
-  if (!transformationSectionRef.value) return 0
-
-  const rect = transformationSectionRef.value.getBoundingClientRect()
-  const viewportHeight = window.innerHeight
-  const elementTop = rect.top + y.value
-  const elementHeight = rect.height
-
-  // Calculate scroll progress through the section
-  const scrollStart = elementTop - viewportHeight * 0.9
-  const scrollEnd = elementTop + elementHeight * 0.9
-  const scrollRange = scrollEnd - scrollStart
-
-  const progress = (y.value - scrollStart) / scrollRange
-  const clampedProgress = Math.max(0, Math.min(1, progress))
-
-  // Before: 0deg → 70deg (starts flat, tilts back dramatically)
-  return clampedProgress * 90
-})
-
-const afterRotation = computed(() => {
-  if (!transformationSectionRef.value) return 70
-
-  const rect = transformationSectionRef.value.getBoundingClientRect()
-  const viewportHeight = window.innerHeight
-  const elementTop = rect.top + y.value
-  const elementHeight = rect.height
-
-  // Calculate scroll progress through the section
-  const scrollStart = elementTop - viewportHeight * 0.1
-  const scrollEnd = elementTop + elementHeight * 0.4
-  const scrollRange = scrollEnd - scrollStart
-
-  const progress = (y.value - scrollStart) / scrollRange
-  const clampedProgress = Math.max(0, Math.min(1, progress))
-
-  // After: 70deg → 0deg (completes rotation at 80% scroll progress for more visible effect)
-  const rotationProgress = Math.min(clampedProgress / 0.9, 1)
-  return 70 - rotationProgress * 70
-})
-
-onMounted(() => {
-  loadMockData()
-})
+// Bibs assigned by registration order: row 1 (oldest) = 112, row 12 (newest) = 101
+// Listed ascending within each group on the right
+const afterGroups = [
+  {
+    label: 'Beginner 7 & Under 9 Years',
+    dancers: [
+      { bib: 102, name: 'Lily Wright' },
+      { bib: 106, name: 'Olivia Hill' },
+      { bib: 110, name: 'Grace Brown' },
+      { bib: 112, name: 'Isla Morrison' },
+    ],
+  },
+  {
+    label: 'Beginner 10 & 11 Years',
+    dancers: [
+      { bib: 101, name: 'Hannah Martin' },
+      { bib: 104, name: 'Hannah Scott' },
+      { bib: 105, name: 'Isabella Clark' },
+      { bib: 108, name: 'Sophie King' },
+    ],
+  },
+  {
+    label: 'Premier 15 Years & Over',
+    dancers: [
+      { bib: 103, name: 'Megan Grant' },
+      { bib: 107, name: 'Ruby Walker' },
+      { bib: 109, name: 'Freya Scott' },
+      { bib: 111, name: 'Angus Clark' },
+    ],
+  },
+]
 </script>
 
 <template>
-  <!-- Section 2: The Transformation - Parallax Slide-Up -->
-  <section
-    ref="transformationSectionRef"
-    class="relative min-h-[150vh] px-6 bg-muted/20"
-    style="perspective: 2000px"
-  >
-    <div class="max-w-6xl mx-auto" style="transform-style: preserve-3d">
-      <!-- Before Table (Sticky, stays in view) -->
-      <div class="sticky top-24 py-12 max-w-[92%] mx-auto" style="transform-style: preserve-3d">
-        <div
-          class="bg-background border rounded-3xl p-6 md:p-8 shadow-lg relative z-10"
-          :style="{ transform: `rotateX(${beforeRotation}deg) scale(0.95)` }"
-        >
-          <div class="flex items-baseline justify-between mb-6">
-            <h3 class="text-base md:text-lg font-semibold text-muted-foreground">Before</h3>
-            <p class="text-sm md:text-base text-muted-foreground/80 font-medium">
-              Unsorted. Unbalanced. Hours of work ahead.
-            </p>
-          </div>
-          <div
-            class="rounded-xl overflow-x-auto overflow-y-hidden border max-h-[500px] will-change-transform"
-            style="backface-visibility: hidden"
-          >
-            <CellTable :data="mockInputDataRows.slice(0, 20)" :headers="mockInputHeaders" />
-          </div>
+  <section ref="sectionRef" class="px-6 py-24 md:py-32">
+    <div class="max-w-2xl mx-auto text-center mb-12 md:mb-16">
+      <h2 class="text-2xl md:text-3xl font-bold tracking-tight mb-3">See the difference</h2>
+      <p class="text-muted-foreground text-sm md:text-base">
+        Raw registration data becomes competition-ready groups in seconds.
+      </p>
+    </div>
+
+    <div
+      class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 md:gap-8 items-start"
+    >
+      <!-- Before -->
+      <div
+        class="transition-all duration-700 ease-out motion-reduce:transition-none pointer-events-none"
+        :class="isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
+      >
+        <p class="text-xs text-muted-foreground/60 mb-2 text-center">Before</p>
+        <div class="rounded-2xl border border-border/80 bg-muted/30 shadow-lg overflow-hidden">
+          <table class="w-full text-[13px]">
+            <thead>
+              <tr class="bg-muted/50">
+                <th class="text-left py-2.5 px-4 font-medium text-muted-foreground/80 text-xs">
+                  Name
+                </th>
+                <th class="text-left py-2.5 px-4 font-medium text-muted-foreground/80 text-xs">
+                  Category
+                </th>
+                <th class="text-left py-2.5 px-4 font-medium text-muted-foreground/80 text-xs">
+                  Age
+                </th>
+                <th class="text-left py-2.5 px-4 font-medium text-muted-foreground/80 text-xs">
+                  Registered
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(row, i) in beforeData" :key="i" class="border-t border-border/40">
+                <td class="py-2 px-4 whitespace-nowrap">{{ row.name }}</td>
+                <td class="py-2 px-4 text-muted-foreground">{{ row.category }}</td>
+                <td class="py-2 px-4 text-muted-foreground">{{ row.age }}</td>
+                <td class="py-2 px-4 text-muted-foreground/60 text-xs whitespace-nowrap">
+                  {{ row.date }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <!-- After Table (Slides up from below to cover Before) -->
-      <div class="relative py-24 -mt-32 max-w-[92%] mx-auto" style="transform-style: preserve-3d">
+      <!-- Arrow connector -->
+      <div class="flex items-center justify-center md:self-center md:mt-6">
+        <div class="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+          <ArrowDown class="w-5 h-5 text-primary/50 md:hidden" />
+          <ArrowRight class="w-5 h-5 text-primary/50 hidden md:block" />
+        </div>
+      </div>
+
+      <!-- After -->
+      <div
+        class="transition-all duration-700 ease-out delay-150 motion-reduce:transition-none pointer-events-none"
+        :class="isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
+      >
+        <p class="text-xs text-primary/60 mb-2 text-center">After</p>
         <div
-          class="bg-primary/5 backdrop-blur-2xl border-2 border-primary/30 rounded-3xl p-6 md:p-8 shadow-2xl relative z-20"
-          :style="{
-            transform: `rotateX(-${afterRotation}deg) translateZ(300px) scale(0.95)`,
-          }"
+          class="rounded-2xl border-2 border-primary/20 bg-primary/[0.03] shadow-lg overflow-hidden"
         >
-          <div class="flex items-baseline justify-between mb-6">
-            <h3 class="text-base md:text-lg font-semibold text-primary">After</h3>
-            <p class="text-sm md:text-base text-primary/90 font-medium">
-              Balanced groups. Assigned bibs. Done in seconds.
-            </p>
-          </div>
-          <div
-            class="rounded-xl overflow-x-auto overflow-y-hidden border-2 border-primary/30 max-h-[500px] will-change-transform"
-            style="backface-visibility: hidden"
-          >
-            <CellTable :data="filteredOutputData" :show-headers="false" :show-row-headers="false" />
+          <div class="p-5 md:p-6 space-y-5">
+            <div v-for="(group, i) in afterGroups" :key="i">
+              <div
+                class="text-xs font-medium text-primary/70 mb-2 pb-1.5 border-b border-primary/10"
+              >
+                {{ group.label }}
+              </div>
+              <div class="space-y-1">
+                <div
+                  v-for="dancer in group.dancers"
+                  :key="dancer.bib"
+                  class="flex items-center gap-3 text-[13px] py-1 px-1"
+                >
+                  <span class="font-mono text-primary/50 w-7 text-right text-xs tabular-nums">{{
+                    dancer.bib
+                  }}</span>
+                  <span>{{ dancer.name }}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
