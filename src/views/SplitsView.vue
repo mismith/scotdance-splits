@@ -201,7 +201,7 @@ function handleExportDownload() {
   <div class="flex flex-col min-h-screen">
     <!-- Fixed Toolbar -->
     <header
-      class="fixed top-0 left-0 right-0 z-50 grid grid-cols-[1fr_auto_1fr] items-center px-4 h-16 bg-gradient-to-b from-background to-transparent"
+      class="fixed top-0 left-0 right-0 z-50 grid grid-cols-[1fr_auto_1fr] items-center px-4 h-16 bg-gradient-to-b from-background to-transparent pointer-events-none *:pointer-events-auto"
     >
       <!-- Left side -->
       <div class="flex items-center gap-1 justify-self-start">
@@ -243,7 +243,7 @@ function handleExportDownload() {
         <Badge
           v-if="isDemoMode"
           variant="accent"
-          class="text-xs -mt-1 -mb-5 bg-accent/50 backdrop-blur-md"
+          class="text-xs -mt-1 -mb-5 bg-accent backdrop-blur-md"
         >
           Demo
         </Badge>
@@ -281,7 +281,7 @@ function handleExportDownload() {
         </div>
       </div>
 
-      <div v-else class="p-4 space-y-4">
+      <div v-else class="px-3 py-4 md:px-4 space-y-4">
         <CategoryCard
           v-for="categoryCode in Object.keys(CATEGORY_CODE_NAMES).filter(
             (c) => store.categories?.[c],

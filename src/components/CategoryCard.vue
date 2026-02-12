@@ -1,11 +1,11 @@
 <template>
-  <Card class="select-none">
-    <CardContent class="px-6">
+  <Card class="select-none py-3 md:py-6">
+    <CardContent class="px-3 md:px-6">
       <div class="relative">
         <!-- 4-column CSS Grid Layout -->
         <div
           ref="colsRef"
-          :class="`grid gap-4 grid-cols-[1fr_1rem_1fr_0] md:grid-cols-[1fr_80px_1fr_0] ${showDancers ? 'md:!grid-cols-[1fr_80px_1fr_1fr]' : ''}`"
+          :class="`grid gap-y-4 grid-cols-[1fr_2rem_1fr_0] md:grid-cols-[1fr_80px_1fr_0] ${showDancers ? 'md:!grid-cols-[1fr_80px_1fr_1fr]' : ''}`"
         >
           <!-- Row 1: Header with title and controls -->
           <div class="flex items-center col-span-2 gap-2">
@@ -163,7 +163,7 @@
           </div>
 
           <!-- Preview Dancers column -->
-          <div class="hidden md:flex flex-col gap-2">
+          <div class="hidden md:flex flex-col gap-2 md:ml-4">
             <template
               v-for="([, count], index) in partitionedAgeCountsArray"
               :key="`preview-${index}`"
@@ -272,13 +272,6 @@
     </SheetContent>
   </Sheet>
 </template>
-
-<style lang="postcss">
-::view-transition-old(.fixed-height),
-::view-transition-new(.fixed-height) {
-  height: 100%;
-}
-</style>
 
 <script lang="ts" setup>
 import partition from 'linear-partitioning'
