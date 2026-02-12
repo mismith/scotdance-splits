@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useEventListener, useLocalStorage } from '@vueuse/core'
-import { AlertTriangle, Check, Map, Share, Table, Users } from 'lucide-vue-next'
+import { AlertTriangle, Check, Map, Table, Users } from 'lucide-vue-next'
 import { computed, nextTick, onMounted, provide, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import { startViewTransition } from 'vue-view-transitions'
