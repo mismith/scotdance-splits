@@ -20,7 +20,7 @@
             <div v-if="hasCustomizations" class="flex items-center gap-2 flex-shrink-0 ml-auto">
               <Tooltip>
                 <TooltipTrigger
-                  class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full cursor-pointer hover:bg-accent/15 transition-colors"
+                  class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full hover:bg-accent/15 transition-colors"
                   @click="resetToDefaults"
                 >
                   <span class="text-xs font-medium text-accent">Manual</span>
@@ -64,10 +64,7 @@
                   @blur="!numAgeGroups && (numAgeGroups = getDefaultNumAgeGroups())"
                   @keyup.enter="($event.target as HTMLInputElement).blur()"
                 />
-                <span
-                  class="text-sm font-medium text-foreground cursor-pointer"
-                  @click="selectGroupsInput"
-                >
+                <span class="text-sm font-medium text-foreground" @click="selectGroupsInput">
                   {{ pluralize(numAgeGroups || 1, 'group') }}
                 </span>
               </div>
@@ -88,7 +85,7 @@
               <Tooltip v-if="hasNonStandardGroupCount">
                 <TooltipTrigger asChild>
                   <div
-                    class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full cursor-pointer hover:bg-accent/15 transition-colors"
+                    class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full hover:bg-accent/15 transition-colors"
                     @click="resetGroupCount"
                   >
                     <span class="text-xs font-medium text-accent">Manual</span>
@@ -139,7 +136,7 @@
               v-for="([[minAge, maxAge], count], index) in partitionedAgeCountsArray"
               :key="index"
               ref="rightSideRef"
-              class="p-3 text-sm bg-secondary/50 border border-border rounded-3xl hover:bg-secondary/70 transition-all select-text cursor-pointer"
+              class="p-3 text-sm bg-secondary/50 border border-border rounded-3xl hover:bg-secondary/70 transition-all select-text"
               :class="'[view-transition-name:match-element]'"
               style="view-transition-class: fixed-height"
               :style="{ flex: `${count} 1 0` }"
