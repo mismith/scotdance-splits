@@ -24,3 +24,7 @@ Example:
 /* styles */
 </style>
 ```
+
+## Styling
+
+Always prefer Tailwind utility classes over custom `<style>` blocks. For Vue `<Transition>` components, use the inline class props (`enter-active-class`, `leave-active-class`, etc.) with Tailwind classes instead of defining CSS transition rules in a `<style>` block.
