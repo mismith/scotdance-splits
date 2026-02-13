@@ -126,7 +126,7 @@ function handleHeaderRowToggle(value: boolean) {
   store.updateColIndexes(store.colIndexes)
 }
 
-function updateColIndex(id: string, value: any) {
+function updateColIndex(id: string, value: string | null) {
   const newIndexes = { ...store.colIndexes }
   const stringValue = String(value || 'none')
   newIndexes[id] = stringValue === 'none' ? -1 : store.inputHeaders.indexOf(stringValue)
@@ -420,7 +420,7 @@ function handleExportDownload() {
             </Label>
             <Select
               :model-value="(store.inputHeaders[store.colIndexes[id]] || 'none') as string"
-              @update:model-value="updateColIndex(id, $event)"
+              @update:model-value="updateColIndex(id, String($event))"
             >
               <SelectTrigger class="w-full">
                 <SelectValue placeholder="Select column..." />
