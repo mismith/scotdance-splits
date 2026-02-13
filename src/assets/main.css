@@ -230,4 +230,13 @@
   ::view-transition-new(slide-right) {
     animation: slide-in-from-left 250ms ease-out;
   }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0s !important;
+  }
 }

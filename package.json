@@ -11,7 +11,9 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "test:e2e": "playwright test",
+    "test": "npm run test:e2e"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.11",
@@ -32,6 +34,7 @@
     "vue-view-transitions": "^1.2.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tsconfig/node22": "^22.0.0",
     "@types/node": "^22.13.9",
     "@types/papaparse": "^5.3.16",
