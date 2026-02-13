@@ -76,7 +76,7 @@ function closeDialog() {
       </div>
 
       <!-- Footer -->
-      <DialogFooter class="p-4 pt-0">
+      <DialogFooter class="p-4 pt-0 flex-shrink-0">
         <Button variant="outline" @click="$emit('update:show-sidebar', !showSidebar)">
           {{ showSidebar ? 'Hide' : 'Show' }} settings
         </Button>
