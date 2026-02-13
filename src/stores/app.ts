@@ -1,4 +1,5 @@
 import { parse } from 'papaparse'
+import { useMediaQuery } from '@vueuse/core'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import {
@@ -45,6 +46,9 @@ export const useAppStore = defineStore('app', () => {
   const hasHeaderRow = ref(true)
   const inputHeaders = ref<string[]>([])
   const colIndexes = ref<Record<string, number>>({})
+
+  // Layout
+  const isDesktop = useMediaQuery('(min-width: 768px)')
 
   // Export configuration
   const maxBibNumber = ref<number>(100)
@@ -285,6 +289,9 @@ export const useAppStore = defineStore('app', () => {
     isPrintingYears,
     includeCountry,
     combineNames,
+
+    // Layout
+    isDesktop,
 
     // Computed
     hasData,

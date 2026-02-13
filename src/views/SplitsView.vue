@@ -36,7 +36,7 @@ const columnMappingShowSidebar = useLocalStorage(
   true,
 )
 const showExportSettingsSheet = ref(false)
-const exportShowSidebar = useLocalStorage('scotdance.splits.exportDialog.showSidebar', true)
+const exportShowSidebar = useLocalStorage('scotdance.splits.exportDialog.showSidebar', store.isDesktop)
 const validationDismissed = ref(false)
 const showDancers = ref(false)
 

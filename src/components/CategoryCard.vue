@@ -991,7 +991,7 @@ useResizeObserver(colsRef, () => repaint())
 
 // Age group interaction functions
 async function openAgeGroupSheet(ageGroupIndex: number) {
-  if (window.innerWidth >= 768) {
+  if (store.isDesktop) {
     // Desktop: Toggle dancers visibility with smooth scroll to element
     const viewTransition = startViewTransition()
     await viewTransition.captured
