@@ -6,9 +6,14 @@ import type { ValidationIssue } from '@/lib/input'
 
 interface Props {
   issues: ValidationIssue[]
+  reviewLabel?: string
+  dismissLabel?: string
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  reviewLabel: 'Review',
+  dismissLabel: 'Dismiss',
+})
 
 const emit = defineEmits<{
   review: []
@@ -133,9 +138,9 @@ function handleDismiss() {
 
           <!-- Action buttons -->
           <div class="flex gap-2">
-            <Button size="sm" @click="$emit('review')" :class="actionButtonClass">Review</Button>
+            <Button size="sm" @click="$emit('review')" :class="actionButtonClass">{{ props.reviewLabel }}</Button>
             <Button size="sm" variant="ghost" @click="handleDismiss" :class="dismissButtonClass">
-              Dismiss
+              {{ props.dismissLabel }}
             </Button>
           </div>
         </div>

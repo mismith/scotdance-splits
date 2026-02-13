@@ -566,6 +566,8 @@
         <div class="fixed bottom-2 md:bottom-8 left-0 right-0 px-2 z-40 pointer-events-none">
           <ValidationBanner
             :issues="criticalErrors"
+            review-label="Try another file"
+            dismiss-label="Close"
             @review="chooseFile"
             @dismiss="handleErrorDismiss"
           />
