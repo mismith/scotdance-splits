@@ -88,7 +88,7 @@ function handleDismiss() {
 <template>
   <div
     v-if="props.issues.length > 0 && !isDismissed"
-    class="pointer-events-auto max-w-lg mx-auto mb-4 relative overflow-hidden backdrop-blur-lg rounded-4xl shadow-xl border transition-all duration-300"
+    class="pointer-events-auto max-w-lg mx-auto relative overflow-hidden backdrop-blur-lg rounded-4xl shadow-xl border transition-all duration-300"
     :class="bannerColorClass"
   >
     <!-- Close button -->

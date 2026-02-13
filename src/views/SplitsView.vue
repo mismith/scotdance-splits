@@ -297,7 +297,7 @@ function handleExportDownload() {
     </main>
 
     <!-- Sticky Footer - Status/Export -->
-    <div class="sticky bottom-0 md:bottom-8 z-40 mt-8 pointer-events-none">
+    <div class="sticky bottom-2 md:bottom-8 z-40 mt-8 px-2 pointer-events-none">
       <!-- Validation Banner -->
       <ValidationBanner
         v-if="!validationDismissed && allValidationIssues.length > 0"
@@ -308,7 +308,7 @@ function handleExportDownload() {
       <!-- Export CTA (hidden when there are unresolved issues) -->
       <div
         v-if="allValidationIssues.length === 0 || validationDismissed"
-        class="pointer-events-auto bg-background/70 backdrop-blur-md border-t md:border border-border shadow-sm rounded-t-4xl md:rounded-4xl px-6 py-5 md:p-6 max-w-lg mx-auto flex flex-col gap-3"
+        class="pointer-events-auto bg-background/70 backdrop-blur-md border border-border shadow-sm rounded-4xl px-6 py-5 md:p-6 max-w-lg mx-auto flex flex-col gap-3"
       >
         <div v-if="allValidationIssues.length === 0" class="flex items-center justify-center gap-2">
           <div class="w-5 h-5 flex items-center justify-center rounded-full bg-green-500/25 -my-2">
