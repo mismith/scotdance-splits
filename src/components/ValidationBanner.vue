@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { AlertTriangle, X } from 'lucide-vue-next'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import type { ValidationIssue } from '@/lib/input'
 
@@ -19,8 +19,6 @@ const emit = defineEmits<{
   review: []
   dismiss: []
 }>()
-
-const isDismissed = ref(false)
 
 const issueCount = computed(() => props.issues.length)
 
@@ -85,14 +83,13 @@ const dismissButtonClass = computed(() => {
 })
 
 function handleDismiss() {
-  isDismissed.value = true
   emit('dismiss')
 }
 </script>
 
 <template>
   <div
-    v-if="props.issues.length > 0 && !isDismissed"
+    v-if="props.issues.length > 0"
     class="pointer-events-auto max-w-lg mx-auto relative overflow-hidden backdrop-blur-lg rounded-4xl shadow-xl border transition-all duration-300"
     :class="bannerColorClass"
   >

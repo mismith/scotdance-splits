@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useEventListener, useLocalStorage } from '@vueuse/core'
-import { AlertTriangle, Check, Map, Table, Users } from 'lucide-vue-next'
+import { AlertTriangle, Table, TableProperties, Users } from 'lucide-vue-next'
 import { computed, nextTick, onMounted, provide, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import { startViewTransition } from 'vue-view-transitions'
@@ -22,7 +22,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { fetchDemoCSV } from '@/lib/input'
 import { CATEGORY_CODE_NAMES, INPUT_COLUMNS, type Partition, createPartitions } from '@/lib/input'
 import { type ExportSettings, convertToCSV, downloadCSV, generateExportData } from '@/lib/output'
@@ -36,7 +35,10 @@ const columnMappingShowSidebar = useLocalStorage(
   true,
 )
 const showExportSettingsSheet = ref(false)
-const exportShowSidebar = useLocalStorage('scotdance.splits.exportDialog.showSidebar', store.isDesktop)
+const exportShowSidebar = useLocalStorage(
+  'scotdance.splits.exportDialog.showSidebar',
+  store.isDesktop,
+)
 const validationDismissed = ref(false)
 const showDancers = ref(false)
 
@@ -45,6 +47,10 @@ const isDemoMode = computed(() => route.name === 'demo')
 
 // Validation issues from store (now includes all validation: headers, column mapping, codes)
 const allValidationIssues = computed(() => store.inputErrors)
+const hasErrors = computed(() => allValidationIssues.value.some((i) => i.severity === 'error'))
+const hasDismissedIssues = computed(
+  () => allValidationIssues.value.length > 0 && validationDismissed.value,
+)
 
 // Partitions store - maps category code to age ranges
 const partitions = ref<Record<string, Partition[]>>({})
@@ -110,14 +116,15 @@ async function toggleDancers() {
   isTransitioningShowDancers.value = false
 }
 
-function dismissValidationErrors() {
+async function dismissValidationErrors() {
+  const viewTransition = startViewTransition()
+  await viewTransition.captured
   validationDismissed.value = true
 }
 
 function handleReviewErrors() {
-  // Open column mapping dialog with sidebar collapsed to focus on the highlighted errors in the table
-  columnMappingShowSidebar.value = false
   showColumnMappingSheet.value = true
+  validationDismissed.value = true
 }
 
 function handleHeaderRowToggle(value: boolean) {
@@ -205,16 +212,25 @@ function handleExportDownload() {
     >
       <!-- Left side -->
       <div class="flex items-center gap-1 justify-self-start">
-        <Tooltip>
-          <TooltipTrigger as-child>
-            <Button variant="outline" size="icon" @click="showColumnMappingSheet = true">
-              <Map class="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Column mapping</p>
-          </TooltipContent>
-        </Tooltip>
+        <Button
+          :variant="hasDismissedIssues ? undefined : 'outline'"
+          :class="[
+            hasDismissedIssues
+              ? hasErrors
+                ? 'bg-red-600 hover:bg-red-700 text-white backdrop-blur-lg'
+                : 'bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30 backdrop-blur-lg'
+              : '',
+            hasDismissedIssues && '[view-transition-name:validation-issues]',
+          ]"
+          @click="hasDismissedIssues ? handleReviewErrors() : (showColumnMappingSheet = true)"
+        >
+          <AlertTriangle v-if="hasDismissedIssues" class="size-4" />
+          <TableProperties v-else class="h-4 w-4" />
+          <template v-if="hasDismissedIssues">
+            {{ allValidationIssues.length }} issue{{ allValidationIssues.length !== 1 ? 's' : '' }}
+          </template>
+          <template v-else>Fields</template>
+        </Button>
       </div>
 
       <!-- Center - Logo -->
@@ -251,25 +267,15 @@ function handleExportDownload() {
 
       <!-- Right side -->
       <div class="hidden md:flex items-center gap-1 justify-self-end">
-        <Tooltip>
-          <TooltipTrigger as-child>
-            <Button
-              :variant="showDancers ? 'default' : 'outline'"
-              size="icon"
-              @click="toggleDancers"
-            >
-              <Users class="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{{ showDancers ? 'Hide dancers' : 'Show dancers' }}</p>
-          </TooltipContent>
-        </Tooltip>
+        <Button :variant="showDancers ? 'default' : 'outline'" @click="toggleDancers">
+          <Users class="h-4 w-4" />
+          Dancers
+        </Button>
       </div>
     </header>
 
     <!-- Main content with top padding to account for fixed header -->
-    <main class="pt-16 flex-auto">
+    <main class="pt-16 pb-16 flex-auto">
       <div
         v-if="!store.hasData"
         class="flex items-center justify-center py-20 text-muted-foreground"
@@ -296,96 +302,41 @@ function handleExportDownload() {
       </div>
     </main>
 
-    <!-- Sticky Footer - Status/Export -->
-    <div class="sticky bottom-2 md:bottom-8 z-40 mt-8 px-2 pointer-events-none">
-      <!-- Validation Banner -->
+    <!-- Validation Banner (floats independently) -->
+    <div
+      v-if="!validationDismissed && allValidationIssues.length > 0"
+      class="fixed bottom-0 left-0 right-0 z-50 px-2 pb-2 md:pb-8 pointer-events-none"
+    >
       <ValidationBanner
-        v-if="!validationDismissed && allValidationIssues.length > 0"
         :issues="allValidationIssues"
+        class="[view-transition-name:validation-issues]"
         @review="handleReviewErrors"
         @dismiss="dismissValidationErrors"
       />
-      <!-- Export CTA (hidden when there are unresolved issues) -->
-      <div
-        v-if="allValidationIssues.length === 0 || validationDismissed"
-        class="pointer-events-auto bg-background/70 backdrop-blur-md border border-border shadow-sm rounded-4xl px-6 py-5 md:p-6 max-w-lg mx-auto flex flex-col gap-3"
-      >
-        <div v-if="allValidationIssues.length === 0" class="flex items-center justify-center gap-2">
-          <div class="w-5 h-5 flex items-center justify-center rounded-full bg-green-500/25 -my-2">
-            <Check class="size-4 text-green-500" />
-          </div>
-          <p class="text-sm font-medium text-green-500">Ready to export</p>
-        </div>
+    </div>
 
-        <!-- Error/warning indicator when validation was dismissed - directly above button -->
-        <div
-          v-if="validationDismissed && allValidationIssues.length > 0"
-          class="flex items-center gap-3 p-2 mb-3 rounded-3xl"
-          :class="
-            allValidationIssues.some((i) => i.severity === 'error')
-              ? 'bg-gradient-to-r from-red-50 to-red-100 dark:from-red-950/30 dark:to-red-900/30 border border-red-200 dark:border-red-800/50'
-              : 'bg-gradient-to-r from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 border border-primary/30 dark:border-primary/50'
-          "
-        >
-          <div
-            class="w-6 h-6 flex items-center justify-center rounded-full flex-shrink-0"
-            :class="
-              allValidationIssues.some((i) => i.severity === 'error')
-                ? 'bg-red-100 dark:bg-red-900/50'
-                : 'bg-primary/20 dark:bg-primary/30'
-            "
-          >
-            <AlertTriangle
-              class="h-3 w-3"
-              :class="
-                allValidationIssues.some((i) => i.severity === 'error')
-                  ? 'text-red-600 dark:text-red-400'
-                  : 'text-primary'
-              "
-            />
-          </div>
-          <span
-            class="text-xs flex-1"
-            :class="
-              allValidationIssues.some((i) => i.severity === 'error')
-                ? 'text-red-700 dark:text-red-300'
-                : 'text-primary/80 dark:text-primary/90'
-            "
-          >
-            {{
-              allValidationIssues.some((i) => i.severity === 'error')
-                ? 'Export may not work properly due to data issues'
-                : `${allValidationIssues.length} warning${allValidationIssues.length !== 1 ? 's' : ''} dismissed`
-            }}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            @click="handleReviewErrors"
-            class="h-6 px-2 text-xs ml-auto"
-            :class="
-              allValidationIssues.some((i) => i.severity === 'error')
-                ? 'text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/50'
-                : 'text-primary hover:bg-primary/10'
-            "
-          >
-            Review
-          </Button>
-        </div>
+    <!-- Fixed Footer (always visible when data loaded, buttons fade in) -->
+    <footer
+      v-if="store.hasData"
+      class="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-[1fr_auto_1fr] items-center px-4 h-16 bg-gradient-to-t from-background to-transparent pointer-events-none *:pointer-events-auto"
+    >
+      <div />
+      <div />
 
-        <!-- Export Button -->
-        <Button size="lg" @click="showExportSettingsSheet = true">
-          <span class="flex items-center gap-2">Export →</span>
+      <!-- Right: Export -->
+      <div class="justify-self-end">
+        <Button size="lg" class="backdrop-blur-lg" @click="showExportSettingsSheet = true">
+          Next &rarr;
         </Button>
       </div>
-    </div>
+    </footer>
 
     <!-- Column mapping settings dialog -->
     <DialogWithSidebar
       v-model:open="showColumnMappingSheet"
       v-model:show-sidebar="columnMappingShowSidebar"
-      title="Column Mapping"
-      description="Map your CSV columns to the correct fields for processing"
+      title="Fields"
+      description="Map your CSV columns to the correct fields"
     >
       <CellTable
         :data="store.hasHeaderRow ? (store.validatedCSV || []).slice(1) : store.validatedCSV || []"
@@ -438,7 +389,7 @@ function handleExportDownload() {
       </template>
 
       <template #submit="{ close }">
-        <Button @click="close()">Save</Button>
+        <Button @click="close()">Done</Button>
       </template>
     </DialogWithSidebar>
 

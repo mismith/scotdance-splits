@@ -18,6 +18,16 @@ async function waitForSplitsPage(page: Page) {
   )
 }
 
+async function waitForAnimations(page: Page) {
+  await page.waitForFunction(() =>
+    document.getAnimations().every((a) => {
+      const timing = a.effect?.getComputedTiming()
+      // Ignore infinite animations (spinners, pulsing effects, etc.)
+      return !timing || timing.iterations === Infinity || a.playState === 'finished'
+    }),
+  )
+}
+
 function screenshotPath(testInfo: TestInfo, name: string) {
   // e.g. e2e/screenshots/desktop/01-happy-path.png
   return path.join(SCREENSHOTS, testInfo.project.name, name)
@@ -31,7 +41,7 @@ test.describe('Validation States', () => {
   test('01 - happy path (clean data)', async ({ page }, testInfo) => {
     await uploadFixture(page, 'clean-small.csv')
     await waitForSplitsPage(page)
-    await expect(page.getByText('Ready to export')).toBeVisible()
+    await expect(page.getByRole('button', { name: /Next/ })).toBeVisible()
     await expect(page.getByText('data issue')).not.toBeVisible()
     await page.screenshot({ path: screenshotPath(testInfo, '01-happy-path.png') })
   })
@@ -122,6 +132,7 @@ test.describe('Validation Interactions', () => {
 
     // Secondary indicator should appear with issue count
     await expect(page.getByText('issue')).toBeVisible()
+    await waitForAnimations(page)
     await page.screenshot({ path: screenshotPath(testInfo, '12-warning-after-dismiss.png') })
   })
 
@@ -137,10 +148,10 @@ test.describe('Validation Interactions', () => {
     // Dismiss the banner
     await page.getByRole('button', { name: 'Dismiss' }).click()
 
-    // Secondary indicator should appear with error styling and Review button
+    // Secondary indicator should appear with error styling
     await expect(page.getByText('issue')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Review' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Export' })).toBeVisible()
+    await expect(page.getByRole('button', { name: /issue/ })).toBeVisible()
+    await waitForAnimations(page)
     await page.screenshot({ path: screenshotPath(testInfo, '14-error-after-dismiss.png') })
   })
 
@@ -155,7 +166,8 @@ test.describe('Validation Interactions', () => {
     await page.getByRole('button', { name: 'Review' }).click()
 
     // Column mapping dialog should open
-    await expect(page.getByText('Column Mapping')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Fields' })).toBeVisible()
+    await waitForAnimations(page)
     await page.screenshot({ path: screenshotPath(testInfo, '15-column-mapping-dialog.png') })
   })
 
@@ -164,16 +176,17 @@ test.describe('Validation Interactions', () => {
     await uploadFixture(page, 'clean-small.csv')
     await waitForSplitsPage(page)
 
-    // Clean data — export CTA visible
-    await expect(page.getByText('Ready to export')).toBeVisible()
+    // Clean data — Next button visible
+    await expect(page.getByRole('button', { name: /Next/ })).toBeVisible()
 
     // Open export dialog
-    await page.getByRole('button', { name: 'Export →' }).click()
+    await page.getByRole('button', { name: /Next/ }).click()
 
     // Export settings dialog should open with title and controls
     await expect(page.getByText('Export Settings')).toBeVisible()
     await expect(page.getByLabel('Highest bib number')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Export' })).toBeVisible()
+    await waitForAnimations(page)
     await page.screenshot({ path: screenshotPath(testInfo, '16-export-dialog.png') })
   })
 })
