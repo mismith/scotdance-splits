@@ -61,6 +61,35 @@ export const useAppStore = defineStore('app', () => {
     return processedDancers.value.length
   })
 
+  // Reactively layer cell validation onto raw CSV data
+  const validatedCSV = computed((): Cell[][] => {
+    if (!inputCSV.value || inputCSV.value.length === 0) return []
+
+    const rawData = inputCSV.value.map((row) => row.map((cell) => cell.value))
+    const dataRows = hasHeaderRow.value ? rawData.slice(1) : rawData
+    const codeColIndex = colIndexes.value.code
+
+    const errorCellMap = new Map<string, 'error' | 'warning'>()
+    if (codeColIndex !== undefined && codeColIndex !== -1) {
+      const { invalidCodeCells, missingCodeCells } = validateCodes(dataRows, codeColIndex)
+      ;[...invalidCodeCells, ...missingCodeCells].forEach(({ rowIndex, colIndex }) => {
+        const actualRowIndex = hasHeaderRow.value ? rowIndex + 1 : rowIndex
+        errorCellMap.set(`${actualRowIndex},${colIndex}`, 'warning')
+      })
+    }
+
+    return inputCSV.value.map((row, rowIndex) =>
+      row.map((cell, colIndex) => {
+        const severity = errorCellMap.get(`${rowIndex},${colIndex}`)
+        return {
+          value: cell.value,
+          error: severity === 'error',
+          warning: severity === 'warning',
+        }
+      }),
+    )
+  })
+
   const inputErrors = computed((): ValidationIssue[] => {
     const errors: ValidationIssue[] = []
 
@@ -83,25 +112,12 @@ export const useAppStore = defineStore('app', () => {
     // Extract raw string values for validation
     const rawData = cellData.map((row) => row.map((cell) => cell.value))
 
-    // Detect if first row is headers using centralized function
-    const potentialHeaders = rawData[0]
-    const hasHeaders = detectHeaders(potentialHeaders)
-
-    // Error if headers not detected
-    if (!hasHeaders) {
-      errors.push({
-        type: 'missing-headers',
-        severity: 'error',
-        message: 'Headers not found (expected FirstName, LastName, HighlandScrutineerCode)',
-      })
-    }
-
     // Validate column mapping completeness
     const columnMappingErrors = validateColumnMapping(colIndexes.value)
     errors.push(...columnMappingErrors)
 
-    // Extract data rows (skip headers if present)
-    const dataRows = hasHeaders ? rawData.slice(1) : rawData
+    // Extract data rows (skip headers if present, based on user's toggle)
+    const dataRows = hasHeaderRow.value ? rawData.slice(1) : rawData
 
     // Get validation errors from categorizeData (which uses validation utilities)
     const { errors: categorizeErrors } = categorizeData(dataRows, colIndexes.value)
@@ -159,17 +175,13 @@ export const useAppStore = defineStore('app', () => {
       // Extract raw string values for processing
       const rawData = cellData.map((row) => row.map((cell) => cell.value))
 
-      const potentialHeaders = rawData[0]
-      const hasHeaders = detectHeaders(potentialHeaders)
-      hasHeaderRow.value = hasHeaders
-
-      const dataRows = hasHeaders ? rawData.slice(1) : rawData
+      const dataRows = hasHeaderRow.value ? rawData.slice(1) : rawData
       const { categories: cats } = categorizeData(dataRows, colIndexes.value)
       const partitionedCats = autoPartitionCategories(cats)
 
       setProcessedData(cats, partitionedCats)
 
-      const defaultMaxBib = calculateDefaultMaxBib(rawData, colIndexes.value, hasHeaders)
+      const defaultMaxBib = calculateDefaultMaxBib(rawData, colIndexes.value, hasHeaderRow.value)
       updateExportSettings({ maxBibNumber: defaultMaxBib })
     }
   }
@@ -234,35 +246,9 @@ export const useAppStore = defineStore('app', () => {
       const headers = hasHeaders ? potentialHeaders : []
       const detectedColIndexes = detectColumnMapping(headers)
 
-      // Get data rows for validation (skip headers if present)
-      const dataRows = hasHeaders ? rawData.slice(1) : rawData
-
-      // Run validation to get error cells
-      const { invalidCodeCells, missingCodeCells } =
-        detectedColIndexes.code !== -1
-          ? validateCodes(dataRows, detectedColIndexes.code)
-          : { invalidCodeCells: [], missingCodeCells: [] }
-
-      // Create a map of error cells for O(1) lookup
-      const errorCellMap = new Map<string, 'error' | 'warning'>()
-      ;[...invalidCodeCells, ...missingCodeCells].forEach(({ rowIndex, colIndex }) => {
-        // Adjust rowIndex to account for header row
-        const actualRowIndex = hasHeaders ? rowIndex + 1 : rowIndex
-        errorCellMap.set(`${actualRowIndex},${colIndex}`, 'warning')
-      })
-
-      // Convert string[][] to Cell[][] with validation flags
-      const cellData: Cell[][] = rawData.map((row, rowIndex) =>
-        row.map((value, colIndex) => {
-          const key = `${rowIndex},${colIndex}`
-          const severity = errorCellMap.get(key)
-
-          return {
-            value,
-            error: severity === 'error',
-            warning: severity === 'warning',
-          }
-        }),
+      // Convert string[][] to Cell[][] (validation flags are layered reactively via validatedCSV)
+      const cellData: Cell[][] = rawData.map((row) =>
+        row.map((value) => ({ value, error: false, warning: false })),
       )
 
       // Set enriched cell data
@@ -284,7 +270,7 @@ export const useAppStore = defineStore('app', () => {
   return {
     // State
     inputFiles,
-    inputCSV,
+    validatedCSV,
     fileLoadError,
     inputErrors,
     isLoadingInputFile,

@@ -276,15 +276,6 @@ export function processCSVData(csvData: string[][]): ProcessedData {
   const potentialHeaders = csvData[0]
   const hasHeaderRow = detectHeaders(potentialHeaders)
 
-  // Error if headers not detected
-  if (!hasHeaderRow) {
-    errors.push({
-      type: 'missing-headers',
-      severity: 'error',
-      message: 'Headers not found (expected FirstName, LastName, HighlandScrutineerCode)',
-    })
-  }
-
   // Auto-detect column mappings
   const headers = hasHeaderRow ? potentialHeaders : []
   const colIndexes = detectColumnMapping(headers)

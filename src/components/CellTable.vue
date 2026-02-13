@@ -55,7 +55,7 @@ function rowHasIssues(row: Cell[]): boolean {
           v-if="showRowHeaders"
           class="w-12 h-8 sticky left-0 z-10 bg-muted/50 backdrop-blur border-r border-b border-border text-center font-semibold"
         >
-          {{ rowIndex + (showHeaders && headers ? 1 : 0) }}
+          {{ rowIndex + 1 }}
         </TableCell>
         <TableCell
           v-for="(cell, colIndex) in row"

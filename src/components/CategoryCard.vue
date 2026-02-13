@@ -442,7 +442,7 @@ async function decrementGroups() {
 
 // Get real dancers for the specified age group from CSV data
 function getRealDancersForAgeGroup(ageGroupIndex: number) {
-  const inputData = (store.inputCSV?.slice(store.hasHeaderRow ? 1 : 0) || []).map((row) =>
+  const inputData = (store.validatedCSV?.slice(store.hasHeaderRow ? 1 : 0) || []).map((row) =>
     row.map((cell) => cell.value),
   )
   const ageRange = partitionedAgeCountsArray.value[ageGroupIndex]?.[0]

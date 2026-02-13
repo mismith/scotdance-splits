@@ -6,7 +6,6 @@ export interface ValidationIssue {
     | 'invalid-codes'
     | 'missing-codes'
     | 'no-valid-codes'
-    | 'missing-headers'
     | 'missing-column-mapping'
     | 'parse-error'
   severity: 'error' | 'warning'
@@ -153,18 +152,6 @@ export function validateInputData(
   // If no CSV data, no validation needed
   if (!csvData || csvData.length === 0) {
     return []
-  }
-
-  // Validate headers are present
-  const potentialHeaders = csvData[0]
-  const headersDetected = detectHeaders(potentialHeaders)
-
-  if (!headersDetected) {
-    errors.push({
-      type: 'missing-headers',
-      severity: 'error',
-      message: 'Headers not found (expected FirstName, LastName, HighlandScrutineerCode)',
-    })
   }
 
   // Validate column mapping completeness

@@ -86,8 +86,9 @@ test.describe('Validation States', () => {
   test('08 - no header row', async ({ page }, testInfo) => {
     await uploadFixture(page, 'no-header-row.csv')
     await waitForSplitsPage(page)
-    // Should show both: missing headers + missing column mapping
-    await expect(page.getByText('Headers not found')).toBeVisible()
+    // Without recognizable headers, column auto-detection fails → missing column mapping
+    await expect(page.getByText('Missing')).toBeVisible()
+    await expect(page.getByText('column mapping')).toBeVisible()
     await page.screenshot({ path: screenshotPath(testInfo, '08-no-header-row.png') })
   })
 
