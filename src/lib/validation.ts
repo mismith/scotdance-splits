@@ -104,24 +104,31 @@ export function validateCodes(
   })
 
   // Generation phase - create ValidationIssue objects with messages and cells
-  const totalSkipped = invalidCodeCells.length + missingCodeCells.length
+  // Only create warnings if we have SOME valid codes (otherwise no-valid-codes error will handle it)
+  if (validCodeCount > 0) {
+    if (invalidCodeCells.length > 0) {
+      const uniqueValues = [...new Set(invalidCodeCells.map((c) => c.value))]
+      const examples = uniqueValues
+        .slice(0, 3)
+        .map((v) => `"${v}"`)
+        .join(', ')
 
-  // Only create warning if we have SOME valid codes (otherwise no-valid-codes error will handle it)
-  if (totalSkipped > 0 && validCodeCount > 0) {
-    // Get examples from invalid codes first, then missing if needed
-    const exampleCells = [
-      ...invalidCodeCells.slice(0, 3),
-      ...missingCodeCells.slice(0, Math.max(0, 3 - invalidCodeCells.length)),
-    ].slice(0, 3)
+      errors.push({
+        type: 'invalid-codes',
+        severity: 'warning',
+        message: `${invalidCodeCells.length} row${invalidCodeCells.length > 1 ? 's' : ''} skipped (invalid codes like ${examples})`,
+        cells: invalidCodeCells,
+      })
+    }
 
-    const examples = exampleCells.map((c) => `"${c.value || '(empty)'}"`).join(', ')
-
-    errors.push({
-      type: 'invalid-codes',
-      severity: 'warning',
-      message: `${totalSkipped} row${totalSkipped > 1 ? 's' : ''} skipped (invalid codes like ${examples})`,
-      cells: [...invalidCodeCells, ...missingCodeCells],
-    })
+    if (missingCodeCells.length > 0) {
+      errors.push({
+        type: 'missing-codes',
+        severity: 'warning',
+        message: `${missingCodeCells.length} row${missingCodeCells.length > 1 ? 's' : ''} with no code ${missingCodeCells.length > 1 ? 'were' : 'was'} skipped`,
+        cells: missingCodeCells,
+      })
+    }
   }
 
   // Critical error: no valid codes at all (blocking)
