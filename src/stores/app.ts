@@ -1,5 +1,5 @@
 import { parse } from 'papaparse'
-import { useMediaQuery } from '@vueuse/core'
+import { useLocalStorage, useMediaQuery } from '@vueuse/core'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import {
@@ -43,7 +43,7 @@ export const useAppStore = defineStore('app', () => {
   const manualPartitions = ref<Record<string, [number[], number][]>>({})
 
   // Input configuration
-  const hasHeaderRow = ref(true)
+  const hasHeaderRow = useLocalStorage('scotdance.splits.hasHeaderRow', true)
   const inputHeaders = ref<string[]>([])
   const colIndexes = ref<Record<string, number>>({})
 
@@ -52,9 +52,9 @@ export const useAppStore = defineStore('app', () => {
 
   // Export configuration
   const maxBibNumber = ref<number>(100)
-  const isPrintingYears = ref(true)
-  const includeCountry = ref(false)
-  const combineNames = ref(false)
+  const isPrintingYears = useLocalStorage('scotdance.splits.isPrintingYears', true)
+  const includeCountry = useLocalStorage('scotdance.splits.includeCountry', false)
+  const combineNames = useLocalStorage('scotdance.splits.combineNames', false)
 
   // Computed
   const hasData = computed(() => {
