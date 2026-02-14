@@ -2,10 +2,7 @@
 import {
   Table,
   TableBody,
-  TableCell,
-  TableHead,
   TableHeader,
-  TableRow,
 } from '@/components/ui/table'
 import type { Cell } from '@/lib/types'
 
@@ -29,46 +26,47 @@ function rowHasIssues(row: Cell[]): boolean {
 <template>
   <Table class="text-xs [border-spacing:0] [border-collapse:separate]">
     <TableHeader v-if="showHeaders && headers">
-      <TableRow>
-        <TableHead
+      <tr class="border-b">
+        <th
           v-if="showRowHeaders"
-          class="w-12 h-8 sticky top-0 left-0 z-20 bg-muted/50 backdrop-blur border-r border-b border-border text-center font-semibold"
+          class="text-foreground px-2 py-1 align-middle whitespace-nowrap w-12 h-8 sticky top-0 left-0 z-20 bg-muted border-r border-b border-border text-center font-semibold"
         >
           #
-        </TableHead>
-        <TableHead
+        </th>
+        <th
           v-for="(header, index) in headers"
           :key="index"
-          class="truncate max-w-xs h-8 sticky top-0 z-10 bg-muted/50 backdrop-blur border-r border-b border-border font-semibold"
+          class="text-foreground px-2 py-1 text-left align-middle truncate max-w-xs h-8 sticky top-0 z-10 bg-muted border-r border-b border-border font-semibold"
         >
           {{ header }}
-        </TableHead>
-      </TableRow>
+        </th>
+      </tr>
     </TableHeader>
     <TableBody>
-      <TableRow
+      <tr
         v-for="(row, rowIndex) in data"
         :key="rowIndex"
+        class="border-b"
         :class="{ 'bg-primary/25': rowHasIssues(row) }"
       >
-        <TableCell
+        <td
           v-if="showRowHeaders"
-          class="w-12 h-8 sticky left-0 z-10 bg-muted/50 backdrop-blur border-r border-b border-border text-center font-semibold"
+          class="px-2 py-1 align-middle whitespace-nowrap w-12 h-8 sticky left-0 z-10 bg-muted border-r border-b border-border text-center font-semibold"
         >
           {{ rowIndex + 1 }}
-        </TableCell>
-        <TableCell
+        </td>
+        <td
           v-for="(cell, colIndex) in row"
           :key="colIndex"
-          class="truncate max-w-xs h-8 border-r border-b border-border"
+          class="px-2 py-1 align-middle truncate max-w-xs h-8 border-r border-b border-border"
           :class="{
             'ring-2 ring-inset ring-destructive': cell.error,
             'ring-2 ring-inset ring-primary': cell.warning,
           }"
         >
           {{ cell.value }}
-        </TableCell>
-      </TableRow>
+        </td>
+      </tr>
     </TableBody>
   </Table>
 </template>
