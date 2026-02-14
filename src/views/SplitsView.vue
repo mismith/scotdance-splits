@@ -208,12 +208,14 @@ function handleExportDownload() {
     <!-- Fixed Toolbar -->
     <header
       class="fixed top-0 left-0 right-0 z-50 grid grid-cols-[1fr_auto_1fr] items-center px-4 h-16 bg-gradient-to-b from-background to-transparent pointer-events-none *:pointer-events-auto"
+      :class="'[view-transition-name:header]'"
     >
       <!-- Left side -->
       <div class="flex items-center gap-1 justify-self-start">
         <Button
           :variant="hasDismissedIssues ? undefined : 'outline'"
           :class="[
+            'backdrop-blur',
             hasDismissedIssues
               ? hasErrors
                 ? 'bg-red-600 hover:bg-red-700 text-white backdrop-blur-lg'
@@ -266,7 +268,11 @@ function handleExportDownload() {
 
       <!-- Right side -->
       <div class="hidden md:flex items-center gap-1 justify-self-end">
-        <Button :variant="showDancers ? 'default' : 'outline'" @click="toggleDancers">
+        <Button
+          :variant="showDancers ? 'default' : 'outline'"
+          class="backdrop-blur"
+          @click="toggleDancers"
+        >
           <Users class="h-4 w-4" />
           Dancers
         </Button>
@@ -317,6 +323,7 @@ function handleExportDownload() {
     <footer
       v-if="store.hasData"
       class="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-[1fr_auto_1fr] items-center px-4 h-16 bg-gradient-to-t from-background to-transparent pointer-events-none *:pointer-events-auto"
+      :class="'[view-transition-name:footer]'"
     >
       <div />
       <div />
