@@ -30,15 +30,9 @@ const store = useAppStore()
 const route = useRoute()
 
 const showColumnMappingSheet = ref(false)
-const columnMappingShowSidebar = useLocalStorage(
-  'scotdance.splits.columnMappingDialog.showSidebar',
-  true,
-)
+const columnMappingShowSidebar = useLocalStorage('columnMappingShowSidebar', true)
 const showExportSettingsSheet = ref(false)
-const exportShowSidebar = useLocalStorage(
-  'scotdance.splits.exportDialog.showSidebar',
-  store.isDesktop,
-)
+const exportShowSidebar = useLocalStorage('exportShowSidebar', store.isDesktop)
 const validationDismissed = ref(false)
 const showDancers = ref(false)
 const categoryCardRef = ref()

@@ -43,7 +43,7 @@ export const useAppStore = defineStore('app', () => {
   const manualPartitions = ref<Record<string, [number[], number][]>>({})
 
   // Input configuration
-  const hasHeaderRow = useLocalStorage('scotdance.splits.hasHeaderRow', true)
+  const hasHeaderRow = useLocalStorage('hasHeaderRow', true)
   const inputHeaders = ref<string[]>([])
   const colIndexes = ref<Record<string, number>>({})
 
@@ -52,9 +52,9 @@ export const useAppStore = defineStore('app', () => {
 
   // Export configuration
   const maxBibNumber = ref<number>(100)
-  const isPrintingYears = useLocalStorage('scotdance.splits.isPrintingYears', true)
-  const includeCountry = useLocalStorage('scotdance.splits.includeCountry', false)
-  const combineNames = useLocalStorage('scotdance.splits.combineNames', false)
+  const isPrintingYears = useLocalStorage('isPrintingYears', true)
+  const includeCountry = useLocalStorage('includeCountry', false)
+  const combineNames = useLocalStorage('combineNames', false)
 
   // Computed
   const hasData = computed(() => {
