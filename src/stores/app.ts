@@ -57,6 +57,12 @@ export const useAppStore = defineStore('app', () => {
   const combineNames = useLocalStorage('combineNames', false)
 
   // Computed
+  const exportFilename = computed(() => {
+    const name = inputFiles.value?.[0]?.name
+    if (!name) return 'Splits'
+    return name.replace(/\.csv$/i, '') + ' - Splits'
+  })
+
   const hasData = computed(() => {
     return categories.value && Object.keys(categories.value).length > 0
   })
@@ -294,6 +300,7 @@ export const useAppStore = defineStore('app', () => {
     isDesktop,
 
     // Computed
+    exportFilename,
     hasData,
     totalDancers,
 

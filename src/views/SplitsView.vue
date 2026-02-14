@@ -193,7 +193,7 @@ function handleExportDownload() {
   // Extract raw values from Cell[][] for CSV conversion
   const rawData = exportPreviewData.value.map((row) => row.map((cell) => cell.value))
   const csvContent = convertToCSV(rawData)
-  downloadCSV(csvContent, 'splits-export')
+  downloadCSV(csvContent, store.exportFilename)
 }
 </script>
 
