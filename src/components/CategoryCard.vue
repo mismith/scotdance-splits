@@ -514,7 +514,7 @@ function getRealDancersForAgeGroup(ageGroupIndex: number) {
       }
     })
 
-  return dancersInGroup
+  return dancersInGroup.sort((a, b) => a.bibNumber - b.bibNumber)
 }
 
 const colsRef = ref()
