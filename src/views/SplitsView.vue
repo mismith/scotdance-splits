@@ -41,6 +41,7 @@ const exportShowSidebar = useLocalStorage(
 )
 const validationDismissed = ref(false)
 const showDancers = ref(false)
+const categoryCardRef = ref()
 
 // Demo mode detection
 const isDemoMode = computed(() => route.name === 'demo')
@@ -103,9 +104,7 @@ onBeforeRouteLeave((to, from, next) => {
   }
 })
 
-const isTransitioningShowDancers = ref(false)
 async function toggleDancers() {
-  isTransitioningShowDancers.value = true
   await nextTick()
 
   const viewTransition = startViewTransition()
@@ -113,7 +112,7 @@ async function toggleDancers() {
   showDancers.value = !showDancers.value
 
   await viewTransition.finished
-  isTransitioningShowDancers.value = false
+  categoryCardRef.value?.forEach((card: InstanceType<typeof CategoryCard>) => card.repaint())
 }
 
 async function dismissValidationErrors() {
@@ -296,7 +295,6 @@ function handleExportDownload() {
           ref="categoryCardRef"
           :name="CATEGORY_CODE_NAMES[categoryCode]"
           :ages="store.categories?.[categoryCode] || {}"
-          :transitioning="isTransitioningShowDancers"
           @partition="handlePartition(categoryCode, $event)"
         />
       </div>

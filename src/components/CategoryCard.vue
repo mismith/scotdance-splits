@@ -1017,6 +1017,8 @@ async function openAgeGroupSheet(ageGroupIndex: number) {
   }
 }
 
+defineExpose({ repaint })
+
 const emit = defineEmits(['partition'])
 watch(
   partitionedAgeCountsArray,
