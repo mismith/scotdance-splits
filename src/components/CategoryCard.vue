@@ -59,7 +59,7 @@
                   :max="ageCountsArray.length"
                   class="text-center text-sm font-medium bg-transparent border-none outline-none focus:ring-0 p-0 text-foreground [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [field-sizing:content]"
                   style="field-sizing: content"
-                  @blur="!numAgeGroups && (numAgeGroups = getDefaultNumAgeGroups())"
+                  @blur="!numAgeGroups && (numAgeGroups = defaultNumAgeGroups)"
                   @keyup.enter="($event.target as HTMLInputElement).blur()"
                 />
                 <span class="text-sm font-medium text-foreground" @click="selectGroupsInput">
@@ -153,7 +153,7 @@
                 }"
                 class="p-3 text-sm bg-muted/30 border border-border/50 rounded-3xl flex flex-col justify-start select-text"
               >
-                <DancerPreview :dancers="getRealDancersForAgeGroup(index)" />
+                <DancerPreview :dancers="dancersByAgeGroup[index] || []" />
               </div>
               <div
                 v-else
@@ -240,7 +240,7 @@
           v-if="selectedAgeGroupIndex !== null"
           class="p-3 bg-muted/30 border border-border/50 rounded-3xl"
         >
-          <DancerPreview :dancers="getRealDancersForAgeGroup(selectedAgeGroupIndex)" />
+          <DancerPreview :dancers="dancersByAgeGroup[selectedAgeGroupIndex] || []" />
         </div>
         <div v-else class="text-center text-muted-foreground py-8">No dancers found</div>
       </div>
@@ -355,7 +355,7 @@ function getAverage(array: number[]) {
   return array.reduce((sum, value) => sum + value, 0) / array.length
 }
 
-function getDefaultNumAgeGroups() {
+const defaultNumAgeGroups = computed(() => {
   const targetDancersPerGroup = Math.max(
     totalDancers.value / averageDancersPerAge.value,
     maxDancersPerAge.value,
@@ -371,9 +371,9 @@ function getDefaultNumAgeGroups() {
     }
   }
   return min.numPartitions
-}
+})
 
-const numAgeGroups = ref(getDefaultNumAgeGroups())
+const numAgeGroups = ref(defaultNumAgeGroups.value)
 
 // Get category code from component name
 const categoryCode = computed(() => {
@@ -404,7 +404,7 @@ const hasCustomizations = computed(() => {
 
 // Check if group count is non-standard
 const hasNonStandardGroupCount = computed(() => {
-  return numAgeGroups.value !== getDefaultNumAgeGroups()
+  return numAgeGroups.value !== defaultNumAgeGroups.value
 })
 
 // Cache default partitions so isBoundaryManual doesn't re-run the partition algorithm per boundary
@@ -440,82 +440,85 @@ async function decrementGroups() {
   }
 }
 
-// Get real dancers for the specified age group from CSV data
-function getRealDancersForAgeGroup(ageGroupIndex: number) {
-  const inputData = (store.validatedCSV?.slice(store.hasHeaderRow ? 1 : 0) || []).map((row) =>
+// Shared computed: extract raw string data from CSV once (instead of per age group per render)
+const csvRawData = computed(() => {
+  if (!store.validatedCSV) return []
+  return store.validatedCSV.slice(store.hasHeaderRow ? 1 : 0).map((row) =>
     row.map((cell) => cell.value),
   )
-  const ageRange = partitionedAgeCountsArray.value[ageGroupIndex]?.[0]
+})
 
-  if (!ageRange || !inputData.length) return []
-
-  const [minAge, maxAge] = ageRange
+// Shared computed: O(1) bib number lookup map (replaces O(n) findIndex per dancer)
+const bibNumberLookup = computed(() => {
   const codeCol = store.colIndexes.code ?? -1
   const timestampCol = store.colIndexes.timestamp ?? -1
   const firstNameCol = store.colIndexes.firstName ?? 0
   const lastNameCol = store.colIndexes.lastName ?? 0
 
-  if (codeCol === -1) return []
+  if (codeCol === -1 || !csvRawData.value.length) return new Map<string, number>()
 
-  // Find the Highland Scrutineer code that matches our category name
-  const expectedCode =
-    Object.keys(CATEGORY_CODE_NAMES).find((code) => CATEGORY_CODE_NAMES[code] === props.name) ||
-    props.name.charAt(0)
-
-  // First, create a global sorted list of all valid dancers for bib number calculation
-  const allValidDancers = inputData
+  const allValidDancers = csvRawData.value
     .filter((row) => /^[PBNIRX]\d{2}$/.test(row[codeCol]))
     .sort((a, b) => {
       if (timestampCol === -1) return 0
       return (a[timestampCol] || '').localeCompare(b[timestampCol] || '')
     })
 
-  // Filter dancers that fall within this age group
-  const dancersInGroup = inputData
-    .filter((row) => {
-      const code = row[codeCol]
-      if (/^[PBNIRX]\d{2}$/.test(code)) {
-        const cat = code.charAt(0)
-        const age = parseInt(code.substring(1))
-        return age >= minAge && age <= maxAge && cat === expectedCode
-      }
-      return false
-    })
-    .sort((a, b) => {
-      if (timestampCol === -1) return 0
-      return (a[timestampCol] || '').localeCompare(b[timestampCol] || '')
-    })
-    .map((row) => {
-      // Build location from available columns
-      const locationParts = []
-      if (store.colIndexes.location !== -1) locationParts.push(row[store.colIndexes.location])
-      if (store.colIndexes.region !== -1) locationParts.push(row[store.colIndexes.region])
-      if (
-        store.includeCountry &&
-        store.colIndexes.country !== -1 &&
-        row[store.colIndexes.country]
-      ) {
-        locationParts.push(row[store.colIndexes.country])
-      }
+  const map = new Map<string, number>()
+  allValidDancers.forEach((row, idx) => {
+    map.set(`${row[timestampCol] ?? ''}|${row[firstNameCol]}|${row[lastNameCol]}`, idx)
+  })
+  return map
+})
 
-      // Find this dancer's position in the overall sorted list to calculate bib number
-      const globalIndex = allValidDancers.findIndex(
-        (r) =>
-          (timestampCol === -1 || r[timestampCol] === row[timestampCol]) &&
-          r[firstNameCol] === row[firstNameCol] &&
-          r[lastNameCol] === row[lastNameCol],
-      )
+// Computed: dancers for all age groups at once (cached, only recomputes when data changes)
+const dancersByAgeGroup = computed(() => {
+  const codeCol = store.colIndexes.code ?? -1
+  const timestampCol = store.colIndexes.timestamp ?? -1
+  const firstNameCol = store.colIndexes.firstName ?? 0
+  const lastNameCol = store.colIndexes.lastName ?? 0
 
-      return {
-        firstName: row[firstNameCol] || '',
-        lastName: row[lastNameCol] || '',
-        location: locationParts.filter(Boolean).join(', ') || 'Unknown',
-        bibNumber: (store.maxBibNumber || 100) - (globalIndex !== -1 ? globalIndex : 0),
-      }
-    })
+  if (codeCol === -1 || !csvRawData.value.length) return []
 
-  return dancersInGroup.sort((a, b) => a.bibNumber - b.bibNumber)
-}
+  const lookup = bibNumberLookup.value
+  const cat = categoryCode.value
+
+  return partitionedAgeCountsArray.value.map(([ageRange]) => {
+    const [minAge, maxAge] = ageRange
+
+    return csvRawData.value
+      .filter((row) => {
+        const code = row[codeCol]
+        if (/^[PBNIRX]\d{2}$/.test(code)) {
+          return code.charAt(0) === cat && parseInt(code.substring(1)) >= minAge && parseInt(code.substring(1)) <= maxAge
+        }
+        return false
+      })
+      .sort((a, b) => {
+        if (timestampCol === -1) return 0
+        return (a[timestampCol] || '').localeCompare(b[timestampCol] || '')
+      })
+      .map((row) => {
+        const locationParts = []
+        if (store.colIndexes.location !== -1) locationParts.push(row[store.colIndexes.location])
+        if (store.colIndexes.region !== -1) locationParts.push(row[store.colIndexes.region])
+        if (store.includeCountry && store.colIndexes.country !== -1 && row[store.colIndexes.country]) {
+          locationParts.push(row[store.colIndexes.country])
+        }
+
+        const key = `${row[timestampCol] ?? ''}|${row[firstNameCol]}|${row[lastNameCol]}`
+        const globalIndex = lookup.get(key) ?? 0
+
+        return {
+          firstName: row[firstNameCol] || '',
+          lastName: row[lastNameCol] || '',
+          location: locationParts.filter(Boolean).join(', ') || 'Unknown',
+          bibNumber: (store.maxBibNumber || 100) - globalIndex,
+        }
+      })
+      .sort((a, b) => a.bibNumber - b.bibNumber)
+  })
+})
 
 const colsRef = ref()
 const leftSideRef = ref<HTMLElement[]>([])
@@ -556,7 +559,7 @@ async function resetToDefaults() {
 async function resetGroupCount() {
   const viewTransition = startViewTransition()
   await viewTransition.captured
-  numAgeGroups.value = getDefaultNumAgeGroups()
+  numAgeGroups.value = defaultNumAgeGroups.value
   await viewTransition.finished
   repaint()
 }

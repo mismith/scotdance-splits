@@ -41,7 +41,7 @@ export function generateExportData(
     data.push([name, '', '', ''])
 
     const rows = numberedCSV.filter((row) =>
-      row.find((value) => partition.codes.includes(value as string)),
+      partition.codes.includes(row[colIndexes.code] as string),
     )
 
     data.push(
