@@ -8,6 +8,7 @@ import { useAppStore } from '@/stores/app'
 import CategoryCard from '@/components/CategoryCard.vue'
 import CellTable from '@/components/CellTable.vue'
 import DialogWithSidebar from '@/components/DialogWithSidebar.vue'
+import FileUpload from '@/components/FileUpload.vue'
 import ValidationBanner from '@/components/ValidationBanner.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -203,6 +204,22 @@ const exportPreviewData = computed(() => {
   )
 })
 
+async function handleFileSelected(file: File) {
+  if (store.hasData && !isDemoMode.value) {
+    const confirmed = window.confirm(
+      'Loading a new file will replace your existing data. Continue?',
+    )
+    if (!confirmed) return
+  }
+  validationDismissed.value = false
+  await store.loadFile(file)
+}
+
+function handleFileRejected(message: string) {
+  store.fileLoadError = message
+  validationDismissed.value = false
+}
+
 // Export function using shared logic
 function handleExportDownload() {
   // Extract raw values from Cell[][] for CSV conversion
@@ -213,6 +230,11 @@ function handleExportDownload() {
 </script>
 
 <template>
+  <FileUpload
+    :is-loading="store.isLoadingInputFile"
+    @file-selected="handleFileSelected"
+    @file-rejected="handleFileRejected"
+  >
   <div class="flex flex-col min-h-screen">
     <!-- Fixed Toolbar -->
     <header
@@ -640,4 +662,5 @@ function handleExportDownload() {
       </template>
     </DialogWithSidebar>
   </div>
+  </FileUpload>
 </template>
