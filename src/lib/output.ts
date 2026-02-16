@@ -35,14 +35,15 @@ export function generateExportData(
     )
 
   sortedPartitions.forEach((partition) => {
+    const rows = numberedCSV.filter((row) =>
+      partition.codes.includes(row[colIndexes.code] as string),
+    )
+    if (rows.length === 0) return
+
     if (data.length) data.push(['', '', '', ''])
 
     const name = `${CATEGORY_CODE_NAMES[partition.categoryCode]} ${getAgeGroupName(partition.ageRange[0], partition.ageRange[1], settings.isPrintingYears)}`
     data.push([name, '', '', ''])
-
-    const rows = numberedCSV.filter((row) =>
-      partition.codes.includes(row[colIndexes.code] as string),
-    )
 
     data.push(
       ...rows.map((row) => {
