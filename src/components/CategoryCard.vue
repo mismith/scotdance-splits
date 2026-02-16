@@ -128,8 +128,13 @@
               v-for="([[minAge, maxAge], count], index) in partitionedAgeCountsArray"
               :key="index"
               ref="rightSideRef"
-              class="p-3 text-sm bg-secondary/50 border border-border rounded-3xl hover:bg-secondary/70 transition-all select-text"
-              :class="'[view-transition-name:match-element] [view-transition-class:fixed-height_fit]'"
+              class="p-3 text-sm rounded-3xl transition-all select-text"
+              :class="[
+                '[view-transition-name:match-element] [view-transition-class:fixed-height_fit]',
+                count < MIN_GROUP_SIZE
+                  ? 'bg-accent/10 border border-accent/30 hover:bg-accent/15'
+                  : 'bg-secondary/50 border border-border hover:bg-secondary/70',
+              ]"
               :style="{ flex: `${count} 1 0` }"
               @click="openAgeGroupSheet(index)"
             >
@@ -139,6 +144,10 @@
                 </span>
                 <DancerCount :count="count" :total="totalDancers" size="x-small" />
               </div>
+              <p v-if="count < MIN_GROUP_SIZE" class="text-xs mt-1 text-accent">
+                <TriangleAlert class="inline-flex size-4 -mt-0.5" />
+                Below recommended minimum of {{ MIN_GROUP_SIZE }} dancers
+              </p>
             </div>
           </div>
 
@@ -253,8 +262,7 @@
 
 <script lang="ts" setup>
 import { useResizeObserver } from '@vueuse/core'
-import partition from 'linear-partitioning'
-import { Delete, Minus, Plus } from 'lucide-vue-next'
+import { Delete, Minus, Plus, TriangleAlert } from 'lucide-vue-next'
 import { computed, inject, nextTick, ref, useId, watch } from 'vue'
 import { startViewTransition } from 'vue-view-transitions'
 import { useAppStore } from '@/stores/app'
@@ -264,7 +272,13 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardTitle } from '@/components/ui/card'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { CATEGORY_CODE_NAMES, getAgeGroupName } from '@/lib/input'
+import {
+  CATEGORY_CODE_NAMES,
+  MIN_GROUP_SIZE,
+  getAgeGroupName,
+  getDefaultNumAgeGroups,
+  getPartitionedAgeCounts,
+} from '@/lib/input'
 import { pluralize } from '@/lib/utils'
 
 const props = defineProps({
@@ -288,7 +302,7 @@ const showDancers = inject('showDancers', ref(true))
 
 const ageCountsArray = computed(() => {
   return Object.entries(props.ages)
-    .map(([age, count]) => [Number(age), count])
+    .map(([age, count]) => [Number(age), count] as [number, number])
     .sort(([ageA], [ageB]) => ageA - ageB)
 })
 
@@ -309,72 +323,7 @@ const sheetTitle = computed(() => {
   return `${props.name}`
 })
 
-const averageDancersPerAge = computed(() => {
-  return ageCountsArray.value.length
-    ? Math.ceil(totalDancers.value / ageCountsArray.value.length)
-    : 0
-})
-
-const maxDancersPerAge = computed(() => {
-  return ageCountsArray.value.reduce((max, [, count]) => Math.max(max, count), 0)
-})
-
-function getPartitionedAgeCounts(ageCounts: number[][], numPartitions: number) {
-  const counts = ageCounts.map(([, count]) => count)
-  const partitionedCounts: number[][] = partition(
-    counts,
-    Math.min(Math.max(1, numPartitions), ageCounts.length),
-  )
-
-  const result: [number[], number][] = []
-  let index = 0
-  partitionedCounts.forEach((partitionedCount, i) => {
-    let minAge = 0
-    let maxAge = Infinity
-    let count = 0
-    partitionedCount.forEach((_, j) => {
-      const age = ageCounts[index][0]
-      if (j === 0 && (i || (numPartitions > 1 && age === 4))) {
-        minAge = age
-      }
-      if (
-        j === partitionedCount.length - 1 &&
-        (i < partitionedCounts.length - 1 || (numPartitions > 1 && age === 6))
-      ) {
-        maxAge = age
-      }
-      count += ageCounts[index][1]
-      index++
-    })
-    // Create fresh immutable array for each range
-    result.push([[minAge, maxAge], count])
-  })
-  // TODO: handle edge case where there are ties, so the number of groups doesn't exactly match the numPartitions requested
-  // TODO: handle edge case where Premier needs to be split around/above 12 y/o, since steps change
-  return result
-}
-
-function getAverage(array: number[]) {
-  return array.reduce((sum, value) => sum + value, 0) / array.length
-}
-
-const defaultNumAgeGroups = computed(() => {
-  const targetDancersPerGroup = Math.max(
-    totalDancers.value / averageDancersPerAge.value,
-    maxDancersPerAge.value,
-  )
-  const min = { diff: Infinity, numPartitions: 1 }
-  for (let i = 1; i < ageCountsArray.value.length; i++) {
-    const partitionedAgeCounts = getPartitionedAgeCounts(ageCountsArray.value, i)
-    const avg = getAverage(partitionedAgeCounts.map(([, count]) => count))
-    const diff = Math.abs(avg - targetDancersPerGroup)
-    if (diff < min.diff) {
-      min.diff = diff
-      min.numPartitions = i
-    }
-  }
-  return min.numPartitions
-})
+const defaultNumAgeGroups = computed(() => getDefaultNumAgeGroups(ageCountsArray.value))
 
 const numAgeGroups = ref(defaultNumAgeGroups.value)
 
@@ -446,9 +395,9 @@ async function decrementGroups() {
 // Shared computed: extract raw string data from CSV once (instead of per age group per render)
 const csvRawData = computed(() => {
   if (!store.validatedCSV) return []
-  return store.validatedCSV.slice(store.hasHeaderRow ? 1 : 0).map((row) =>
-    row.map((cell) => cell.value),
-  )
+  return store.validatedCSV
+    .slice(store.hasHeaderRow ? 1 : 0)
+    .map((row) => row.map((cell) => cell.value))
 })
 
 // Shared computed: O(1) bib number lookup map (replaces O(n) findIndex per dancer)
@@ -494,7 +443,11 @@ const dancersByAgeGroup = computed(() => {
       .map((row, i) => ({ row, code: codes[i] ?? '' }))
       .filter(({ code }) => {
         if (/^[PBNIRX]\d{2}$/.test(code)) {
-          return code.charAt(0) === cat && parseInt(code.substring(1)) >= minAge && parseInt(code.substring(1)) <= maxAge
+          return (
+            code.charAt(0) === cat &&
+            parseInt(code.substring(1)) >= minAge &&
+            parseInt(code.substring(1)) <= maxAge
+          )
         }
         return false
       })
@@ -506,7 +459,11 @@ const dancersByAgeGroup = computed(() => {
         const locationParts = []
         if (store.colIndexes.location !== -1) locationParts.push(row[store.colIndexes.location])
         if (store.colIndexes.region !== -1) locationParts.push(row[store.colIndexes.region])
-        if (store.includeCountry && store.colIndexes.country !== -1 && row[store.colIndexes.country]) {
+        if (
+          store.includeCountry &&
+          store.colIndexes.country !== -1 &&
+          row[store.colIndexes.country]
+        ) {
           locationParts.push(row[store.colIndexes.country])
         }
 

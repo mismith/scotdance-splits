@@ -5,6 +5,9 @@ import { type ValidationIssue, detectHeaders, validateCodes } from './validation
 
 dayjs.extend(customParseFormat)
 
+// Minimum number of dancers per age group (used by algorithm and UI warnings)
+export const MIN_GROUP_SIZE = 5
+
 // Supported date formats for birthday parsing (tried in order)
 const DATE_FORMATS = [
   'YYYY-MM-DD',
@@ -314,15 +317,22 @@ export function getDefaultNumAgeGroups(ageCountsArray: [number, number][]): numb
 
   const targetDancersPerGroup = Math.max(totalDancers / averageDancersPerAge, maxDancersPerAge)
 
-  const min = { diff: Infinity, numPartitions: 1 }
+  const min = { diff: Infinity, numPartitions: 1, meetsMinSize: false }
   for (let i = 1; i < ageCountsArray.length; i++) {
     const partitionedAgeCounts = getPartitionedAgeCounts(ageCountsArray, i)
     const avg =
       partitionedAgeCounts.reduce((sum, [, count]) => sum + count, 0) / partitionedAgeCounts.length
     const diff = Math.abs(avg - targetDancersPerGroup)
-    if (diff < min.diff) {
+    const meetsMinSize = partitionedAgeCounts.every(([, count]) => count >= MIN_GROUP_SIZE)
+
+    // Prefer candidates where all groups meet minimum size; among equal, prefer lower diff
+    if (
+      (meetsMinSize && !min.meetsMinSize) ||
+      (meetsMinSize === min.meetsMinSize && diff < min.diff)
+    ) {
       min.diff = diff
       min.numPartitions = i
+      min.meetsMinSize = meetsMinSize
     }
   }
   return min.numPartitions
