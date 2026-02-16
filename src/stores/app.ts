@@ -1,4 +1,5 @@
 import { useLocalStorage, useMediaQuery } from '@vueuse/core'
+import dayjs from 'dayjs'
 import { parse } from 'papaparse'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
@@ -65,8 +66,9 @@ export const useAppStore = defineStore('app', () => {
   // Computed
   const competitionDateObj = computed(() => {
     if (!competitionDate.value) return undefined
-    const d = new Date(competitionDate.value)
-    return isNaN(d.getTime()) ? undefined : d
+    const d = dayjs(competitionDate.value, 'YYYY-MM-DD', true)
+    if (!d.isValid()) return undefined
+    return d.toDate()
   })
 
   const synthesisMode = computed(() => isSynthesisMode(colIndexes.value))

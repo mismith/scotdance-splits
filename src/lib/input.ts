@@ -1,5 +1,21 @@
+import dayjs from 'dayjs'
+import customParseFormat from 'dayjs/plugin/customParseFormat'
 import partition from 'linear-partitioning'
 import { type ValidationIssue, detectHeaders, validateCodes } from './validation'
+
+dayjs.extend(customParseFormat)
+
+// Supported date formats for birthday parsing (tried in order)
+const DATE_FORMATS = [
+  'YYYY-MM-DD',
+  'YYYY/MM/DD',
+  'MM/DD/YYYY',
+  'M/D/YYYY',
+  'DD/MM/YYYY',
+  'D/M/YYYY',
+  'DD-MM-YYYY',
+  'DD.MM.YYYY',
+]
 export type { ValidationIssue } from './validation'
 
 // Highland dance category code names
@@ -37,11 +53,16 @@ export function calculateAgeOnDate(
   birthdayStr: string,
   competitionDate: Date,
 ): number | undefined {
-  const birthday = new Date(birthdayStr)
-  if (isNaN(birthday.getTime())) return undefined
-  let age = competitionDate.getFullYear() - birthday.getFullYear()
-  const monthDiff = competitionDate.getMonth() - birthday.getMonth()
-  if (monthDiff < 0 || (monthDiff === 0 && competitionDate.getDate() < birthday.getDate())) {
+  const birthday = dayjs(birthdayStr, DATE_FORMATS, true)
+  if (!birthday.isValid()) return undefined
+
+  const compYear = competitionDate.getFullYear()
+  const compMonth = competitionDate.getMonth() + 1
+  const compDay = competitionDate.getDate()
+  const birthMonth = birthday.month() + 1
+
+  let age = compYear - birthday.year()
+  if (compMonth < birthMonth || (compMonth === birthMonth && compDay < birthday.date())) {
     age--
   }
   return age >= 0 && age <= 99 ? age : undefined
