@@ -12,8 +12,8 @@ defineProps<{
 </script>
 
 <template>
-  <div class="space-y-1">
-    <div v-for="dancer in dancers" :key="dancer.bibNumber" class="flex items-center gap-2 text-xs">
+  <ul class="space-y-1 list-none p-0 m-0">
+    <li v-for="dancer in dancers" :key="dancer.bibNumber" class="flex items-center gap-2 text-xs">
       <span
         class="bg-primary/20 text-primary px-1.5 py-0.5 rounded text-[10px] font-bold min-w-[2rem] text-center"
       >
@@ -23,6 +23,6 @@ defineProps<{
         >{{ dancer.firstName }} {{ dancer.lastName }}</span
       >
       <span class="truncate text-muted-foreground text-[10px]">{{ dancer.location }}</span>
-    </div>
-  </div>
+    </li>
+  </ul>
 </template>

@@ -43,7 +43,7 @@ function closeDialog() {
           </DialogDescription>
         </DialogHeader>
         <DialogClose as-child class="self-start">
-          <Button variant="ghost" size="sm" class="w-8 h-8 p-0 flex-shrink-0">
+          <Button variant="ghost" size="sm" class="w-8 h-8 p-0 flex-shrink-0" aria-label="Close">
             <X class="h-4 w-4" />
           </Button>
         </DialogClose>

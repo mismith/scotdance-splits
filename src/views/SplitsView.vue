@@ -275,13 +275,14 @@ function handleExportDownload() {
 
     <!-- Main content with top padding to account for fixed header -->
     <main class="pt-16 pb-16 flex-auto">
+      <h1 class="sr-only">Age Group Splits</h1>
       <div
         v-if="!store.hasData"
         class="flex items-center justify-center py-20 text-muted-foreground"
       >
         <div class="text-center">
           <Table class="h-16 w-16 mx-auto mb-4 opacity-50" />
-          <h3 class="text-lg font-semibold mb-2">No data to display</h3>
+          <h2 class="text-lg font-semibold mb-2">No data to display</h2>
           <p class="text-sm">Upload a CSV file to see age group splits</p>
         </div>
       </div>

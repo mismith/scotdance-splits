@@ -47,6 +47,7 @@
                 @click="decrementGroups"
                 :disabled="numAgeGroups <= 1"
                 class="w-6 h-6 rounded-full p-0"
+                aria-label="Decrease number of groups"
               >
                 <Minus class="h-3 w-3" />
               </Button>
@@ -57,6 +58,7 @@
                   v-model.number="numAgeGroups"
                   :min="1"
                   :max="ageCountsArray.length"
+                  aria-label="Number of groups"
                   class="text-center text-sm font-medium bg-transparent border-none outline-none focus:ring-0 p-0 text-foreground [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [field-sizing:content]"
                   style="field-sizing: content"
                   @blur="!numAgeGroups && (numAgeGroups = defaultNumAgeGroups)"
@@ -72,6 +74,7 @@
                 @click="incrementGroups"
                 :disabled="numAgeGroups >= ageCountsArray.length"
                 class="w-6 h-6 rounded-full p-0"
+                aria-label="Increase number of groups"
               >
                 <Plus class="h-3 w-3" />
               </Button>

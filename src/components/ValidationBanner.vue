@@ -100,6 +100,7 @@ function handleDismiss() {
       @click="handleDismiss"
       class="absolute top-4 right-4 w-8 h-8 p-0 z-10 rounded-full transition-colors"
       :class="closeButtonClass"
+      aria-label="Dismiss"
     >
       <X class="h-4 w-4" :class="textColorClass" />
     </Button>
@@ -117,9 +118,9 @@ function handleDismiss() {
 
         <!-- Content -->
         <div class="flex-1 min-w-0">
-          <h3 class="text-base font-semibold mb-1" :class="headingColorClass">
+          <p class="text-base font-semibold mb-1" :class="headingColorClass">
             {{ issueCount }} data issue{{ issueCount > 1 ? 's' : '' }}
-          </h3>
+          </p>
 
           <!-- Show all issue messages -->
           <div class="space-y-2 mb-4">
