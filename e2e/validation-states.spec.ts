@@ -60,11 +60,11 @@ test.describe('Validation States', () => {
     await page.screenshot({ path: screenshotPath(testInfo, '03-empty-file.png') })
   })
 
-  test('04 - missing code column', async ({ page }, testInfo) => {
+  test('04 - missing code column (no synthesis columns)', async ({ page }, testInfo) => {
     await uploadFixture(page, 'missing-code-column.csv')
     await waitForSplitsPage(page)
-    await expect(page.getByText('Missing')).toBeVisible()
-    await expect(page.getByText('column mapping')).toBeVisible()
+    await expect(page.getByText('Missing Highland Scrutineer code')).toBeVisible()
+    await expect(page.getByText('Category + Age or Birthday')).toBeVisible()
     await page.screenshot({ path: screenshotPath(testInfo, '04-missing-code-column.png') })
   })
 
@@ -91,6 +91,74 @@ test.describe('Validation States', () => {
     await waitForSplitsPage(page)
     await expect(page.getByText('No valid dancer codes found')).toBeVisible()
     await page.screenshot({ path: screenshotPath(testInfo, '07-no-valid-codes.png') })
+  })
+})
+
+test.describe('Synthesis Mode', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+  })
+
+  test('08 - synthesis from category + age (happy path)', async ({ page }, testInfo) => {
+    await uploadFixture(page, 'category-age.csv')
+    await waitForSplitsPage(page)
+    // Should auto-detect category and age columns and synthesize codes
+    await expect(page.getByRole('button', { name: /Next/ })).toBeVisible()
+    await expect(page.getByText('data issue')).not.toBeVisible()
+    await page.screenshot({ path: screenshotPath(testInfo, '08-synthesis-category-age.png') })
+  })
+
+  test('09 - synthesis from birthday requires competition date', async ({ page }, testInfo) => {
+    await uploadFixture(page, 'category-birthday.csv')
+    await waitForSplitsPage(page)
+    // Should show competition date required error
+    await expect(page.getByText('Competition date is required')).toBeVisible()
+    await page.screenshot({ path: screenshotPath(testInfo, '09-synthesis-missing-date.png') })
+  })
+
+  test('10 - synthesis from birthday with competition date set', async ({ page }, testInfo) => {
+    await uploadFixture(page, 'category-birthday.csv')
+    await waitForSplitsPage(page)
+
+    // Open Fields dialog via Review button
+    await page.getByRole('button', { name: 'Review' }).click()
+    await expect(page.getByRole('heading', { name: 'Fields' })).toBeVisible()
+
+    // Competition date input should be visible (accordion auto-expanded)
+    await expect(page.getByLabel('Competition date')).toBeVisible()
+
+    // Set competition date
+    await page.getByLabel('Competition date').fill('2023-07-15')
+
+    // Close dialog
+    await page.getByRole('button', { name: 'Done' }).click()
+
+    // Should now have valid synthesized codes — no errors
+    await expect(page.getByText('Competition date is required')).not.toBeVisible()
+    await expect(page.getByRole('button', { name: /Next/ })).toBeVisible()
+    await page.screenshot({ path: screenshotPath(testInfo, '10-synthesis-with-date.png') })
+  })
+
+  test('11 - unrecognized categories warning', async ({ page }, testInfo) => {
+    await uploadFixture(page, 'unrecognized-categories.csv')
+    await waitForSplitsPage(page)
+    // Should show warning about unrecognized categories
+    await expect(page.getByText('unrecognized category')).toBeVisible()
+    await page.screenshot({ path: screenshotPath(testInfo, '11-unrecognized-categories.png') })
+  })
+
+  test('12 - direct code column takes priority over synthesis', async ({ page }, testInfo) => {
+    await uploadFixture(page, 'clean-small.csv')
+    await waitForSplitsPage(page)
+    // Direct code column should work as normal — no synthesis active
+    await expect(page.getByRole('button', { name: /Next/ })).toBeVisible()
+    await expect(page.getByText('data issue')).not.toBeVisible()
+
+    // Open Fields dialog — synthesis section should be hidden when code is mapped
+    await page.getByRole('button', { name: /Fields/ }).click()
+    await expect(page.getByText('Highland Scrutineer code')).toBeVisible()
+    await expect(page.getByText('or generate from')).not.toBeVisible()
+    await page.screenshot({ path: screenshotPath(testInfo, '12-direct-code-priority.png') })
   })
 })
 

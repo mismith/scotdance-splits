@@ -15,17 +15,25 @@ export function generateExportData(
   partitions: Record<string, Partition[]>,
   settings: ExportSettings,
   hasHeaderRow: boolean,
+  resolvedCodes?: string[],
 ): (string | number)[][] {
   const data: (string | number)[][] = []
 
   // Create numbered CSV with bib numbers based on registration order
   const inputData = hasHeaderRow ? csvData.slice(1) : csvData
+  const codes = resolvedCodes ?? inputData.map((row) => row[colIndexes.code] ?? '')
+
+  // Zip rows with resolved codes, then filter/sort/number
   const numberedCSV = inputData
-    .filter((row) => row[colIndexes.firstName])
-    .sort((rowA, rowB) =>
-      (rowA[colIndexes.timestamp] || '').localeCompare(rowB[colIndexes.timestamp] || ''),
+    .map((row, i) => ({ row, code: codes[i] }))
+    .filter(({ row }) => row[colIndexes.firstName])
+    .sort((a, b) =>
+      (a.row[colIndexes.timestamp] || '').localeCompare(b.row[colIndexes.timestamp] || ''),
     )
-    .map((row, index) => [...row, `${settings.maxBibNumber - index}`])
+    .map(({ row, code }, index) => ({
+      row: [...row, `${settings.maxBibNumber - index}`],
+      code,
+    }))
 
   // Sort categories by the defined order: P, B, N, I, R, X
   const sortedPartitions = CATEGORY_ORDER.filter((categoryCode) => partitions[categoryCode]) // Only include categories that exist
@@ -35,10 +43,10 @@ export function generateExportData(
     )
 
   sortedPartitions.forEach((partition) => {
-    const rows = numberedCSV.filter((row) =>
-      partition.codes.includes(row[colIndexes.code] as string),
-    )
-    if (rows.length === 0) return
+    const matchingRows = numberedCSV
+      .filter(({ code }) => partition.codes.includes(code))
+      .map(({ row }) => row)
+    if (matchingRows.length === 0) return
 
     if (data.length) data.push(['', '', '', ''])
 
@@ -46,7 +54,7 @@ export function generateExportData(
     data.push([name, '', '', ''])
 
     data.push(
-      ...rows.map((row) => {
+      ...matchingRows.map((row) => {
         const bibNumber = row[row.length - 1] // bib number (last column)
 
         // Output name information

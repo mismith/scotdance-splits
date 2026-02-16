@@ -68,7 +68,7 @@ function closeDialog() {
                 : 'max-h-0 lg:max-h-none lg:w-0 opacity-0'
             "
           >
-            <div class="w-full lg:w-80 overflow-y-auto">
+            <div class="w-full lg:w-80 overflow-y-auto overflow-x-hidden">
               <slot name="sidebar" />
             </div>
           </div>

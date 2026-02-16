@@ -453,22 +453,23 @@ const csvRawData = computed(() => {
 
 // Shared computed: O(1) bib number lookup map (replaces O(n) findIndex per dancer)
 const bibNumberLookup = computed(() => {
-  const codeCol = store.colIndexes.code ?? -1
   const timestampCol = store.colIndexes.timestamp ?? -1
   const firstNameCol = store.colIndexes.firstName ?? 0
   const lastNameCol = store.colIndexes.lastName ?? 0
+  const codes = store.resolvedCodes
 
-  if (codeCol === -1 || !csvRawData.value.length) return new Map<string, number>()
+  if (!csvRawData.value.length) return new Map<string, number>()
 
   const allValidDancers = csvRawData.value
-    .filter((row) => /^[PBNIRX]\d{2}$/.test(row[codeCol]))
+    .map((row, i) => ({ row, code: codes[i] ?? '' }))
+    .filter(({ code }) => /^[PBNIRX]\d{2}$/.test(code))
     .sort((a, b) => {
       if (timestampCol === -1) return 0
-      return (a[timestampCol] || '').localeCompare(b[timestampCol] || '')
+      return (a.row[timestampCol] || '').localeCompare(b.row[timestampCol] || '')
     })
 
   const map = new Map<string, number>()
-  allValidDancers.forEach((row, idx) => {
+  allValidDancers.forEach(({ row }, idx) => {
     map.set(`${row[timestampCol] ?? ''}|${row[firstNameCol]}|${row[lastNameCol]}`, idx)
   })
   return map
@@ -476,12 +477,12 @@ const bibNumberLookup = computed(() => {
 
 // Computed: dancers for all age groups at once (cached, only recomputes when data changes)
 const dancersByAgeGroup = computed(() => {
-  const codeCol = store.colIndexes.code ?? -1
   const timestampCol = store.colIndexes.timestamp ?? -1
   const firstNameCol = store.colIndexes.firstName ?? 0
   const lastNameCol = store.colIndexes.lastName ?? 0
+  const codes = store.resolvedCodes
 
-  if (codeCol === -1 || !csvRawData.value.length) return []
+  if (!csvRawData.value.length) return []
 
   const lookup = bibNumberLookup.value
   const cat = categoryCode.value
@@ -490,8 +491,8 @@ const dancersByAgeGroup = computed(() => {
     const [minAge, maxAge] = ageRange
 
     return csvRawData.value
-      .filter((row) => {
-        const code = row[codeCol]
+      .map((row, i) => ({ row, code: codes[i] ?? '' }))
+      .filter(({ code }) => {
         if (/^[PBNIRX]\d{2}$/.test(code)) {
           return code.charAt(0) === cat && parseInt(code.substring(1)) >= minAge && parseInt(code.substring(1)) <= maxAge
         }
@@ -499,9 +500,9 @@ const dancersByAgeGroup = computed(() => {
       })
       .sort((a, b) => {
         if (timestampCol === -1) return 0
-        return (a[timestampCol] || '').localeCompare(b[timestampCol] || '')
+        return (a.row[timestampCol] || '').localeCompare(b.row[timestampCol] || '')
       })
-      .map((row) => {
+      .map(({ row }) => {
         const locationParts = []
         if (store.colIndexes.location !== -1) locationParts.push(row[store.colIndexes.location])
         if (store.colIndexes.region !== -1) locationParts.push(row[store.colIndexes.region])

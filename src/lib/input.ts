@@ -15,6 +15,38 @@ export const CATEGORY_CODE_NAMES: Record<string, string> = {
 // Highland dance category order (progression from beginner to advanced)
 export const CATEGORY_ORDER = ['P', 'B', 'N', 'I', 'R', 'X'] as const
 
+// Reverse mapping: category name variants → category code (case-insensitive lookup)
+export const CATEGORY_NAME_TO_CODE: Record<string, string> = {
+  primary: 'P',
+  beginner: 'B',
+  novice: 'N',
+  intermediate: 'I',
+  'restricted premier': 'R',
+  restricted: 'R',
+  premier: 'X',
+  championship: 'X',
+  open: 'X',
+}
+
+export function resolveCategoryCode(categoryName: string): string | undefined {
+  return CATEGORY_NAME_TO_CODE[categoryName.trim().toLowerCase()]
+}
+
+// Calculate age on a given date from a birthday string
+export function calculateAgeOnDate(
+  birthdayStr: string,
+  competitionDate: Date,
+): number | undefined {
+  const birthday = new Date(birthdayStr)
+  if (isNaN(birthday.getTime())) return undefined
+  let age = competitionDate.getFullYear() - birthday.getFullYear()
+  const monthDiff = competitionDate.getMonth() - birthday.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && competitionDate.getDate() < birthday.getDate())) {
+    age--
+  }
+  return age >= 0 && age <= 99 ? age : undefined
+}
+
 // Age group name formatting
 export function getAgeGroupName(minAge: number, maxAge: number, printYears = true) {
   const YEARS = printYears ? ' Years' : ''
@@ -60,7 +92,21 @@ export const INPUT_COLUMNS: InputColumn[] = [
     id: 'code',
     name: 'Highland Scrutineer code',
     regex: /(highland)?[-_\. ]?(scrutineer(ing)?)[-_\. ]?code$/i,
-    required: true,
+  },
+  {
+    id: 'category',
+    name: 'Category',
+    regex: /^(dance[-_\. ]?)?category$|^class$|^level$/i,
+  },
+  {
+    id: 'age',
+    name: 'Age',
+    regex: /^age(on(competition|day))?$/i,
+  },
+  {
+    id: 'birthday',
+    name: 'Birthday',
+    regex: /(date[-_\. ]?of[-_\. ]?)?birth(day|date)?$|^dob$/i,
   },
   {
     id: 'timestamp',
@@ -96,6 +142,69 @@ export function detectColumnMapping(headers: string[]): Record<string, number> {
   return colIndexes
 }
 
+// Synthesis configuration for resolving codes from alternative columns
+export interface SynthesisConfig {
+  colIndexes: Record<string, number>
+  competitionDate?: Date
+}
+
+// Check if synthesis mode is active (code column unmapped, but category + age/birthday available)
+export function isSynthesisMode(colIndexes: Record<string, number>): boolean {
+  return (
+    colIndexes.code === -1 &&
+    colIndexes.category !== -1 &&
+    (colIndexes.age !== -1 || colIndexes.birthday !== -1)
+  )
+}
+
+// Columns that are rendered inside the synthesis accordion, not the main field list
+export const SYNTHESIS_COLUMN_IDS = ['category', 'age', 'birthday']
+
+// Resolve a scrutineer code for a single row (direct or synthesized)
+export function resolveCode(row: string[], config: SynthesisConfig): string {
+  const { colIndexes, competitionDate } = config
+
+  // Direct code takes priority
+  if (colIndexes.code !== -1) {
+    const directCode = row[colIndexes.code]
+    if (directCode && /^[PBNIRX]\d{2}$/.test(directCode)) {
+      return directCode
+    }
+  }
+
+  // Synthesis mode: need category + (age or birthday)
+  if (colIndexes.category === -1) return ''
+
+  const categoryName = row[colIndexes.category]
+  if (!categoryName) return ''
+
+  const categoryCode = resolveCategoryCode(categoryName)
+  if (!categoryCode) return ''
+
+  // Try age column first
+  let age: number | undefined
+  if (colIndexes.age !== -1 && row[colIndexes.age]) {
+    const parsed = parseInt(row[colIndexes.age], 10)
+    if (!isNaN(parsed) && parsed >= 0 && parsed <= 99) {
+      age = parsed
+    }
+  }
+
+  // Fall back to birthday column
+  if (age === undefined && colIndexes.birthday !== -1 && row[colIndexes.birthday] && competitionDate) {
+    age = calculateAgeOnDate(row[colIndexes.birthday], competitionDate)
+  }
+
+  if (age === undefined) return ''
+
+  return `${categoryCode}${age.toString().padStart(2, '0')}`
+}
+
+// Build resolved codes array for all data rows
+export function buildResolvedCodes(data: string[][], config: SynthesisConfig): string[] {
+  return data.map((row) => resolveCode(row, config))
+}
+
 // Age categorization result with validation errors
 export interface CategorizeDataResult {
   categories: Record<string, Record<string, number>>
@@ -106,19 +215,21 @@ export interface CategorizeDataResult {
 export function categorizeData(
   data: string[][],
   colIndexes: Record<string, number>,
+  resolvedCodes?: string[],
 ): CategorizeDataResult {
-  // Validate codes only if code column is mapped
-  const validationResult =
-    colIndexes.code !== -1
-      ? validateCodes(data, colIndexes.code)
-      : { errors: [], validCodeCount: 0, invalidCodeCells: [], missingCodeCells: [] }
+  const codes = resolvedCodes ?? data.map((row) => row[colIndexes.code] ?? '')
 
-  const { errors, validCodeCount, invalidCodeCells, missingCodeCells } = validationResult
+  // Validate codes only if reading from a direct code column (not synthesis)
+  const errors: ValidationIssue[] = []
+  if (!resolvedCodes && colIndexes.code !== -1) {
+    const validationResult = validateCodes(data, colIndexes.code)
+    errors.push(...validationResult.errors)
+  }
 
   // Categorization - build category -> age -> count map
   const categories = data.reduce(
-    (acc, row, index) => {
-      const cell = row[colIndexes.code]
+    (acc, _row, index) => {
+      const cell = codes[index]
 
       // Only process valid Highland Scrutineer codes (e.g., P08, B12)
       if (cell && /^[PBNIRX]\d{2}$/.test(cell)) {

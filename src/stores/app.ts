@@ -1,12 +1,13 @@
-import { parse } from 'papaparse'
 import { useLocalStorage, useMediaQuery } from '@vueuse/core'
+import { parse } from 'papaparse'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import {
-  INPUT_COLUMNS,
   autoPartitionCategories,
+  buildResolvedCodes,
   categorizeData,
   detectColumnMapping,
+  isSynthesisMode,
 } from '@/lib/input'
 import { calculateDefaultMaxBib } from '@/lib/output'
 import type { Cell } from '@/lib/types'
@@ -15,6 +16,7 @@ import {
   detectHeaders,
   validateCodes,
   validateColumnMapping,
+  validateSynthesizedCodes,
 } from '@/lib/validation'
 
 export interface DancerData {
@@ -47,6 +49,10 @@ export const useAppStore = defineStore('app', () => {
   const inputHeaders = ref<string[]>([])
   const colIndexes = ref<Record<string, number>>({})
 
+  // Synthesis state
+  const competitionDate = useLocalStorage<string | undefined>('competitionDate', undefined)
+  const resolvedCodes = ref<string[]>([])
+
   // Layout
   const isDesktop = useMediaQuery('(min-width: 768px)')
 
@@ -57,6 +63,14 @@ export const useAppStore = defineStore('app', () => {
   const combineNames = useLocalStorage('combineNames', false)
 
   // Computed
+  const competitionDateObj = computed(() => {
+    if (!competitionDate.value) return undefined
+    const d = new Date(competitionDate.value)
+    return isNaN(d.getTime()) ? undefined : d
+  })
+
+  const synthesisMode = computed(() => isSynthesisMode(colIndexes.value))
+
   const exportFilename = computed(() => {
     const name = inputFiles.value?.[0]?.name
     if (!name) return 'Splits'
@@ -81,11 +95,34 @@ export const useAppStore = defineStore('app', () => {
 
     const errorCellMap = new Map<string, 'error' | 'warning'>()
     if (codeColIndex !== undefined && codeColIndex !== -1) {
+      // Direct mode: highlight invalid/missing code cells
       const { invalidCodeCells, missingCodeCells } = validateCodes(dataRows, codeColIndex)
       ;[...invalidCodeCells, ...missingCodeCells].forEach(({ rowIndex, colIndex }) => {
         const actualRowIndex = hasHeaderRow.value ? rowIndex + 1 : rowIndex
         errorCellMap.set(`${actualRowIndex},${colIndex}`, 'warning')
       })
+    } else if (synthesisMode.value) {
+      // Synthesis mode: highlight category cells where code couldn't be resolved
+      resolvedCodes.value.forEach((code, index) => {
+        if (!code || !/^[PBNIRX]\d{2}$/.test(code)) {
+          const actualRowIndex = hasHeaderRow.value ? index + 1 : index
+          if (colIndexes.value.category !== -1) {
+            errorCellMap.set(`${actualRowIndex},${colIndexes.value.category}`, 'warning')
+          }
+        }
+      })
+
+      // Highlight birthday cells when competition date is missing (all are unresolvable)
+      if (
+        colIndexes.value.birthday !== -1 &&
+        colIndexes.value.age === -1 &&
+        !competitionDateObj.value
+      ) {
+        dataRows.forEach((_, index) => {
+          const actualRowIndex = hasHeaderRow.value ? index + 1 : index
+          errorCellMap.set(`${actualRowIndex},${colIndexes.value.birthday}`, 'warning')
+        })
+      }
     }
 
     return inputCSV.value.map((row, rowIndex) =>
@@ -122,18 +159,26 @@ export const useAppStore = defineStore('app', () => {
     // Extract raw string values for validation
     const rawData = cellData.map((row) => row.map((cell) => cell.value))
 
-    // Validate column mapping completeness
-    const columnMappingErrors = validateColumnMapping(colIndexes.value)
+    // Validate column mapping completeness (with competition date for synthesis validation)
+    const columnMappingErrors = validateColumnMapping(colIndexes.value, competitionDateObj.value)
     errors.push(...columnMappingErrors)
 
     // Extract data rows (skip headers if present, based on user's toggle)
     const dataRows = hasHeaderRow.value ? rawData.slice(1) : rawData
 
-    // Get validation errors from categorizeData (which uses validation utilities)
-    const { errors: categorizeErrors } = categorizeData(dataRows, colIndexes.value)
-
-    // Combine errors
-    errors.push(...categorizeErrors)
+    if (colIndexes.value.code !== -1) {
+      // Direct mode: validate code column values
+      const { errors: categorizeErrors } = categorizeData(dataRows, colIndexes.value)
+      errors.push(...categorizeErrors)
+    } else if (synthesisMode.value) {
+      // Synthesis mode: validate synthesized codes
+      const synthErrors = validateSynthesizedCodes(
+        dataRows,
+        colIndexes.value,
+        resolvedCodes.value,
+      )
+      errors.push(...synthErrors)
+    }
 
     return errors
   })
@@ -173,6 +218,8 @@ export const useAppStore = defineStore('app', () => {
     inputHeaders.value = []
     colIndexes.value = {}
     manualPartitions.value = {}
+    resolvedCodes.value = []
+    competitionDate.value = undefined
   }
 
   function updateColIndexes(indexes: Record<string, number>) {
@@ -186,14 +233,28 @@ export const useAppStore = defineStore('app', () => {
       const rawData = cellData.map((row) => row.map((cell) => cell.value))
 
       const dataRows = hasHeaderRow.value ? rawData.slice(1) : rawData
-      const { categories: cats } = categorizeData(dataRows, colIndexes.value)
+
+      // Build resolved codes (handles both direct and synthesis modes)
+      const codes = buildResolvedCodes(dataRows, {
+        colIndexes: indexes,
+        competitionDate: competitionDateObj.value,
+      })
+      resolvedCodes.value = codes
+
+      const { categories: cats } = categorizeData(dataRows, indexes, codes)
       const partitionedCats = autoPartitionCategories(cats)
 
       setProcessedData(cats, partitionedCats)
 
-      const defaultMaxBib = calculateDefaultMaxBib(rawData, colIndexes.value, hasHeaderRow.value)
+      const defaultMaxBib = calculateDefaultMaxBib(rawData, indexes, hasHeaderRow.value)
       updateExportSettings({ maxBibNumber: defaultMaxBib })
     }
+  }
+
+  function updateCompetitionDate(dateStr: string | undefined) {
+    competitionDate.value = dateStr
+    // Rebuild resolved codes with new competition date
+    updateColIndexes(colIndexes.value)
   }
 
   function updateExportSettings(settings: {
@@ -295,6 +356,12 @@ export const useAppStore = defineStore('app', () => {
     isPrintingYears,
     includeCountry,
     combineNames,
+
+    // Synthesis
+    competitionDate,
+    resolvedCodes,
+    synthesisMode,
+    updateCompetitionDate,
 
     // Layout
     isDesktop,

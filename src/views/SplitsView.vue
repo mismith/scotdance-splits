@@ -22,8 +22,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { fetchDemoCSV } from '@/lib/input'
-import { CATEGORY_CODE_NAMES, INPUT_COLUMNS, type Partition, createPartitions } from '@/lib/input'
+import {
+  CATEGORY_CODE_NAMES,
+  INPUT_COLUMNS,
+  type Partition,
+  SYNTHESIS_COLUMN_IDS,
+  createPartitions,
+  fetchDemoCSV,
+} from '@/lib/input'
 import { type ExportSettings, convertToCSV, downloadCSV, generateExportData } from '@/lib/output'
 
 const store = useAppStore()
@@ -49,6 +55,14 @@ const hasDismissedIssues = computed(
 
 // Partitions store - maps category code to age ranges
 const partitions = ref<Record<string, Partition[]>>({})
+
+// Main field columns (excluding code and synthesis-only columns)
+const mainColumns = computed(() =>
+  INPUT_COLUMNS.filter((col) => col.id !== 'code' && !SYNTHESIS_COLUMN_IDS.includes(col.id)),
+)
+
+// Code column rendered separately (before "or" divider)
+const codeColumn = computed(() => INPUT_COLUMNS.find((col) => col.id === 'code')!)
 
 // Provide for CategoryCard components
 provide(
@@ -134,9 +148,9 @@ function updateColIndex(id: string, value: string | null) {
 }
 
 function isFieldValid(fieldId: string) {
-  const column = INPUT_COLUMNS.find((col) => col.id === fieldId)
-  if (column?.required) {
-    return store.colIndexes[fieldId] >= 0
+  if (fieldId === 'code') {
+    // Code is valid if mapped OR if synthesis mode is active
+    return store.colIndexes.code >= 0 || store.synthesisMode
   }
   return true
 }
@@ -180,6 +194,7 @@ const exportPreviewData = computed(() => {
     partitions.value,
     settings,
     store.hasHeaderRow,
+    store.synthesisMode ? store.resolvedCodes : undefined,
   )
 
   // Convert (string | number)[][] to Cell[][] for display
@@ -360,15 +375,155 @@ function handleExportDownload() {
             </label>
           </div>
 
-          <div v-for="{ id, name, required } in INPUT_COLUMNS" :key="id" class="space-y-2">
-            <Label
-              :for="id"
-              :class="{
-                'text-destructive': required && !isFieldValid(id),
-              }"
-            >
-              {{ name }}{{ required ? ' *' : '' }}
-            </Label>
+          <!-- Code resolution card -->
+          <div
+            class="rounded-xl border p-3 space-y-3"
+            :class="store.synthesisMode ? 'border-accent bg-accent/5' : ''"
+          >
+            <!-- Code column select -->
+            <div class="space-y-2">
+              <Label
+                for="code"
+                :class="{
+                  'text-destructive': !isFieldValid('code'),
+                }"
+              >
+                {{ codeColumn.name }}{{ !store.synthesisMode ? ' *' : '' }}
+              </Label>
+              <Select
+                :model-value="(store.inputHeaders[store.colIndexes.code] || 'none') as string"
+                @update:model-value="updateColIndex('code', String($event))"
+              >
+                <SelectTrigger class="w-full">
+                  <SelectValue placeholder="Select column..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectSeparator />
+                  <SelectItem v-for="header in store.inputHeaders" :key="header" :value="header">
+                    {{ header }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <!-- Synthesis section (only when code column is unmapped) -->
+            <template v-if="store.colIndexes.code === -1">
+              <div class="flex items-center gap-3">
+                <div class="flex-1 border-t" />
+                <span class="text-muted-foreground text-xs">or</span>
+                <div class="flex-1 border-t" />
+              </div>
+
+              <!-- Category -->
+              <div class="space-y-2">
+                <Label for="category">Category</Label>
+                <Select
+                  :model-value="(store.inputHeaders[store.colIndexes.category] || 'none') as string"
+                  @update:model-value="updateColIndex('category', String($event))"
+                >
+                  <SelectTrigger class="w-full">
+                    <SelectValue placeholder="Select column..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectSeparator />
+                    <SelectItem v-for="header in store.inputHeaders" :key="header" :value="header">
+                      {{ header }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <!-- Age / Birthday card -->
+              <div class="rounded-lg border p-3 space-y-3">
+                <!-- Age -->
+                <div class="space-y-2">
+                  <Label for="age">Age</Label>
+                  <Select
+                    :model-value="(store.inputHeaders[store.colIndexes.age] || 'none') as string"
+                    @update:model-value="updateColIndex('age', String($event))"
+                  >
+                    <SelectTrigger class="w-full">
+                      <SelectValue placeholder="Select column..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectSeparator />
+                      <SelectItem
+                        v-for="header in store.inputHeaders"
+                        :key="header"
+                        :value="header"
+                      >
+                        {{ header }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <!-- "or" divider -->
+                <div class="flex items-center gap-3">
+                  <div class="flex-1 border-t" />
+                  <span class="text-muted-foreground text-xs">or</span>
+                  <div class="flex-1 border-t" />
+                </div>
+
+                <!-- Birthday -->
+                <div class="space-y-2">
+                  <Label for="birthday">Birthday</Label>
+                  <Select
+                    :model-value="
+                      (store.inputHeaders[store.colIndexes.birthday] || 'none') as string
+                    "
+                    @update:model-value="updateColIndex('birthday', String($event))"
+                  >
+                    <SelectTrigger class="w-full">
+                      <SelectValue placeholder="Select column..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectSeparator />
+                      <SelectItem
+                        v-for="header in store.inputHeaders"
+                        :key="header"
+                        :value="header"
+                      >
+                        {{ header }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <!-- Competition date (only when birthday mapped and age not mapped) -->
+                <div
+                  v-if="store.colIndexes.birthday !== -1 && store.colIndexes.age === -1"
+                  class="space-y-2"
+                >
+                  <Label
+                    for="competition-date"
+                    :class="{
+                      'text-destructive': !store.competitionDate,
+                    }"
+                  >
+                    Competition date *
+                  </Label>
+                  <Input
+                    id="competition-date"
+                    type="date"
+                    :model-value="store.competitionDate || ''"
+                    class="w-full"
+                    @update:model-value="
+                      store.updateCompetitionDate($event ? String($event) : undefined)
+                    "
+                  />
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Other field columns -->
+          <div v-for="{ id, name } in mainColumns" :key="id" class="space-y-2">
+            <Label :for="id">{{ name }}</Label>
             <Select
               :model-value="(store.inputHeaders[store.colIndexes[id]] || 'none') as string"
               @update:model-value="updateColIndex(id, String($event))"

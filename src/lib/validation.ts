@@ -1,4 +1,9 @@
-import { INPUT_COLUMNS, type InputColumn } from './input'
+import {
+  INPUT_COLUMNS,
+  type InputColumn,
+  isSynthesisMode,
+  resolveCategoryCode,
+} from './input'
 
 // Validation issue with optional cell-level details
 export interface ValidationIssue {
@@ -7,6 +12,9 @@ export interface ValidationIssue {
     | 'missing-codes'
     | 'no-valid-codes'
     | 'missing-column-mapping'
+    | 'missing-competition-date'
+    | 'unrecognized-category'
+    | 'synthesis-no-valid-codes'
     | 'parse-error'
   severity: 'error' | 'warning'
   message: string // Summary message with examples
@@ -30,33 +38,39 @@ export function detectHeaders(potentialHeaders: string[]): boolean {
 
 /**
  * Validate column mapping completeness
- * Returns error if required columns are unmapped
+ * Code column is conditionally required: not needed if synthesis columns are available
  */
-export function validateColumnMapping(colIndexes: Record<string, number>): ValidationIssue[] {
+export function validateColumnMapping(
+  colIndexes: Record<string, number>,
+  competitionDate?: Date,
+): ValidationIssue[] {
   const errors: ValidationIssue[] = []
 
-  // Check that all required columns are mapped (not -1)
-  const requiredColumns = INPUT_COLUMNS.filter((col) => col.required).map((col) => col.id)
-  const unmappedColumns = requiredColumns.filter((col) => colIndexes[col] === -1)
+  const hasCode = colIndexes.code !== -1
+  const canSynthesize = isSynthesisMode(colIndexes)
 
-  if (unmappedColumns.length > 0) {
-    // Create specific error message with missing column names
-    const missingNames = unmappedColumns.map((col) => {
-      const inputCol = INPUT_COLUMNS.find((c) => c.id === col)
-      return inputCol?.name || col
-    })
-
-    const missingText =
-      missingNames.length === 1
-        ? missingNames[0]
-        : missingNames.length === 2
-          ? `${missingNames[0]} and ${missingNames[1]}`
-          : `${missingNames.slice(0, -1).join(', ')}, and ${missingNames[missingNames.length - 1]}`
-
+  // Code is required unless synthesis columns are present
+  if (!hasCode && !canSynthesize) {
     errors.push({
       type: 'missing-column-mapping',
       severity: 'error',
-      message: `Missing ${missingText} column mapping`,
+      message:
+        'Missing Highland Scrutineer code column mapping. Alternatively, map Category + Age or Birthday columns to generate codes.',
+    })
+  }
+
+  // If using birthday for synthesis (birthday mapped, age not mapped) but no competition date
+  if (
+    !hasCode &&
+    canSynthesize &&
+    colIndexes.age === -1 &&
+    colIndexes.birthday !== -1 &&
+    !competitionDate
+  ) {
+    errors.push({
+      type: 'missing-competition-date',
+      severity: 'error',
+      message: 'Competition date is required to calculate ages from birthdays',
     })
   }
 
@@ -146,6 +160,61 @@ export function validateCodes(
 }
 
 /**
+ * Validate synthesized codes and track issues with source columns
+ */
+export function validateSynthesizedCodes(
+  data: string[][],
+  colIndexes: Record<string, number>,
+  resolvedCodes: string[],
+): ValidationIssue[] {
+  const errors: ValidationIssue[] = []
+  const unrecognizedCategories: { rowIndex: number; colIndex: number; value: string }[] = []
+  let validCount = 0
+
+  data.forEach((row, index) => {
+    const code = resolvedCodes[index]
+    if (code && /^[PBNIRX]\d{2}$/.test(code)) {
+      validCount++
+      return
+    }
+
+    // Diagnose why this row failed — track unrecognized category values
+    if (colIndexes.category !== -1) {
+      const cat = row[colIndexes.category]
+      if (cat && !resolveCategoryCode(cat)) {
+        unrecognizedCategories.push({
+          rowIndex: index,
+          colIndex: colIndexes.category,
+          value: cat,
+        })
+      }
+    }
+  })
+
+  if (unrecognizedCategories.length > 0 && validCount > 0) {
+    const unique = [...new Set(unrecognizedCategories.map((c) => c.value))]
+    errors.push({
+      type: 'unrecognized-category',
+      severity: 'warning',
+      message: `${unrecognizedCategories.length} row${unrecognizedCategories.length > 1 ? 's' : ''} with unrecognized category: ${unique.slice(0, 3).map((v) => `"${v}"`).join(', ')}`,
+      cells: unrecognizedCategories,
+    })
+  }
+
+  if (validCount === 0 && data.length > 0) {
+    errors.push({
+      type: 'synthesis-no-valid-codes',
+      severity: 'error',
+      message:
+        'No valid codes could be generated. Check your Category and Age/Birthday column mappings.',
+      cells: unrecognizedCategories,
+    })
+  }
+
+  return errors
+}
+
+/**
  * Central validation orchestrator
  * Single source of truth for all input data validation
  */
@@ -153,6 +222,8 @@ export function validateInputData(
   csvData: string[][],
   colIndexes: Record<string, number>,
   hasHeaderRow: boolean,
+  resolvedCodes?: string[],
+  competitionDate?: Date,
 ): ValidationIssue[] {
   const errors: ValidationIssue[] = []
 
@@ -162,16 +233,20 @@ export function validateInputData(
   }
 
   // Validate column mapping completeness
-  const columnMappingErrors = validateColumnMapping(colIndexes)
+  const columnMappingErrors = validateColumnMapping(colIndexes, competitionDate)
   errors.push(...columnMappingErrors)
 
   // Extract data rows (skip headers if present)
   const dataRows = hasHeaderRow ? csvData.slice(1) : csvData
 
-  // Validate scrutineer codes if code column is mapped
   if (colIndexes.code !== -1 && dataRows.length > 0) {
+    // Direct mode: validate code column values
     const { errors: codeErrors } = validateCodes(dataRows, colIndexes.code)
     errors.push(...codeErrors)
+  } else if (resolvedCodes && dataRows.length > 0) {
+    // Synthesis mode: validate synthesized codes
+    const synthErrors = validateSynthesizedCodes(dataRows, colIndexes, resolvedCodes)
+    errors.push(...synthErrors)
   }
 
   return errors
