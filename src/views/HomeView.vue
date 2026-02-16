@@ -516,7 +516,7 @@
                   style="border-color: #1976d2"
                 >
                   <img
-                    src="/src/assets/scotdance-icon.png"
+                    :src="scotdanceIcon"
                     alt="ScotDance.app"
                     class="w-8 h-8 object-contain"
                   />
@@ -588,6 +588,7 @@ import TransformationSection from '@/components/TransformationSection.vue'
 import ValidationBanner from '@/components/ValidationBanner.vue'
 import { Button } from '@/components/ui/button'
 import { type ValidationIssue } from '@/lib/input'
+import scotdanceIcon from '@/assets/scotdance-icon.png'
 
 // Refs for measuring element positions
 const logoRef = ref<HTMLElement>()
