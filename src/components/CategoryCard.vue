@@ -996,6 +996,12 @@ function repaint() {
 // Repaint when grid container resizes (covers window resize, initial mount, layout shifts)
 useResizeObserver(colsRef, () => repaint())
 
+// Repaint when dancers column visibility changes (grid columns redistribute without resizing container)
+watch(showDancers, async () => {
+  await nextTick()
+  repaint()
+})
+
 // Age group interaction functions
 async function openAgeGroupSheet(ageGroupIndex: number) {
   if (store.isDesktop) {
