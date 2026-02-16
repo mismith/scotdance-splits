@@ -1,5 +1,5 @@
 <template>
-  <FileUpload :is-loading="store.isLoadingInputFile" @file-selected="handleFileSelected">
+  <FileUpload :is-loading="store.isLoadingInputFile" @file-selected="handleFileSelected" @file-rejected="handleFileRejected">
     <template #default="{ chooseFile }">
       <!-- Sticky Logo (no background, sticks when logo reaches top) -->
       <div
@@ -625,6 +625,10 @@ async function handleFileSelected(file: File) {
   if (success) {
     router.push('/splits')
   }
+}
+
+function handleFileRejected(message: string) {
+  store.fileLoadError = message
 }
 
 function handleErrorDismiss() {

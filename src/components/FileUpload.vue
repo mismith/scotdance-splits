@@ -15,6 +15,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   'file-selected': [file: File]
+  'file-rejected': [message: string]
 }>()
 
 const dropZoneRef = ref<HTMLElement>()
@@ -22,7 +23,12 @@ const fileInputRef = ref<HTMLInputElement>()
 
 const { isOverDropZone } = useDropZone(dropZoneRef, {
   onDrop(files) {
-    if (files?.length === 1 && files[0].type === props.accept) {
+    if (!files?.length) return
+    if (files.length > 1) {
+      emit('file-rejected', 'Please drop a single CSV file')
+    } else if (files[0].type !== props.accept) {
+      emit('file-rejected', 'Only CSV files are supported')
+    } else {
       emit('file-selected', files[0])
     }
   },
@@ -32,7 +38,11 @@ function handleFileChange(event: Event) {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
   if (file) {
-    emit('file-selected', file)
+    if (file.type !== props.accept) {
+      emit('file-rejected', 'Only CSV files are supported')
+    } else {
+      emit('file-selected', file)
+    }
   }
 }
 </script>

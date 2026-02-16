@@ -46,44 +46,51 @@ test.describe('Validation States', () => {
     await page.screenshot({ path: screenshotPath(testInfo, '01-happy-path.png') })
   })
 
-  test('02 - empty file', async ({ page }, testInfo) => {
+  test('02 - non-CSV file rejected', async ({ page }, testInfo) => {
+    await uploadFixture(page, 'not-a-csv.txt')
+    // Stays on home page — file rejected
+    await expect(page.getByText('Only CSV files are supported')).toBeVisible()
+    await page.screenshot({ path: screenshotPath(testInfo, '02-non-csv-file.png') })
+  })
+
+  test('03 - empty file', async ({ page }, testInfo) => {
     await uploadFixture(page, 'empty.csv')
     // Stays on home page — parse error
     await expect(page.getByText('CSV file is empty')).toBeVisible()
-    await page.screenshot({ path: screenshotPath(testInfo, '02-empty-file.png') })
+    await page.screenshot({ path: screenshotPath(testInfo, '03-empty-file.png') })
   })
 
-  test('03 - missing code column', async ({ page }, testInfo) => {
+  test('04 - missing code column', async ({ page }, testInfo) => {
     await uploadFixture(page, 'missing-code-column.csv')
     await waitForSplitsPage(page)
     await expect(page.getByText('Missing')).toBeVisible()
     await expect(page.getByText('column mapping')).toBeVisible()
-    await page.screenshot({ path: screenshotPath(testInfo, '03-missing-code-column.png') })
+    await page.screenshot({ path: screenshotPath(testInfo, '04-missing-code-column.png') })
   })
 
-  test('04 - missing data (empty codes)', async ({ page }, testInfo) => {
+  test('05 - missing data (empty codes)', async ({ page }, testInfo) => {
     await uploadFixture(page, 'missing-data.csv')
     await waitForSplitsPage(page)
     // Warning: rows with no code were skipped (no invalid format codes in this fixture)
     await expect(page.getByText('with no code')).toBeVisible()
     await expect(page.getByText('invalid codes')).not.toBeVisible()
-    await page.screenshot({ path: screenshotPath(testInfo, '04-missing-data.png') })
+    await page.screenshot({ path: screenshotPath(testInfo, '05-missing-data.png') })
   })
 
-  test('05 - mixed valid and invalid codes', async ({ page }, testInfo) => {
+  test('06 - mixed valid and invalid codes', async ({ page }, testInfo) => {
     await uploadFixture(page, 'mixed-valid-invalid.csv')
     await waitForSplitsPage(page)
     // Both warnings: invalid format codes + empty code cells
     await expect(page.getByText('invalid codes')).toBeVisible()
     await expect(page.getByText('with no code')).toBeVisible()
-    await page.screenshot({ path: screenshotPath(testInfo, '05-mixed-valid-invalid.png') })
+    await page.screenshot({ path: screenshotPath(testInfo, '06-mixed-valid-invalid.png') })
   })
 
-  test('06 - no valid codes (invalid format)', async ({ page }, testInfo) => {
+  test('07 - no valid codes (invalid format)', async ({ page }, testInfo) => {
     await uploadFixture(page, 'invalid-code-format.csv')
     await waitForSplitsPage(page)
     await expect(page.getByText('No valid dancer codes found')).toBeVisible()
-    await page.screenshot({ path: screenshotPath(testInfo, '06-no-valid-codes.png') })
+    await page.screenshot({ path: screenshotPath(testInfo, '07-no-valid-codes.png') })
   })
 })
 
@@ -101,7 +108,7 @@ test.describe('Validation Interactions', () => {
     // Wait for view transition animations to register, then finish
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
     await waitForAnimations(page)
-    await page.screenshot({ path: screenshotPath(testInfo, '07-warning-after-dismiss.png') })
+    await page.screenshot({ path: screenshotPath(testInfo, '08-warning-after-dismiss.png') })
   })
 
   test('dismiss error banner → secondary error indicator with Review', async ({ page }, testInfo) => {
@@ -117,7 +124,7 @@ test.describe('Validation Interactions', () => {
     await expect(page.getByRole('button', { name: /issue/ })).toBeVisible()
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
     await waitForAnimations(page)
-    await page.screenshot({ path: screenshotPath(testInfo, '08-error-after-dismiss.png') })
+    await page.screenshot({ path: screenshotPath(testInfo, '09-error-after-dismiss.png') })
   })
 
   test('click Review → column mapping dialog opens', async ({ page }, testInfo) => {
@@ -133,7 +140,7 @@ test.describe('Validation Interactions', () => {
     // Fields dialog should open
     await expect(page.getByRole('heading', { name: 'Fields' })).toBeVisible()
     await waitForAnimations(page)
-    await page.screenshot({ path: screenshotPath(testInfo, '09-fields-dialog.png') })
+    await page.screenshot({ path: screenshotPath(testInfo, '10-fields-dialog.png') })
   })
 
   test('export dialog opens with settings', async ({ page }, testInfo) => {
@@ -152,6 +159,6 @@ test.describe('Validation Interactions', () => {
     await expect(page.getByLabel('Highest bib number')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Export' })).toBeVisible()
     await waitForAnimations(page)
-    await page.screenshot({ path: screenshotPath(testInfo, '10-export-dialog.png') })
+    await page.screenshot({ path: screenshotPath(testInfo, '11-export-dialog.png') })
   })
 })
