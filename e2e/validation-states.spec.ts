@@ -46,6 +46,53 @@ test.describe('Validation States', () => {
     await page.screenshot({ path: screenshotPath(testInfo, '01-happy-path.png') })
   })
 
+  test('01a - synthesis from category + age (happy path)', async ({ page }, testInfo) => {
+    await uploadFixture(page, 'category-age.csv')
+    await waitForSplitsPage(page)
+    // Should auto-detect category and age columns and synthesize codes
+    await expect(page.getByRole('button', { name: /Next/ })).toBeVisible()
+    await expect(page.getByText('data issue')).not.toBeVisible()
+    await page.screenshot({ path: screenshotPath(testInfo, '01a-synthesis-category-age.png') })
+  })
+
+  test('01b - synthesis from birthday with competition date set', async ({ page }, testInfo) => {
+    await uploadFixture(page, 'category-birthday.csv')
+    await waitForSplitsPage(page)
+
+    // Open Fields dialog via Review button
+    await page.getByRole('button', { name: 'Review' }).click()
+    await expect(page.getByRole('heading', { name: 'Fields' })).toBeVisible()
+
+    // Competition date input should be visible (accordion auto-expanded)
+    await expect(page.getByLabel('Competition date')).toBeVisible()
+
+    // Set competition date
+    await page.getByLabel('Competition date').fill('2023-07-15')
+
+    // Close dialog
+    await page.getByRole('button', { name: 'Done' }).click()
+
+    // Should now have valid synthesized codes — no errors
+    await expect(page.getByText('Competition date is required')).not.toBeVisible()
+    await expect(page.getByRole('button', { name: /Next/ })).toBeVisible()
+    await page.screenshot({ path: screenshotPath(testInfo, '01b-synthesis-birthday-with-date.png') })
+  })
+
+  test('01c - direct code column takes priority over synthesis', async ({ page }, testInfo) => {
+    await uploadFixture(page, 'clean-small.csv')
+    await waitForSplitsPage(page)
+    // Direct code column should work as normal — no synthesis active
+    await expect(page.getByRole('button', { name: /Next/ })).toBeVisible()
+    await expect(page.getByText('data issue')).not.toBeVisible()
+
+    // Open Fields dialog — synthesis section should be hidden when code is mapped
+    await page.getByRole('button', { name: /Fields/ }).click()
+    await expect(page.getByText('Highland Scrutineer code')).toBeVisible()
+    await expect(page.getByText('or generate from')).not.toBeVisible()
+    await waitForAnimations(page)
+    await page.screenshot({ path: screenshotPath(testInfo, '01c-direct-code-priority.png') })
+  })
+
   test('02 - non-CSV file rejected', async ({ page }, testInfo) => {
     await uploadFixture(page, 'not-a-csv.txt')
     // Stays on home page — file rejected
@@ -99,119 +146,44 @@ test.describe('Synthesis Mode', () => {
     await page.goto('/')
   })
 
-  test('08 - synthesis from category + age (happy path)', async ({ page }, testInfo) => {
-    await uploadFixture(page, 'category-age.csv')
-    await waitForSplitsPage(page)
-    // Should auto-detect category and age columns and synthesize codes
-    await expect(page.getByRole('button', { name: /Next/ })).toBeVisible()
-    await expect(page.getByText('data issue')).not.toBeVisible()
-    await page.screenshot({ path: screenshotPath(testInfo, '08-synthesis-category-age.png') })
-  })
-
-  test('09 - synthesis from birthday requires competition date', async ({ page }, testInfo) => {
+  test('08 - synthesis from birthday requires competition date', async ({ page }, testInfo) => {
     await uploadFixture(page, 'category-birthday.csv')
     await waitForSplitsPage(page)
     // Should show competition date required error
     await expect(page.getByText('Competition date is required')).toBeVisible()
-    await page.screenshot({ path: screenshotPath(testInfo, '09-synthesis-missing-date.png') })
+    await page.screenshot({ path: screenshotPath(testInfo, '08-synthesis-missing-date.png') })
   })
 
-  test('10 - synthesis from birthday with competition date set', async ({ page }, testInfo) => {
+  test('09 - unrecognized categories warning', async ({ page }, testInfo) => {
+    await uploadFixture(page, 'unrecognized-categories.csv')
+    await waitForSplitsPage(page)
+    // Should show warning about unrecognized categories
+    await expect(page.getByText('unrecognized category')).toBeVisible()
+    await page.screenshot({ path: screenshotPath(testInfo, '09-unrecognized-categories.png') })
+  })
+})
+
+test.describe('Validation Interactions', () => {
+  test('10 - fields dialog with synthesis UI', async ({ page }, testInfo) => {
+    await page.goto('/')
     await uploadFixture(page, 'category-birthday.csv')
     await waitForSplitsPage(page)
+
+    // Birthday synthesis without competition date — error banner visible
+    await expect(page.getByText('Competition date is required')).toBeVisible()
 
     // Open Fields dialog via Review button
     await page.getByRole('button', { name: 'Review' }).click()
     await expect(page.getByRole('heading', { name: 'Fields' })).toBeVisible()
 
-    // Competition date input should be visible (accordion auto-expanded)
+    // Synthesis section should be visible with age/birthday dropdown and empty competition date
+    await expect(page.getByText('Birthday')).toBeVisible()
     await expect(page.getByLabel('Competition date')).toBeVisible()
-
-    // Set competition date
-    await page.getByLabel('Competition date').fill('2023-07-15')
-
-    // Close dialog
-    await page.getByRole('button', { name: 'Done' }).click()
-
-    // Should now have valid synthesized codes — no errors
-    await expect(page.getByText('Competition date is required')).not.toBeVisible()
-    await expect(page.getByRole('button', { name: /Next/ })).toBeVisible()
-    await page.screenshot({ path: screenshotPath(testInfo, '10-synthesis-with-date.png') })
-  })
-
-  test('11 - unrecognized categories warning', async ({ page }, testInfo) => {
-    await uploadFixture(page, 'unrecognized-categories.csv')
-    await waitForSplitsPage(page)
-    // Should show warning about unrecognized categories
-    await expect(page.getByText('unrecognized category')).toBeVisible()
-    await page.screenshot({ path: screenshotPath(testInfo, '11-unrecognized-categories.png') })
-  })
-
-  test('12 - direct code column takes priority over synthesis', async ({ page }, testInfo) => {
-    await uploadFixture(page, 'clean-small.csv')
-    await waitForSplitsPage(page)
-    // Direct code column should work as normal — no synthesis active
-    await expect(page.getByRole('button', { name: /Next/ })).toBeVisible()
-    await expect(page.getByText('data issue')).not.toBeVisible()
-
-    // Open Fields dialog — synthesis section should be hidden when code is mapped
-    await page.getByRole('button', { name: /Fields/ }).click()
-    await expect(page.getByText('Highland Scrutineer code')).toBeVisible()
-    await expect(page.getByText('or generate from')).not.toBeVisible()
-    await page.screenshot({ path: screenshotPath(testInfo, '12-direct-code-priority.png') })
-  })
-})
-
-test.describe('Validation Interactions', () => {
-  test('dismiss warning banner → secondary indicator appears', async ({ page }, testInfo) => {
-    await page.goto('/')
-    await uploadFixture(page, 'mixed-valid-invalid.csv')
-    await waitForSplitsPage(page)
-
-    await expect(page.getByText('invalid codes')).toBeVisible()
-    await page.getByRole('button', { name: 'Dismiss' }).click()
-
-    // Secondary indicator should appear with issue count
-    await expect(page.getByText('issue')).toBeVisible()
-    // Wait for view transition animations to register, then finish
-    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
-    await waitForAnimations(page)
-    await page.screenshot({ path: screenshotPath(testInfo, '08-warning-after-dismiss.png') })
-  })
-
-  test('dismiss error banner → secondary error indicator with Review', async ({ page }, testInfo) => {
-    await page.goto('/')
-    await uploadFixture(page, 'invalid-code-format.csv')
-    await waitForSplitsPage(page)
-
-    await expect(page.getByText('No valid dancer codes found')).toBeVisible()
-    await page.getByRole('button', { name: 'Dismiss' }).click()
-
-    // Secondary indicator should appear with error styling
-    await expect(page.getByText('issue')).toBeVisible()
-    await expect(page.getByRole('button', { name: /issue/ })).toBeVisible()
-    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
-    await waitForAnimations(page)
-    await page.screenshot({ path: screenshotPath(testInfo, '09-error-after-dismiss.png') })
-  })
-
-  test('click Review → column mapping dialog opens', async ({ page }, testInfo) => {
-    await page.goto('/')
-    await uploadFixture(page, 'mixed-valid-invalid.csv')
-    await waitForSplitsPage(page)
-
-    await expect(page.getByText('invalid codes')).toBeVisible()
-
-    // Click Review button on the validation banner
-    await page.getByRole('button', { name: 'Review' }).click()
-
-    // Fields dialog should open
-    await expect(page.getByRole('heading', { name: 'Fields' })).toBeVisible()
     await waitForAnimations(page)
     await page.screenshot({ path: screenshotPath(testInfo, '10-fields-dialog.png') })
   })
 
-  test('export dialog opens with settings', async ({ page }, testInfo) => {
+  test('11 - export dialog opens with settings', async ({ page }, testInfo) => {
     await page.goto('/')
     await uploadFixture(page, 'clean-small.csv')
     await waitForSplitsPage(page)
@@ -228,5 +200,37 @@ test.describe('Validation Interactions', () => {
     await expect(page.getByRole('button', { name: 'Export' })).toBeVisible()
     await waitForAnimations(page)
     await page.screenshot({ path: screenshotPath(testInfo, '11-export-dialog.png') })
+  })
+
+  test('12 - dismiss warning banner → secondary indicator appears', async ({ page }, testInfo) => {
+    await page.goto('/')
+    await uploadFixture(page, 'mixed-valid-invalid.csv')
+    await waitForSplitsPage(page)
+
+    await expect(page.getByText('invalid codes')).toBeVisible()
+    await page.getByRole('button', { name: 'Dismiss' }).click()
+
+    // Secondary indicator should appear with issue count
+    await expect(page.getByText('issue')).toBeVisible()
+    // Wait for view transition animations to register, then finish
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
+    await waitForAnimations(page)
+    await page.screenshot({ path: screenshotPath(testInfo, '12-warning-after-dismiss.png') })
+  })
+
+  test('13 - dismiss error banner → secondary error indicator with Review', async ({ page }, testInfo) => {
+    await page.goto('/')
+    await uploadFixture(page, 'invalid-code-format.csv')
+    await waitForSplitsPage(page)
+
+    await expect(page.getByText('No valid dancer codes found')).toBeVisible()
+    await page.getByRole('button', { name: 'Dismiss' }).click()
+
+    // Secondary indicator should appear with error styling
+    await expect(page.getByText('issue')).toBeVisible()
+    await expect(page.getByRole('button', { name: /issue/ })).toBeVisible()
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
+    await waitForAnimations(page)
+    await page.screenshot({ path: screenshotPath(testInfo, '13-error-after-dismiss.png') })
   })
 })
