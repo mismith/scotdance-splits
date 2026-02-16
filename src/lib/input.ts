@@ -1,5 +1,6 @@
 import partition from 'linear-partitioning'
 import { type ValidationIssue, detectHeaders, validateCodes } from './validation'
+export type { ValidationIssue } from './validation'
 
 // Highland dance category code names
 export const CATEGORY_CODE_NAMES: Record<string, string> = {

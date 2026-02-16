@@ -100,7 +100,7 @@ function handleDismiss() {
       @click="handleDismiss"
       class="absolute top-4 right-4 w-8 h-8 p-0 z-10 rounded-full transition-colors"
       :class="closeButtonClass"
-      aria-label="Dismiss"
+      aria-label="Close"
     >
       <X class="h-4 w-4" :class="textColorClass" />
     </Button>

@@ -9,7 +9,9 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:5173',
     screenshot: 'off', // we take manual screenshots for the gallery
-    reducedMotion: 'reduce',
+    contextOptions: {
+      reducedMotion: 'reduce',
+    },
   },
   projects: [
     {
