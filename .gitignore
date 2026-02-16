@@ -34,3 +34,4 @@ coverage
 
 # Profiling files
 *.profraw
+/stats.html
