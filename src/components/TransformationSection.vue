@@ -90,31 +90,31 @@ const afterGroups = [
         class="transition-all duration-700 ease-out motion-reduce:transition-none pointer-events-none"
         :class="isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
       >
-        <p class="text-xs text-muted-foreground/60 mb-2 text-center">Before</p>
+        <p class="text-[10px] uppercase tracking-widest text-muted-foreground/60 mb-2 text-center">Before</p>
         <div class="rounded-2xl border border-border/80 bg-muted/30 shadow-lg overflow-hidden">
           <table class="w-full text-[13px]">
             <thead>
               <tr class="bg-muted/50">
-                <th class="text-left py-2.5 px-4 font-medium text-muted-foreground/80 text-xs">
+                <th class="text-left py-2.5 px-2 sm:px-4 font-medium text-muted-foreground/80 text-xs">
                   Name
                 </th>
-                <th class="text-left py-2.5 px-4 font-medium text-muted-foreground/80 text-xs">
+                <th class="text-left py-2.5 px-2 sm:px-4 font-medium text-muted-foreground/80 text-xs">
                   Category
                 </th>
-                <th class="text-left py-2.5 px-4 font-medium text-muted-foreground/80 text-xs">
+                <th class="text-left py-2.5 px-2 sm:px-4 font-medium text-muted-foreground/80 text-xs">
                   Age
                 </th>
-                <th class="text-left py-2.5 px-4 font-medium text-muted-foreground/80 text-xs">
+                <th class="text-left py-2.5 px-2 sm:px-4 font-medium text-muted-foreground/80 text-xs">
                   Registered
                 </th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="(row, i) in beforeData" :key="i" class="border-t border-border/40">
-                <td class="py-2 px-4 whitespace-nowrap">{{ row.name }}</td>
-                <td class="py-2 px-4 text-muted-foreground">{{ row.category }}</td>
-                <td class="py-2 px-4 text-muted-foreground">{{ row.age }}</td>
-                <td class="py-2 px-4 text-muted-foreground/60 text-xs whitespace-nowrap">
+                <td class="py-2 px-2 sm:px-4 whitespace-nowrap">{{ row.name }}</td>
+                <td class="py-2 px-2 sm:px-4 text-muted-foreground">{{ row.category }}</td>
+                <td class="py-2 px-2 sm:px-4 text-muted-foreground">{{ row.age }}</td>
+                <td class="py-2 px-2 sm:px-4 text-muted-foreground/60 text-xs whitespace-nowrap">
                   {{ row.date }}
                 </td>
               </tr>
@@ -136,7 +136,7 @@ const afterGroups = [
         class="transition-all duration-700 ease-out delay-150 motion-reduce:transition-none pointer-events-none"
         :class="isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
       >
-        <p class="text-xs text-primary/60 mb-2 text-center">After</p>
+        <p class="text-[10px] uppercase tracking-widest text-primary/60 mb-2 text-center">After</p>
         <div
           class="rounded-2xl border-2 border-primary/20 bg-primary/[0.03] shadow-lg overflow-hidden"
         >

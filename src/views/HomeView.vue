@@ -1,13 +1,18 @@
 <template>
-  <FileUpload :is-loading="store.isLoadingInputFile" @file-selected="handleFileSelected" @file-rejected="handleFileRejected">
+  <FileUpload
+    :is-loading="store.isLoadingInputFile"
+    @file-selected="handleFileSelected"
+    @file-rejected="handleFileRejected"
+  >
     <template #default="{ chooseFile }">
       <!-- Sticky Logo (no background, sticks when logo reaches top) -->
       <div
-        class="fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300"
+        class="fixed top-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300"
         :class="isLogoSticky ? 'opacity-100 scale-100' : 'opacity-0 scale-150 pointer-events-none'"
       >
         <Button
           variant="outline"
+          size="sm"
           class="backdrop-blur font-semibold text-primary hover:tracking-widest duration-500 transition-all"
           @click="scrollToTop"
         >
@@ -19,7 +24,7 @@
               :class="{ '[view-transition-name:splits-logo]': isLogoSticky }"
             />
             <span
-              class="text-sm font-semibold text-primary"
+              class="font-semibold text-primary"
               :class="{ '[view-transition-name:splits-name]': isLogoSticky }"
             >
               Splits
@@ -101,7 +106,7 @@
               </div>
 
               <h1
-                class="text-6xl md:text-7xl lg:text-8xl font-semibold tracking-tight text-foreground"
+                class="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold tracking-tight text-foreground"
               >
                 An hour of work.<br />Done in seconds.
               </h1>
@@ -147,8 +152,10 @@
           </div>
 
           <!-- Footer note -->
-          <div class="text-center">
-            <p class="text-sm text-muted-foreground">Private by design. Free forever.</p>
+          <div class="text-center pt-8">
+            <p class="text-xs uppercase tracking-widest text-muted-foreground">
+              Private by design. Free forever.
+            </p>
           </div>
         </section>
 
@@ -515,11 +522,7 @@
                   class="inline-flex items-center gap-3 px-2 py-1 rounded-sm border-2 bg-[#1976d2] border-[#1976d2] hover:bg-[#1565c0] hover:border-[#1565c0] transition-all shadow-md hover:shadow-lg min-w-[140px]"
                   style="border-color: #1976d2"
                 >
-                  <img
-                    :src="scotdanceIcon"
-                    alt="ScotDance.app"
-                    class="w-8 h-8 object-contain"
-                  />
+                  <img :src="scotdanceIcon" alt="ScotDance.app" class="w-8 h-8 object-contain" />
                   <div class="flex flex-col items-start -space-y-0.5">
                     <span class="text-[10px] font-medium text-white/90 uppercase tracking-wide">
                       Made for
@@ -582,13 +585,13 @@ import { useElementBounding } from '@vueuse/core'
 import { Shield } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import scotdanceIcon from '@/assets/scotdance-icon.png'
 import { useAppStore } from '@/stores/app'
 import FileUpload from '@/components/FileUpload.vue'
 import TransformationSection from '@/components/TransformationSection.vue'
 import ValidationBanner from '@/components/ValidationBanner.vue'
 import { Button } from '@/components/ui/button'
 import { type ValidationIssue } from '@/lib/input'
-import scotdanceIcon from '@/assets/scotdance-icon.png'
 
 // Refs for measuring element positions
 const logoRef = ref<HTMLElement>()

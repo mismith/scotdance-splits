@@ -197,7 +197,7 @@
             v-for="(pos, index) in dragHandlePositions"
             :key="index"
             v-show="showDragHandle && hoveredBoundaryIndex === index"
-            class="max-sm:flex! absolute cursor-ns-resize z-20 h-3 flex items-center -mt-1.5 justify-center shadow transition-shadow"
+            class="max-sm:flex! absolute cursor-ns-resize z-20 h-3 flex items-center -mt-1.5 justify-center shadow transition-shadow before:absolute before:-inset-y-4 before:inset-x-0 sm:before:hidden"
             :class="`${index !== -1 && isBoundaryManual(index) ? 'bg-accent text-accent-foreground [&_path]:fill-accent' : 'bg-primary text-primary-foreground [&_path]:fill-primary'} ${isDragging && draggingBoundaryIndex === index ? (index !== -1 && isBoundaryManual(index) ? 'shadow-[0_0_20px_var(--accent)]' : 'shadow-[0_0_20px_var(--primary)]') : ''}`"
             :style="{
               left: pos.left + 24 + 'px',
@@ -686,6 +686,11 @@ function onDragStart(event: MouseEvent | TouchEvent, boundaryIndex: number) {
   function onMove(moveEvent: MouseEvent | TouchEvent) {
     if (!isDragging.value) return
 
+    // Prevent page scrolling while dragging on touch devices
+    if ('touches' in moveEvent) {
+      moveEvent.preventDefault()
+    }
+
     const currentY = 'touches' in moveEvent ? moveEvent.touches[0].clientY : moveEvent.clientY
     const deltaY = currentY - startY
     const newY = initialY + deltaY
@@ -726,6 +731,7 @@ function onDragStart(event: MouseEvent | TouchEvent, boundaryIndex: number) {
     document.removeEventListener('mouseup', onEnd)
     document.removeEventListener('touchmove', onMove)
     document.removeEventListener('touchend', onEnd)
+    document.removeEventListener('touchcancel', onEnd)
 
     // Commit the partition change with a view transition
     if (lastValidAge !== null && isValidBoundaryChange(draggingBoundaryIndex.value, lastValidAge)) {
@@ -745,6 +751,7 @@ function onDragStart(event: MouseEvent | TouchEvent, boundaryIndex: number) {
 
         // Wait for the view transition to finish, then repaint with final DOM positions
         await viewTransition.finished
+        await nextTick()
         repaint()
         return
       }
@@ -756,6 +763,7 @@ function onDragStart(event: MouseEvent | TouchEvent, boundaryIndex: number) {
     dragPreviewY.value = null
     showDragHandle.value = false
     hoveredBoundaryIndex.value = -1
+    await nextTick()
     repaint()
   }
 
@@ -764,6 +772,7 @@ function onDragStart(event: MouseEvent | TouchEvent, boundaryIndex: number) {
   document.addEventListener('mouseup', onEnd)
   document.addEventListener('touchmove', onMove, { passive: false })
   document.addEventListener('touchend', onEnd)
+  document.addEventListener('touchcancel', onEnd)
 }
 
 // Helper functions for partition calculations
