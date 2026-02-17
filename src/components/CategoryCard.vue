@@ -197,7 +197,7 @@
             v-for="(pos, index) in dragHandlePositions"
             :key="index"
             v-show="showDragHandle && hoveredBoundaryIndex === index"
-            class="max-sm:flex! absolute cursor-ns-resize z-20 h-3 flex items-center -mt-1.5 justify-center shadow transition-shadow before:absolute before:-inset-y-4 before:inset-x-0 sm:before:hidden"
+            class="max-sm:flex! absolute cursor-ns-resize z-20 h-3 flex items-center -mt-1.5 justify-center shadow transition-shadow before:absolute before:-inset-y-4 before:inset-x-0 sm:before:hidden [view-transition-name:match-element]"
             :class="`${index !== -1 && isBoundaryManual(index) ? 'bg-accent text-accent-foreground [&_path]:fill-accent' : 'bg-primary text-primary-foreground [&_path]:fill-primary'} ${isDragging && draggingBoundaryIndex === index ? (index !== -1 && isBoundaryManual(index) ? 'shadow-[0_0_20px_var(--accent)]' : 'shadow-[0_0_20px_var(--primary)]') : ''}`"
             :style="{
               left: pos.left + 24 + 'px',
