@@ -69,40 +69,43 @@
       <div class="flex flex-col">
         <!-- Section 1: Hero (100vh) -->
         <section
-          class="min-h-screen flex flex-col items-center justify-between px-6 py-24 relative bg-gradient-to-b from-transparent to-background/25"
+          class="min-h-svh flex flex-col items-center justify-between px-6 py-24 relative bg-gradient-to-b from-transparent to-background/25"
         >
           <!-- Hero content -->
           <div class="flex-1 flex items-center justify-center w-full">
             <div class="max-w-4xl mx-auto text-center space-y-8">
               <!-- Large Logo (scales down and fades out when sticky) -->
-              <div
-                ref="logoRef"
-                class="flex justify-center mb-8 w-full relative z-30 transition-all duration-500"
-                :class="
-                  isLogoSticky ? 'opacity-0 scale-50 pointer-events-none' : 'opacity-100 scale-100'
-                "
-              >
-                <Button
-                  variant="outline"
-                  size="lg"
-                  class="p-8 font-semibold text-primary backdrop-blur hover:tracking-widest duration-500 transition-all"
-                  @click="scrollToTop"
+              <div ref="logoRef" class="mb-8 w-full relative z-30">
+                <div
+                  class="flex justify-center transition-all duration-500"
+                  :class="
+                    isLogoSticky
+                      ? 'opacity-0 scale-50 pointer-events-none'
+                      : 'opacity-100 scale-100'
+                  "
                 >
-                  <div class="flex items-center gap-3">
-                    <img
-                      src="/touchicon.png"
-                      alt="Splits Logo"
-                      class="size-8"
-                      :class="{ '[view-transition-name:splits-logo]': !isLogoSticky }"
-                    />
-                    <span
-                      class="text-2xl font-semibold text-primary"
-                      :class="{ '[view-transition-name:splits-name]': !isLogoSticky }"
-                    >
-                      Splits
-                    </span>
-                  </div>
-                </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    class="p-8 font-semibold text-primary backdrop-blur hover:tracking-widest duration-500 transition-all"
+                    @click="scrollToTop"
+                  >
+                    <div class="flex items-center gap-3">
+                      <img
+                        src="/touchicon.png"
+                        alt="Splits Logo"
+                        class="size-8"
+                        :class="{ '[view-transition-name:splits-logo]': !isLogoSticky }"
+                      />
+                      <span
+                        class="text-2xl font-semibold text-primary"
+                        :class="{ '[view-transition-name:splits-name]': !isLogoSticky }"
+                      >
+                        Splits
+                      </span>
+                    </div>
+                  </Button>
+                </div>
               </div>
 
               <h1
@@ -118,35 +121,36 @@
               </p>
 
               <!-- CTAs (scale down and fade out when buttons become sticky) -->
-              <div
-                ref="buttonsRef"
-                class="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4 transition-all duration-500"
-                :class="
-                  isButtonsSticky
-                    ? 'opacity-0 scale-50 pointer-events-none'
-                    : 'opacity-100 scale-100'
-                "
-              >
-                <!-- Left: Choose file button -->
-                <Button
-                  size="lg"
-                  :disabled="store.isLoadingInputFile"
-                  :loading="store.isLoadingInputFile"
-                  @click="chooseFile"
-                  class="text-lg px-8 py-6 rounded-full backdrop-blur"
+              <div ref="buttonsRef" class="pt-4">
+                <div
+                  class="flex flex-col sm:flex-row gap-4 justify-center items-center transition-all duration-500"
+                  :class="
+                    isButtonsSticky
+                      ? 'opacity-0 scale-50 pointer-events-none'
+                      : 'opacity-100 scale-100'
+                  "
                 >
-                  Choose file →
-                </Button>
+                  <!-- Left: Choose file button -->
+                  <Button
+                    size="lg"
+                    :disabled="store.isLoadingInputFile"
+                    :loading="store.isLoadingInputFile"
+                    @click="chooseFile"
+                    class="text-lg px-8 py-6 rounded-full backdrop-blur"
+                  >
+                    Choose file →
+                  </Button>
 
-                <!-- Right: View demo button -->
-                <Button
-                  size="lg"
-                  variant="outline"
-                  as-child
-                  class="text-lg px-8 py-6 rounded-full backdrop-blur"
-                >
-                  <router-link to="/demo">View demo</router-link>
-                </Button>
+                  <!-- Right: View demo button -->
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    as-child
+                    class="text-lg px-8 py-6 rounded-full backdrop-blur"
+                  >
+                    <router-link to="/demo">View demo</router-link>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -581,7 +585,7 @@
 </template>
 
 <script setup lang="ts">
-import { useElementBounding } from '@vueuse/core'
+import { useIntersectionObserver } from '@vueuse/core'
 import { Shield } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -597,22 +601,25 @@ import { type ValidationIssue } from '@/lib/input'
 const logoRef = ref<HTMLElement>()
 const buttonsRef = ref<HTMLElement>()
 
-// Get element bounds reactively
-const logoBounds = useElementBounding(logoRef)
-const buttonsBounds = useElementBounding(buttonsRef)
-
-// Sticky threshold (distance from top of viewport)
-const STICKY_TOP = 24 // 1.5rem = top-6
-
-// Logo becomes sticky when its top reaches STICKY_TOP
-// Check height > 0 to ensure element has been measured (avoids flash on initial load)
-const isLogoSticky = computed(
-  () => logoBounds.height.value > 0 && logoBounds.top.value <= STICKY_TOP,
+// Sticky detection via IntersectionObserver (passive, no layout thrashing during scroll)
+// rootMargin shrinks the intersection area by 24px from the top (matching top-6),
+// so elements are "not intersecting" once their top edge crosses that 24px line
+const isLogoSticky = ref(false)
+useIntersectionObserver(
+  logoRef,
+  ([entry]) => {
+    isLogoSticky.value = !entry?.isIntersecting
+  },
+  { rootMargin: '-24px 0px 0px 0px', threshold: 1 },
 )
 
-// Buttons become sticky when their top reaches STICKY_TOP
-const isButtonsSticky = computed(
-  () => buttonsBounds.height.value > 0 && buttonsBounds.top.value <= STICKY_TOP,
+const isButtonsSticky = ref(false)
+useIntersectionObserver(
+  buttonsRef,
+  ([entry]) => {
+    isButtonsSticky.value = !entry?.isIntersecting
+  },
+  { rootMargin: '-24px 0px 0px 0px', threshold: 1 },
 )
 
 const store = useAppStore()
