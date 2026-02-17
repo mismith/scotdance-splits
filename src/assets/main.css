@@ -231,7 +231,10 @@
   ::view-transition-new(slide-right) {
     animation: slide-in-from-left 250ms ease-out;
   }
+}
 
+.crisp-client {
+  --crisp-customization-container-index: 42 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
