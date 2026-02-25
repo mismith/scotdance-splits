@@ -4,6 +4,7 @@ import { parse } from 'papaparse'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import {
+  SCRUTINEERING_CODE_REGEX,
   autoPartitionCategories,
   buildResolvedCodes,
   categorizeData,
@@ -106,7 +107,7 @@ export const useAppStore = defineStore('app', () => {
     } else if (synthesisMode.value) {
       // Synthesis mode: highlight category cells where code couldn't be resolved
       resolvedCodes.value.forEach((code, index) => {
-        if (!code || !/^[PBNIRX]\d{2}$/.test(code)) {
+        if (!code || !SCRUTINEERING_CODE_REGEX.test(code)) {
           const actualRowIndex = hasHeaderRow.value ? index + 1 : index
           if (colIndexes.value.category !== -1) {
             errorCellMap.set(`${actualRowIndex},${colIndexes.value.category}`, 'warning')

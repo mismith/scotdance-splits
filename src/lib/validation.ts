@@ -1,6 +1,7 @@
 import {
   INPUT_COLUMNS,
   type InputColumn,
+  SCRUTINEERING_CODE_REGEX,
   isSynthesisMode,
   resolveCategoryCode,
 } from './input'
@@ -105,7 +106,7 @@ export function validateCodes(
         colIndex: codeColIndex,
         value: cell || '',
       })
-    } else if (/^[PBNIRX]\d{2}$/.test(cell)) {
+    } else if (SCRUTINEERING_CODE_REGEX.test(cell)) {
       // Valid Highland Scrutineer code (e.g., P08, B12)
       validCodeCount++
     } else {
@@ -173,7 +174,7 @@ export function validateSynthesizedCodes(
 
   data.forEach((row, index) => {
     const code = resolvedCodes[index]
-    if (code && /^[PBNIRX]\d{2}$/.test(code)) {
+    if (code && SCRUTINEERING_CODE_REGEX.test(code)) {
       validCount++
       return
     }

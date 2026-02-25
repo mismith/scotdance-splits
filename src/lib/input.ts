@@ -8,6 +8,9 @@ dayjs.extend(customParseFormat)
 // Minimum number of dancers per age group (used by algorithm and UI warnings)
 export const MIN_GROUP_SIZE = 5
 
+/** Matches a valid Highland Scrutineer code (e.g. P08, B12, I8) */
+export const SCRUTINEERING_CODE_REGEX = /^[PBNIRX]\d{1,2}$/
+
 // Supported date formats for birthday parsing (tried in order)
 const DATE_FORMATS = [
   'YYYY-MM-DD',
@@ -191,7 +194,7 @@ export function resolveCode(row: string[], config: SynthesisConfig): string {
   // Direct code takes priority
   if (colIndexes.code !== -1) {
     const directCode = row[colIndexes.code]
-    if (directCode && /^[PBNIRX]\d{2}$/.test(directCode)) {
+    if (directCode && SCRUTINEERING_CODE_REGEX.test(directCode)) {
       return directCode
     }
   }
@@ -256,7 +259,7 @@ export function categorizeData(
       const cell = codes[index]
 
       // Only process valid Highland Scrutineer codes (e.g., P08, B12)
-      if (cell && /^[PBNIRX]\d{2}$/.test(cell)) {
+      if (cell && SCRUTINEERING_CODE_REGEX.test(cell)) {
         const categoryCode = cell.substring(0, 1)
         const age = cell.substring(1)
         acc[categoryCode] = acc[categoryCode] || {}

@@ -275,6 +275,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
   CATEGORY_CODE_NAMES,
   MIN_GROUP_SIZE,
+  SCRUTINEERING_CODE_REGEX,
   getAgeGroupName,
   getDefaultNumAgeGroups,
   getPartitionedAgeCounts,
@@ -411,7 +412,7 @@ const bibNumberLookup = computed(() => {
 
   const allValidDancers = csvRawData.value
     .map((row, i) => ({ row, code: codes[i] ?? '' }))
-    .filter(({ code }) => /^[PBNIRX]\d{2}$/.test(code))
+    .filter(({ code }) => SCRUTINEERING_CODE_REGEX.test(code))
     .sort((a, b) => {
       if (timestampCol === -1) return 0
       return (a.row[timestampCol] || '').localeCompare(b.row[timestampCol] || '')
@@ -442,7 +443,7 @@ const dancersByAgeGroup = computed(() => {
     return csvRawData.value
       .map((row, i) => ({ row, code: codes[i] ?? '' }))
       .filter(({ code }) => {
-        if (/^[PBNIRX]\d{2}$/.test(code)) {
+        if (SCRUTINEERING_CODE_REGEX.test(code)) {
           return (
             code.charAt(0) === cat &&
             parseInt(code.substring(1)) >= minAge &&
