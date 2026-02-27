@@ -34,6 +34,7 @@ export function generateExportData(
       row: [...row, `${settings.maxBibNumber - index}`],
       code,
     }))
+    .sort((a, b) => Number(a.row[a.row.length - 1]) - Number(b.row[b.row.length - 1]))
 
   // Sort categories by the defined order: P, B, N, I, R, X
   const sortedPartitions = CATEGORY_ORDER.filter((categoryCode) => partitions[categoryCode]) // Only include categories that exist
