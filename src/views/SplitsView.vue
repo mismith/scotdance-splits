@@ -694,7 +694,16 @@ function handleExportDownload() {
         <div class="border rounded-3xl h-full bg-muted/50 overflow-auto">
           <table class="text-xs [border-spacing:0] [border-collapse:separate] w-full">
             <tbody>
-              <tr v-for="(row, rowIndex) in exportPreviewData" :key="rowIndex" class="border-b">
+              <tr
+                v-for="(row, rowIndex) in exportPreviewData"
+                :key="rowIndex"
+                class="border-b"
+                :class="{
+                  'bg-destructive/10':
+                    activeFirstDancerRows.has(rowIndex) &&
+                    store.bibRangeWarnings.has(activeFirstDancerRows.get(rowIndex)!.partitionKey),
+                }"
+              >
                 <template v-if="isGroupHeaderRow(row)">
                   <!-- Group header row: name merged across all columns -->
                   <td
@@ -713,51 +722,65 @@ function handleExportDownload() {
                   >
                     <!-- First dancer in group/category: show editable bib input instead of plain number -->
                     <template v-if="colIndex === 0 && activeFirstDancerRows.has(rowIndex)">
-                      <div class="flex items-center gap-1 -my-1 -mx-2">
-                        <Input
-                          type="number"
-                          :step="activeBlockSize"
-                          :aria-label="`Start bib for ${activeFirstDancerRows.get(rowIndex)!.label}`"
-                          :model-value="
-                            activeFirstDancerRows.get(rowIndex)!.partitionKey in activeBibOverrides
-                              ? activeFirstDancerRows.get(rowIndex)!.startBib
-                              : undefined
-                          "
-                          :placeholder="String(activeFirstDancerRows.get(rowIndex)!.startBib)"
-                          class="min-w-20 field-sizing-content h-8 px-2 [font-size:inherit]! border-primary! border-2 ring-inset text-xs"
-                          :class="{
-                            'border-accent!':
-                              activeFirstDancerRows.get(rowIndex)!.partitionKey in
-                              activeBibOverrides,
-                          }"
-                          @update:model-value="
-                            (value: string | number) =>
-                              setActiveBibOverride(
-                                activeFirstDancerRows.get(rowIndex)!.partitionKey,
-                                Number(value),
-                              )
-                          "
-                        />
-                        <Tooltip
-                          v-if="
-                            activeFirstDancerRows.get(rowIndex)!.partitionKey in activeBibOverrides
-                          "
-                        >
-                          <TooltipTrigger
-                            class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full hover:bg-accent/15 transition-colors"
-                            @click="
-                              clearActiveBibOverride(
-                                activeFirstDancerRows.get(rowIndex)!.partitionKey,
-                              )
+                      <div class="-my-1 -mx-2">
+                        <div class="flex items-center gap-1">
+                          <Input
+                            type="number"
+                            :step="activeBlockSize"
+                            :aria-label="`Start bib for ${activeFirstDancerRows.get(rowIndex)!.label}`"
+                            :aria-invalid="store.bibRangeWarnings.has(activeFirstDancerRows.get(rowIndex)!.partitionKey) || undefined"
+                            :model-value="
+                              activeFirstDancerRows.get(rowIndex)!.partitionKey in activeBibOverrides
+                                ? activeFirstDancerRows.get(rowIndex)!.startBib
+                                : undefined
+                            "
+                            :placeholder="String(activeFirstDancerRows.get(rowIndex)!.startBib)"
+                            class="min-w-20 field-sizing-content h-8 px-2 [font-size:inherit]! border-primary! border-2 ring-inset text-xs"
+                            :class="{
+                              'border-accent!':
+                                activeFirstDancerRows.get(rowIndex)!.partitionKey in
+                                activeBibOverrides,
+                              'border-destructive!':
+                                store.bibRangeWarnings.has(activeFirstDancerRows.get(rowIndex)!.partitionKey),
+                            }"
+                            @update:model-value="
+                              (value: string | number) => {
+                                const key = activeFirstDancerRows.get(rowIndex)!.partitionKey
+                                if (value === '' || value === undefined)
+                                  clearActiveBibOverride(key)
+                                else
+                                  setActiveBibOverride(key, Number(value))
+                              }
+                            "
+                          />
+                          <Tooltip
+                            v-if="
+                              activeFirstDancerRows.get(rowIndex)!.partitionKey in activeBibOverrides
                             "
                           >
-                            <span class="text-xs font-medium text-accent">Manual</span>
-                            <Delete class="w-3 h-3 text-accent ml-1" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Reset to auto-calculated</p>
-                          </TooltipContent>
-                        </Tooltip>
+                            <TooltipTrigger
+                              class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full hover:bg-accent/15 transition-colors"
+                              @click="
+                                clearActiveBibOverride(
+                                  activeFirstDancerRows.get(rowIndex)!.partitionKey,
+                                )
+                              "
+                            >
+                              <span class="text-xs font-medium text-accent">Manual</span>
+                              <Delete class="w-3 h-3 text-accent ml-1" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Reset to auto-calculated</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <div
+                          v-if="store.bibRangeWarnings.has(activeFirstDancerRows.get(rowIndex)!.partitionKey)"
+                          class="flex items-center gap-1 text-destructive px-2 py-0.5"
+                        >
+                          <TriangleAlert class="size-3 shrink-0" />
+                          <span class="truncate">{{ store.bibRangeWarnings.get(activeFirstDancerRows.get(rowIndex)!.partitionKey) }}</span>
+                        </div>
                       </div>
                     </template>
                     <template v-else>
@@ -853,25 +876,6 @@ function handleExportDownload() {
               />
             </div>
 
-            <!-- Overlap warnings -->
-            <template
-              v-if="
-                store.bibNumberingMode === 'per-category' || store.bibNumberingMode === 'per-group'
-              "
-            >
-              <!-- Overlap warnings -->
-              <div v-if="store.bibRangeWarnings.length" class="space-y-1">
-                <div
-                  v-for="(warning, i) in store.bibRangeWarnings"
-                  :key="i"
-                  class="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-400"
-                >
-                  <TriangleAlert class="size-3.5 shrink-0 mt-0.5" />
-                  <span>{{ warning }}</span>
-                </div>
-              </div>
-            </template>
-
             <div class="border-t" />
 
             <!-- Shared format options -->
@@ -926,15 +930,27 @@ function handleExportDownload() {
         </template>
 
         <template #submit="{ close }">
-          <Button
-            @click="
-              () => {
-                handleExportDownload()
-                close()
-              }
-            "
-            >Export</Button
-          >
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <Button
+              class="flex-1 sm:flex-initial"
+              @click="
+                () => {
+                  handleExportDownload()
+                  close()
+                }
+              "
+            >
+              Export
+            </Button>
+            <Tooltip v-if="store.bibRangeWarnings.size">
+              <TooltipTrigger as-child>
+                <TriangleAlert class="size-4 text-destructive" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{{ store.bibRangeWarnings.size }} bib range overlap{{ store.bibRangeWarnings.size > 1 ? 's' : '' }}</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </template>
       </DialogWithSidebar>
     </div>

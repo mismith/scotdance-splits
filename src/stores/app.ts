@@ -167,19 +167,28 @@ export const useAppStore = defineStore('app', () => {
     )
   })
 
-  // Warnings for bib range overlaps
-  const bibRangeWarnings = computed((): string[] => {
-    const warnings: string[] = []
+  // Warnings for bib range overlaps, keyed by partitionKey of each involved group
+  const bibRangeWarnings = computed((): Map<string, string> => {
+    const warnings = new Map<string, string>()
     const ranges = bibNumberingMode.value === 'per-category' ? bibCategoryRanges.value : bibGroupRanges.value
 
-    for (let i = 0; i < ranges.length - 1; i++) {
-      const current = ranges[i]
-      const next = ranges[i + 1]
-      const currentEnd = current.startBib + current.dancerCount - 1
-      if (currentEnd >= next.startBib) {
-        warnings.push(
-          `"${current.label}" (${current.startBib}-${currentEnd}) overlaps with "${next.label}" (${next.startBib})`,
-        )
+    // Check all pairs for overlap (ranges may not be in startBib order due to manual overrides)
+    for (let i = 0; i < ranges.length; i++) {
+      for (let j = i + 1; j < ranges.length; j++) {
+        const a = ranges[i]
+        const b = ranges[j]
+        const aEnd = a.startBib + a.dancerCount - 1
+        const bEnd = b.startBib + b.dancerCount - 1
+
+        if (a.startBib <= bEnd && b.startBib <= aEnd) {
+          const message = `"${a.label}" (${a.startBib}-${aEnd}) overlaps with "${b.label}" (${b.startBib}-${bEnd})`
+          if (!warnings.has(a.partitionKey)) {
+            warnings.set(a.partitionKey, message)
+          }
+          if (!warnings.has(b.partitionKey)) {
+            warnings.set(b.partitionKey, message)
+          }
+        }
       }
     }
 
