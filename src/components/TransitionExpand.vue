@@ -6,7 +6,7 @@ interface Props {
   group?: boolean
   orientation?: 'vertical' | 'horizontal'
   tag?: string
-  class?: any
+  class?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {

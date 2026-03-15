@@ -13,7 +13,7 @@ interface Props {
   showRowHeaders?: boolean
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   showHeaders: true,
   showRowHeaders: true,
 })

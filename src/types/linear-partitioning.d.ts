@@ -1,4 +1,4 @@
 declare module 'linear-partitioning' {
-  function partition(sequence: number[], k: number): number[][]
+  function partition(_sequence: number[], _k: number): number[][]
   export = partition
 }
