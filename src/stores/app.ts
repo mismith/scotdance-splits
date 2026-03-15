@@ -14,11 +14,11 @@ import {
   isSynthesisMode,
 } from '@/lib/input'
 import {
-  type BibGroupRange,
   type BibNumberingMode,
+  type BibRange,
+  DEFAULT_MIN_BIB,
   calculateBibCategoryRanges,
   calculateBibGroupRanges,
-  calculateDefaultMinBib,
   getPartitionKey,
 } from '@/lib/output'
 import type { Cell } from '@/lib/types'
@@ -68,7 +68,7 @@ export const useAppStore = defineStore('app', () => {
   const isDesktop = useMediaQuery('(min-width: 768px)')
 
   // Export configuration
-  const minBibNumber = ref<number>(100)
+  const minBibNumber = ref<number>(DEFAULT_MIN_BIB)
   const bibNumberingMode = useLocalStorage<BibNumberingMode>('bibNumberingMode', 'global')
   const bibGroupRangeOverrides = ref<Record<string, number>>({})
   const bibCategoryRangeOverrides = ref<Record<string, number>>({})
@@ -102,31 +102,33 @@ export const useAppStore = defineStore('app', () => {
     return processedDancers.value.length
   })
 
+  // Shared: resolved data rows and codes for bib range calculations
+  const resolvedDataRowsAndCodes = computed(() => {
+    if (!inputCSV.value) return null
+    const rawData = inputCSV.value.map((row) => row.map((cell) => cell.value))
+    const dataRows = hasHeaderRow.value ? rawData.slice(1) : rawData
+    const codes = resolvedCodes.value.length
+      ? resolvedCodes.value
+      : dataRows.map((row) => row[colIndexes.value.code] ?? '')
+    return { dataRows, codes }
+  })
+
   // Computed bib group ranges for per-group mode
-  const bibGroupRanges = computed((): BibGroupRange[] => {
-    if (!categories.value || !partitionedCategories.value) return []
+  const bibGroupRanges = computed((): BibRange[] => {
+    if (!categories.value || !partitionedCategories.value || !resolvedDataRowsAndCodes.value) {
+      return []
+    }
 
-    // Build partitions from current state
     const parts = createPartitions(categories.value, partitionedCategories.value)
-
-    // Get sorted flat list of partitions
     const sortedPartitions = CATEGORY_ORDER
       .filter((code) => parts[code])
       .flatMap((code) => parts[code].sort((a, b) => a.ageRange[0] - b.ageRange[0]))
 
-    // Count dancers per partition from raw CSV data
+    const { codes } = resolvedDataRowsAndCodes.value
     const dancerCounts = new Map<string, number>()
-    const inputData = inputCSV.value
-    if (inputData) {
-      const rawData = inputData.map((row) => row.map((cell) => cell.value))
-      const dataRows = hasHeaderRow.value ? rawData.slice(1) : rawData
-      const codes = resolvedCodes.value.length ? resolvedCodes.value : dataRows.map((row) => row[colIndexes.value.code] ?? '')
-
-      for (const partition of sortedPartitions) {
-        const key = getPartitionKey(partition.categoryCode, partition.ageRange)
-        const count = codes.filter((code) => partition.codes.includes(code)).length
-        dancerCounts.set(key, count)
-      }
+    for (const partition of sortedPartitions) {
+      const key = getPartitionKey(partition.categoryCode, partition.ageRange)
+      dancerCounts.set(key, codes.filter((code) => partition.codes.includes(code)).length)
     }
 
     return calculateBibGroupRanges(
@@ -139,23 +141,15 @@ export const useAppStore = defineStore('app', () => {
   })
 
   // Computed bib category ranges for per-category mode
-  const bibCategoryRanges = computed((): BibGroupRange[] => {
-    if (!categories.value) return []
+  const bibCategoryRanges = computed((): BibRange[] => {
+    if (!categories.value || !resolvedDataRowsAndCodes.value) return []
 
     const presentCategories = CATEGORY_ORDER.filter((code) => categories.value![code])
 
-    // Count dancers per category from raw CSV data
+    const { codes } = resolvedDataRowsAndCodes.value
     const dancerCounts = new Map<string, number>()
-    const inputData = inputCSV.value
-    if (inputData) {
-      const rawData = inputData.map((row) => row.map((cell) => cell.value))
-      const dataRows = hasHeaderRow.value ? rawData.slice(1) : rawData
-      const codes = resolvedCodes.value.length ? resolvedCodes.value : dataRows.map((row) => row[colIndexes.value.code] ?? '')
-
-      for (const categoryCode of presentCategories) {
-        const count = codes.filter((code) => code.startsWith(categoryCode)).length
-        dancerCounts.set(categoryCode, count)
-      }
+    for (const categoryCode of presentCategories) {
+      dancerCounts.set(categoryCode, codes.filter((code) => code.startsWith(categoryCode)).length)
     }
 
     return calculateBibCategoryRanges(
@@ -336,14 +330,11 @@ export const useAppStore = defineStore('app', () => {
 
   function updateColIndexes(indexes: Record<string, number>) {
     colIndexes.value = indexes
-    // Errors will automatically recompute via the computed property
 
     // Reprocess categories with new column mappings
     if (inputCSV.value && inputCSV.value.length > 0) {
       const cellData = inputCSV.value
-      // Extract raw string values for processing
       const rawData = cellData.map((row) => row.map((cell) => cell.value))
-
       const dataRows = hasHeaderRow.value ? rawData.slice(1) : rawData
 
       // Build resolved codes (handles both direct and synthesis modes)
@@ -357,9 +348,7 @@ export const useAppStore = defineStore('app', () => {
       const partitionedCats = autoPartitionCategories(cats)
 
       setProcessedData(cats, partitionedCats)
-
-      const defaultMinBib = calculateDefaultMinBib()
-      updateExportSettings({ minBibNumber: defaultMinBib })
+      minBibNumber.value = DEFAULT_MIN_BIB
     }
   }
 
@@ -367,24 +356,6 @@ export const useAppStore = defineStore('app', () => {
     competitionDate.value = dateStr
     // Rebuild resolved codes with new competition date
     updateColIndexes(colIndexes.value)
-  }
-
-  function setBibGroupStartOverride(partitionKey: string, startBib: number) {
-    bibGroupRangeOverrides.value = { ...bibGroupRangeOverrides.value, [partitionKey]: startBib }
-  }
-
-  function clearBibGroupStartOverride(partitionKey: string) {
-    const { [partitionKey]: _, ...rest } = bibGroupRangeOverrides.value
-    bibGroupRangeOverrides.value = rest
-  }
-
-  function setBibCategoryStartOverride(categoryCode: string, startBib: number) {
-    bibCategoryRangeOverrides.value = { ...bibCategoryRangeOverrides.value, [categoryCode]: startBib }
-  }
-
-  function clearBibCategoryStartOverride(categoryCode: string) {
-    const { [categoryCode]: _, ...rest } = bibCategoryRangeOverrides.value
-    bibCategoryRangeOverrides.value = rest
   }
 
   function updateExportSettings(settings: {
@@ -523,10 +494,6 @@ export const useAppStore = defineStore('app', () => {
     hasManualAdjustments,
     setManualPartitions,
     clearManualPartitions,
-    setBibGroupStartOverride,
-    clearBibGroupStartOverride,
-    setBibCategoryStartOverride,
-    clearBibCategoryStartOverride,
     loadFile,
   }
 })

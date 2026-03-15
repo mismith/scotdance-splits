@@ -219,70 +219,17 @@ function isGroupHeaderRow(row: { value: string }[]) {
   return row[0]?.value && row.slice(1).every((cell) => !cell.value)
 }
 
-// Map first-dancer row indices to their BibGroupRange (for per-group mode interactive editing)
-const exportPreviewFirstDancerRows = computed(() => {
-  const map = new Map<number, (typeof store.bibGroupRanges)[number]>()
-  if (store.bibNumberingMode !== 'per-group') return map
-
-  const ranges = store.bibGroupRanges
-  let rangeIndex = 0
-  let expectingFirstDancer = false
-
-  exportPreviewData.value.forEach((row, rowIndex) => {
-    if (isGroupHeaderRow(row) && rangeIndex < ranges.length) {
-      expectingFirstDancer = true
-    } else if (expectingFirstDancer && row.some((cell) => cell.value)) {
-      map.set(rowIndex, ranges[rangeIndex])
-      rangeIndex++
-      expectingFirstDancer = false
-    }
-  })
-
-  return map
+// Active bib ranges and block size for whichever mode is active
+const activeRanges = computed(() => {
+  if (store.bibNumberingMode === 'per-group') return store.bibGroupRanges
+  if (store.bibNumberingMode === 'per-category') return store.bibCategoryRanges
+  return []
 })
 
-// Map first-dancer row indices to their BibGroupRange for per-category mode
-const exportPreviewFirstCategoryRows = computed(() => {
-  const map = new Map<number, (typeof store.bibCategoryRanges)[number]>()
-  if (store.bibNumberingMode !== 'per-category') return map
-
-  const ranges = store.bibCategoryRanges
-  const rangeMap = new Map(ranges.map((r) => [r.categoryCode, r]))
-  const seenCategories = new Set<string>()
-  let pendingCategoryCode = ''
-
-  exportPreviewData.value.forEach((row, rowIndex) => {
-    if (isGroupHeaderRow(row)) {
-      const headerText = row[0]?.value || ''
-      const matchingRange = ranges.find((r) => headerText.startsWith(r.label))
-      if (matchingRange && !seenCategories.has(matchingRange.categoryCode)) {
-        pendingCategoryCode = matchingRange.categoryCode
-      }
-    } else if (pendingCategoryCode && row.some((cell) => cell.value)) {
-      const range = rangeMap.get(pendingCategoryCode)
-      if (range) {
-        map.set(rowIndex, range)
-        seenCategories.add(pendingCategoryCode)
-      }
-      pendingCategoryCode = ''
-    }
-  })
-
-  return map
-})
-
-// Active block size for current bib mode
 const activeBlockSize = computed(() => {
   if (store.bibNumberingMode === 'per-category') return store.bibCategoryBlockSize
   if (store.bibNumberingMode === 'per-group') return store.bibGroupBlockSize
   return 10
-})
-
-// Unified first-dancer-row map for whichever bib mode is active
-const activeFirstDancerRows = computed(() => {
-  if (store.bibNumberingMode === 'per-group') return exportPreviewFirstDancerRows.value
-  if (store.bibNumberingMode === 'per-category') return exportPreviewFirstCategoryRows.value
-  return new Map<number, (typeof store.bibGroupRanges)[number]>()
 })
 
 const activeBibOverrides = computed(() => {
@@ -291,16 +238,71 @@ const activeBibOverrides = computed(() => {
   return {}
 })
 
+// Map first-dancer row indices to their BibRange for interactive editing
+const activeFirstDancerRows = computed(() => {
+  const map = new Map<number, (typeof activeRanges.value)[number]>()
+  const ranges = activeRanges.value
+  if (ranges.length === 0) return map
+
+  if (store.bibNumberingMode === 'per-group') {
+    // Per-group: ranges appear in partition order, one per group header
+    let rangeIndex = 0
+    let expectingFirstDancer = false
+
+    exportPreviewData.value.forEach((row, rowIndex) => {
+      if (isGroupHeaderRow(row) && rangeIndex < ranges.length) {
+        expectingFirstDancer = true
+      } else if (expectingFirstDancer && row.some((cell) => cell.value)) {
+        map.set(rowIndex, ranges[rangeIndex])
+        rangeIndex++
+        expectingFirstDancer = false
+      }
+    })
+  } else if (store.bibNumberingMode === 'per-category') {
+    // Per-category: only the first group header per category gets a range
+    const rangeMap = new Map(ranges.map((r) => [r.categoryCode, r]))
+    const seenCategories = new Set<string>()
+    let pendingCategoryCode = ''
+
+    exportPreviewData.value.forEach((row, rowIndex) => {
+      if (isGroupHeaderRow(row)) {
+        const headerText = row[0]?.value || ''
+        const matchingRange = ranges.find((r) => headerText.startsWith(r.label))
+        if (matchingRange && !seenCategories.has(matchingRange.categoryCode)) {
+          pendingCategoryCode = matchingRange.categoryCode
+        }
+      } else if (pendingCategoryCode && row.some((cell) => cell.value)) {
+        const range = rangeMap.get(pendingCategoryCode)
+        if (range) {
+          map.set(rowIndex, range)
+          seenCategories.add(pendingCategoryCode)
+        }
+        pendingCategoryCode = ''
+      }
+    })
+  }
+
+  return map
+})
+
 function setActiveBibOverride(partitionKey: string, startBib: number) {
-  if (store.bibNumberingMode === 'per-group') store.setBibGroupStartOverride(partitionKey, startBib)
-  else if (store.bibNumberingMode === 'per-category')
-    store.setBibCategoryStartOverride(partitionKey, startBib)
+  if (store.bibNumberingMode === 'per-group') {
+    store.bibGroupRangeOverrides = { ...store.bibGroupRangeOverrides, [partitionKey]: startBib }
+  } else if (store.bibNumberingMode === 'per-category') {
+    store.bibCategoryRangeOverrides = { ...store.bibCategoryRangeOverrides, [partitionKey]: startBib }
+  }
 }
 
 function clearActiveBibOverride(partitionKey: string) {
-  if (store.bibNumberingMode === 'per-group') store.clearBibGroupStartOverride(partitionKey)
-  else if (store.bibNumberingMode === 'per-category')
-    store.clearBibCategoryStartOverride(partitionKey)
+  if (store.bibNumberingMode === 'per-group') {
+    store.bibGroupRangeOverrides = Object.fromEntries(
+      Object.entries(store.bibGroupRangeOverrides).filter(([key]) => key !== partitionKey),
+    )
+  } else if (store.bibNumberingMode === 'per-category') {
+    store.bibCategoryRangeOverrides = Object.fromEntries(
+      Object.entries(store.bibCategoryRangeOverrides).filter(([key]) => key !== partitionKey),
+    )
+  }
 }
 
 async function handleFileSelected(file: File) {

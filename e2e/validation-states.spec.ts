@@ -1,6 +1,6 @@
-import { test, expect, type Page, type TestInfo } from '@playwright/test'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { type Page, type TestInfo, expect, test } from '@playwright/test'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const FIXTURES = path.join(__dirname, 'fixtures')
