@@ -4,14 +4,22 @@ import { parse } from 'papaparse'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import {
+  CATEGORY_ORDER,
   SCRUTINEERING_CODE_REGEX,
   autoPartitionCategories,
   buildResolvedCodes,
   categorizeData,
+  createPartitions,
   detectColumnMapping,
   isSynthesisMode,
 } from '@/lib/input'
-import { calculateDefaultMaxBib } from '@/lib/output'
+import {
+  type BibGroupRange,
+  type BibNumberingMode,
+  calculateBibGroupRanges,
+  calculateDefaultMinBib,
+  getPartitionKey,
+} from '@/lib/output'
 import type { Cell } from '@/lib/types'
 import {
   type ValidationIssue,
@@ -59,7 +67,9 @@ export const useAppStore = defineStore('app', () => {
   const isDesktop = useMediaQuery('(min-width: 768px)')
 
   // Export configuration
-  const maxBibNumber = ref<number>(100)
+  const minBibNumber = ref<number>(100)
+  const bibNumberingMode = useLocalStorage<BibNumberingMode>('bibNumberingMode', 'global')
+  const bibGroupRangeOverrides = ref<Record<string, number>>({})
   const isPrintingYears = useLocalStorage('isPrintingYears', true)
   const includeCountry = useLocalStorage('includeCountry', false)
   const combineNames = useLocalStorage('combineNames', false)
@@ -86,6 +96,60 @@ export const useAppStore = defineStore('app', () => {
 
   const totalDancers = computed(() => {
     return processedDancers.value.length
+  })
+
+  // Computed bib group ranges for per-group mode
+  const bibGroupRanges = computed((): BibGroupRange[] => {
+    if (!categories.value || !partitionedCategories.value) return []
+
+    // Build partitions from current state
+    const parts = createPartitions(categories.value, partitionedCategories.value)
+
+    // Get sorted flat list of partitions
+    const sortedPartitions = CATEGORY_ORDER
+      .filter((code) => parts[code])
+      .flatMap((code) => parts[code].sort((a, b) => a.ageRange[0] - b.ageRange[0]))
+
+    // Count dancers per partition from raw CSV data
+    const dancerCounts = new Map<string, number>()
+    const inputData = inputCSV.value
+    if (inputData) {
+      const rawData = inputData.map((row) => row.map((cell) => cell.value))
+      const dataRows = hasHeaderRow.value ? rawData.slice(1) : rawData
+      const codes = resolvedCodes.value.length ? resolvedCodes.value : dataRows.map((row) => row[colIndexes.value.code] ?? '')
+
+      for (const partition of sortedPartitions) {
+        const key = getPartitionKey(partition.categoryCode, partition.ageRange)
+        const count = codes.filter((code) => partition.codes.includes(code)).length
+        dancerCounts.set(key, count)
+      }
+    }
+
+    return calculateBibGroupRanges(
+      sortedPartitions,
+      dancerCounts,
+      bibGroupRangeOverrides.value,
+      minBibNumber.value,
+    )
+  })
+
+  // Warnings for bib range overlaps
+  const bibRangeWarnings = computed((): string[] => {
+    const warnings: string[] = []
+    const ranges = bibGroupRanges.value
+
+    for (let i = 0; i < ranges.length - 1; i++) {
+      const current = ranges[i]
+      const next = ranges[i + 1]
+      const currentEnd = current.startBib + current.dancerCount - 1
+      if (currentEnd >= next.startBib) {
+        warnings.push(
+          `"${current.label}" (${current.startBib}-${currentEnd}) overlaps with "${next.label}" (${next.startBib})`,
+        )
+      }
+    }
+
+    return warnings
   })
 
   // Reactively layer cell validation onto raw CSV data
@@ -221,6 +285,7 @@ export const useAppStore = defineStore('app', () => {
     inputHeaders.value = []
     colIndexes.value = {}
     manualPartitions.value = {}
+    bibGroupRangeOverrides.value = {}
     resolvedCodes.value = []
     competitionDate.value = undefined
   }
@@ -249,8 +314,8 @@ export const useAppStore = defineStore('app', () => {
 
       setProcessedData(cats, partitionedCats)
 
-      const defaultMaxBib = calculateDefaultMaxBib(rawData, indexes, hasHeaderRow.value)
-      updateExportSettings({ maxBibNumber: defaultMaxBib })
+      const defaultMinBib = calculateDefaultMinBib()
+      updateExportSettings({ minBibNumber: defaultMinBib })
     }
   }
 
@@ -260,14 +325,27 @@ export const useAppStore = defineStore('app', () => {
     updateColIndexes(colIndexes.value)
   }
 
+  function setBibGroupStartOverride(partitionKey: string, startBib: number) {
+    bibGroupRangeOverrides.value = { ...bibGroupRangeOverrides.value, [partitionKey]: startBib }
+  }
+
+  function clearBibGroupStartOverride(partitionKey: string) {
+    const { [partitionKey]: _, ...rest } = bibGroupRangeOverrides.value
+    bibGroupRangeOverrides.value = rest
+  }
+
   function updateExportSettings(settings: {
-    maxBibNumber?: number
+    minBibNumber?: number
+    bibNumberingMode?: BibNumberingMode
     isPrintingYears?: boolean
     includeCountry?: boolean
     combineNames?: boolean
   }) {
-    if (settings.maxBibNumber !== undefined) {
-      maxBibNumber.value = settings.maxBibNumber
+    if (settings.minBibNumber !== undefined) {
+      minBibNumber.value = settings.minBibNumber
+    }
+    if (settings.bibNumberingMode !== undefined) {
+      bibNumberingMode.value = settings.bibNumberingMode
     }
     if (settings.isPrintingYears !== undefined) {
       isPrintingYears.value = settings.isPrintingYears
@@ -355,7 +433,11 @@ export const useAppStore = defineStore('app', () => {
     hasHeaderRow,
     inputHeaders,
     colIndexes,
-    maxBibNumber,
+    minBibNumber,
+    bibNumberingMode,
+    bibGroupRanges,
+    bibGroupRangeOverrides,
+    bibRangeWarnings,
     isPrintingYears,
     includeCountry,
     combineNames,
@@ -384,6 +466,8 @@ export const useAppStore = defineStore('app', () => {
     hasManualAdjustments,
     setManualPartitions,
     clearManualPartitions,
+    setBibGroupStartOverride,
+    clearBibGroupStartOverride,
     loadFile,
   }
 })

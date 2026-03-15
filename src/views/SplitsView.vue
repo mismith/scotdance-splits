@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { useEventListener, useLocalStorage } from '@vueuse/core'
-import { AlertTriangle, Table, TableProperties, Users } from 'lucide-vue-next'
+import {
+  AlertTriangle,
+  Delete,
+  Table,
+  TableProperties,
+  TriangleAlert,
+  Users,
+} from 'lucide-vue-next'
 import { computed, nextTick, onMounted, provide, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import { startViewTransition } from 'vue-view-transitions'
@@ -23,6 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   CATEGORY_CODE_NAMES,
   INPUT_COLUMNS,
@@ -31,7 +39,13 @@ import {
   createPartitions,
   fetchDemoCSV,
 } from '@/lib/input'
-import { type ExportSettings, convertToCSV, downloadCSV, generateExportData } from '@/lib/output'
+import {
+  BIB_BLOCK_SIZE,
+  type ExportSettings,
+  convertToCSV,
+  downloadCSV,
+  generateExportData,
+} from '@/lib/output'
 
 const store = useAppStore()
 const route = useRoute()
@@ -183,7 +197,9 @@ const exportPreviewData = computed(() => {
   const rawData = store.validatedCSV.map((row) => row.map((cell) => cell.value))
 
   const settings: ExportSettings = {
-    maxBibNumber: store.maxBibNumber,
+    minBibNumber: store.minBibNumber,
+    bibNumberingMode: store.bibNumberingMode,
+    bibGroupRanges: store.bibGroupRanges,
     isPrintingYears: store.isPrintingYears,
     includeCountry: store.includeCountry,
     combineNames: store.combineNames,
@@ -202,6 +218,32 @@ const exportPreviewData = computed(() => {
   return exportData.map((row) =>
     row.map((value) => ({ value: String(value), error: false, warning: false })),
   )
+})
+
+function isGroupHeaderRow(row: { value: string }[]) {
+  return row[0]?.value && row.slice(1).every((cell) => !cell.value)
+}
+
+// Map first-dancer row indices to their BibGroupRange (for per-group mode interactive editing)
+const exportPreviewFirstDancerRows = computed(() => {
+  const map = new Map<number, (typeof store.bibGroupRanges)[number]>()
+  if (store.bibNumberingMode !== 'per-group') return map
+
+  const ranges = store.bibGroupRanges
+  let rangeIndex = 0
+  let expectingFirstDancer = false
+
+  exportPreviewData.value.forEach((row, rowIndex) => {
+    if (isGroupHeaderRow(row) && rangeIndex < ranges.length) {
+      expectingFirstDancer = true
+    } else if (expectingFirstDancer && row.some((cell) => cell.value)) {
+      map.set(rowIndex, ranges[rangeIndex])
+      rangeIndex++
+      expectingFirstDancer = false
+    }
+  })
+
+  return map
 })
 
 async function handleFileSelected(file: File) {
@@ -235,218 +277,194 @@ function handleExportDownload() {
     @file-selected="handleFileSelected"
     @file-rejected="handleFileRejected"
   >
-  <div class="flex flex-col min-h-screen">
-    <!-- Fixed Toolbar -->
-    <header
-      class="fixed top-0 left-0 right-0 z-50 grid grid-cols-[1fr_auto_1fr] items-center px-4 h-16 bg-gradient-to-b from-background to-transparent pointer-events-none *:pointer-events-auto"
-      :class="'[view-transition-name:header]'"
-    >
-      <!-- Left side -->
-      <div class="flex items-center gap-1 justify-self-start">
-        <Button
-          :variant="hasDismissedIssues ? undefined : 'outline'"
-          :class="[
-            'backdrop-blur',
-            hasDismissedIssues
-              ? hasErrors
-                ? 'bg-red-600 hover:bg-red-700 text-white backdrop-blur-lg'
-                : 'bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30 backdrop-blur-lg'
-              : '',
-            hasDismissedIssues && '[view-transition-name:validation-issues]',
-          ]"
-          @click="hasDismissedIssues ? handleReviewErrors() : (showColumnMappingSheet = true)"
-        >
-          <AlertTriangle v-if="hasDismissedIssues" class="size-4" />
-          <TableProperties v-else class="h-4 w-4" />
-          <template v-if="hasDismissedIssues">
-            {{ allValidationIssues.length }} issue{{ allValidationIssues.length !== 1 ? 's' : '' }}
-          </template>
-          <template v-else>Fields</template>
-        </Button>
-      </div>
-
-      <!-- Center - Logo -->
-      <div class="flex flex-col items-center justify-self-center">
-        <Button variant="outline" as-child>
-          <router-link
-            to="/"
-            class="font-semibold text-primary backdrop-blur hover:tracking-widest duration-500 transition-all"
-          >
-            <div class="flex items-center gap-2">
-              <img
-                src="/touchicon.png"
-                alt="Splits Logo"
-                class="size-4"
-                :class="'[view-transition-name:splits-logo]'"
-              />
-              <span
-                class="text-sm font-semibold text-primary"
-                :class="'[view-transition-name:splits-name]'"
-              >
-                Splits
-              </span>
-            </div>
-          </router-link>
-        </Button>
-        <Badge
-          v-if="isDemoMode"
-          variant="accent"
-          class="text-xs -mt-1 -mb-5 bg-accent backdrop-blur-md"
-        >
-          Demo
-        </Badge>
-      </div>
-
-      <!-- Right side -->
-      <div class="hidden md:flex items-center gap-1 justify-self-end">
-        <Button
-          :variant="showDancers ? 'default' : 'outline'"
-          class="backdrop-blur"
-          @click="toggleDancers"
-        >
-          <Users class="h-4 w-4" />
-          Dancers
-        </Button>
-      </div>
-    </header>
-
-    <!-- Main content with top padding to account for fixed header -->
-    <main class="pt-16 pb-16 flex-auto">
-      <h1 class="sr-only">Age Group Splits</h1>
-      <div
-        v-if="!store.hasData"
-        class="flex items-center justify-center py-20 text-muted-foreground"
+    <div class="flex flex-col min-h-screen">
+      <!-- Fixed Toolbar -->
+      <header
+        class="fixed top-0 left-0 right-0 z-50 grid grid-cols-[1fr_auto_1fr] items-center px-4 h-16 bg-gradient-to-b from-background to-transparent pointer-events-none *:pointer-events-auto"
+        :class="'[view-transition-name:header]'"
       >
-        <div class="text-center">
-          <Table class="h-16 w-16 mx-auto mb-4 opacity-50" />
-          <h2 class="text-lg font-semibold mb-2">No data to display</h2>
-          <p class="text-sm">Upload a CSV file to see age group splits</p>
+        <!-- Left side -->
+        <div class="flex items-center gap-1 justify-self-start">
+          <Button
+            :variant="hasDismissedIssues ? undefined : 'outline'"
+            :class="[
+              'backdrop-blur',
+              hasDismissedIssues
+                ? hasErrors
+                  ? 'bg-red-600 hover:bg-red-700 text-white backdrop-blur-lg'
+                  : 'bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30 backdrop-blur-lg'
+                : '',
+              hasDismissedIssues && '[view-transition-name:validation-issues]',
+            ]"
+            @click="hasDismissedIssues ? handleReviewErrors() : (showColumnMappingSheet = true)"
+          >
+            <AlertTriangle v-if="hasDismissedIssues" class="size-4" />
+            <TableProperties v-else class="h-4 w-4" />
+            <template v-if="hasDismissedIssues">
+              {{ allValidationIssues.length }} issue{{
+                allValidationIssues.length !== 1 ? 's' : ''
+              }}
+            </template>
+            <template v-else>Fields</template>
+          </Button>
         </div>
-      </div>
 
-      <div v-else class="px-3 py-4 md:px-4 space-y-4">
-        <CategoryCard
-          v-for="categoryCode in Object.keys(CATEGORY_CODE_NAMES).filter(
-            (c) => store.categories?.[c],
-          )"
-          :key="categoryCode"
-          ref="categoryCardRef"
-          :name="CATEGORY_CODE_NAMES[categoryCode]"
-          :ages="store.categories?.[categoryCode] || {}"
-          @partition="handlePartition(categoryCode, $event)"
+        <!-- Center - Logo -->
+        <div class="flex flex-col items-center justify-self-center">
+          <Button variant="outline" as-child>
+            <router-link
+              to="/"
+              class="font-semibold text-primary backdrop-blur hover:tracking-widest duration-500 transition-all"
+            >
+              <div class="flex items-center gap-2">
+                <img
+                  src="/touchicon.png"
+                  alt="Splits Logo"
+                  class="size-4"
+                  :class="'[view-transition-name:splits-logo]'"
+                />
+                <span
+                  class="text-sm font-semibold text-primary"
+                  :class="'[view-transition-name:splits-name]'"
+                >
+                  Splits
+                </span>
+              </div>
+            </router-link>
+          </Button>
+          <Badge
+            v-if="isDemoMode"
+            variant="accent"
+            class="text-xs -mt-1 -mb-5 bg-accent backdrop-blur-md"
+          >
+            Demo
+          </Badge>
+        </div>
+
+        <!-- Right side -->
+        <div class="hidden md:flex items-center gap-1 justify-self-end">
+          <Button
+            :variant="showDancers ? 'default' : 'outline'"
+            class="backdrop-blur"
+            @click="toggleDancers"
+          >
+            <Users class="h-4 w-4" />
+            Dancers
+          </Button>
+        </div>
+      </header>
+
+      <!-- Main content with top padding to account for fixed header -->
+      <main class="pt-16 pb-16 flex-auto">
+        <h1 class="sr-only">Age Group Splits</h1>
+        <div
+          v-if="!store.hasData"
+          class="flex items-center justify-center py-20 text-muted-foreground"
+        >
+          <div class="text-center">
+            <Table class="h-16 w-16 mx-auto mb-4 opacity-50" />
+            <h2 class="text-lg font-semibold mb-2">No data to display</h2>
+            <p class="text-sm">Upload a CSV file to see age group splits</p>
+          </div>
+        </div>
+
+        <div v-else class="px-3 py-4 md:px-4 space-y-4">
+          <CategoryCard
+            v-for="categoryCode in Object.keys(CATEGORY_CODE_NAMES).filter(
+              (c) => store.categories?.[c],
+            )"
+            :key="categoryCode"
+            ref="categoryCardRef"
+            :name="CATEGORY_CODE_NAMES[categoryCode]"
+            :ages="store.categories?.[categoryCode] || {}"
+            @partition="handlePartition(categoryCode, $event)"
+          />
+        </div>
+      </main>
+
+      <!-- Validation Banner (floats independently) -->
+      <div
+        v-if="!validationDismissed && allValidationIssues.length > 0"
+        class="fixed bottom-0 left-0 right-0 z-50 px-2 pb-2 md:pb-8 pointer-events-none"
+      >
+        <ValidationBanner
+          :issues="allValidationIssues"
+          class="[view-transition-name:validation-issues]"
+          @review="handleReviewErrors"
+          @dismiss="dismissValidationErrors"
         />
       </div>
-    </main>
 
-    <!-- Validation Banner (floats independently) -->
-    <div
-      v-if="!validationDismissed && allValidationIssues.length > 0"
-      class="fixed bottom-0 left-0 right-0 z-50 px-2 pb-2 md:pb-8 pointer-events-none"
-    >
-      <ValidationBanner
-        :issues="allValidationIssues"
-        class="[view-transition-name:validation-issues]"
-        @review="handleReviewErrors"
-        @dismiss="dismissValidationErrors"
-      />
-    </div>
+      <!-- Fixed Footer (always visible when data loaded, buttons fade in) -->
+      <footer
+        v-if="store.hasData"
+        class="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-[1fr_auto_1fr] items-center px-4 h-16 bg-gradient-to-t from-background to-transparent pointer-events-none *:pointer-events-auto"
+        :class="'[view-transition-name:footer]'"
+      >
+        <div />
+        <div />
 
-    <!-- Fixed Footer (always visible when data loaded, buttons fade in) -->
-    <footer
-      v-if="store.hasData"
-      class="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-[1fr_auto_1fr] items-center px-4 h-16 bg-gradient-to-t from-background to-transparent pointer-events-none *:pointer-events-auto"
-      :class="'[view-transition-name:footer]'"
-    >
-      <div />
-      <div />
+        <!-- Right: Export -->
+        <div class="justify-self-end">
+          <Button size="lg" class="backdrop-blur-lg" @click="showExportSettingsSheet = true">
+            Next &rarr;
+          </Button>
+        </div>
+      </footer>
 
-      <!-- Right: Export -->
-      <div class="justify-self-end">
-        <Button size="lg" class="backdrop-blur-lg" @click="showExportSettingsSheet = true">
-          Next &rarr;
-        </Button>
-      </div>
-    </footer>
-
-    <!-- Column mapping settings dialog -->
-    <DialogWithSidebar
-      v-model:open="showColumnMappingSheet"
-      v-model:show-sidebar="columnMappingShowSidebar"
-      title="Fields"
+      <!-- Column mapping settings dialog -->
+      <DialogWithSidebar
+        v-model:open="showColumnMappingSheet"
+        v-model:show-sidebar="columnMappingShowSidebar"
+        title="Fields"
         description="Your imported dancer registration data. Column mappings can be adjusted as needed."
-    >
-      <CellTable
-        :data="store.hasHeaderRow ? (store.validatedCSV || []).slice(1) : store.validatedCSV || []"
-        :headers="store.hasHeaderRow ? store.inputHeaders : undefined"
-        wrapper-class="border rounded-3xl h-full bg-muted/50"
-      />
+      >
+        <CellTable
+          :data="
+            store.hasHeaderRow ? (store.validatedCSV || []).slice(1) : store.validatedCSV || []
+          "
+          :headers="store.hasHeaderRow ? store.inputHeaders : undefined"
+          wrapper-class="border rounded-3xl h-full bg-muted/50"
+        />
 
-      <template #sidebar>
-        <div class="space-y-4">
-          <div class="space-y-2">
-            <Label for="header-row">Header row</Label>
-            <label
-              class="border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-full items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-            >
-              <span>First row is headers</span>
-              <Switch
-                id="header-row"
-                :model-value="store.hasHeaderRow"
-                @update:model-value="handleHeaderRowToggle"
-              />
-            </label>
-          </div>
+        <template #sidebar>
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <Label for="header-row">Header row</Label>
+              <label
+                class="border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-full items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+              >
+                <span>First row is headers</span>
+                <Switch
+                  id="header-row"
+                  :model-value="store.hasHeaderRow"
+                  @update:model-value="handleHeaderRowToggle"
+                />
+              </label>
+            </div>
 
-          <!-- Code resolution card -->
-          <div
+            <!-- Code resolution card -->
+            <div
               :class="
                 store.colIndexes.code === -1
                   ? 'rounded-xl border p-3 space-y-3 ' +
                     (store.synthesisMode ? 'border-accent bg-accent/5' : '')
                   : 'space-y-3'
               "
-          >
-            <!-- Code column select -->
-            <div class="space-y-2">
-              <Label
-                for="code"
-                :class="{
-                  'text-destructive': !isFieldValid('code'),
-                }"
-              >
-                {{ codeColumn.name }}{{ !store.synthesisMode ? ' *' : '' }}
-              </Label>
-              <Select
-                :model-value="(store.inputHeaders[store.colIndexes.code] || 'none') as string"
-                @update:model-value="updateColIndex('code', String($event))"
-              >
-                <SelectTrigger class="w-full">
-                  <SelectValue placeholder="Select column..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectSeparator />
-                  <SelectItem v-for="header in store.inputHeaders" :key="header" :value="header">
-                    {{ header }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <!-- Synthesis section (only when code column is unmapped) -->
-            <template v-if="store.colIndexes.code === -1">
-              <div class="flex items-center gap-3">
-                <div class="flex-1 border-t" />
-                <span class="text-muted-foreground text-xs">or</span>
-                <div class="flex-1 border-t" />
-              </div>
-
-              <!-- Category -->
+            >
+              <!-- Code column select -->
               <div class="space-y-2">
-                <Label for="category">Category</Label>
+                <Label
+                  for="code"
+                  :class="{
+                    'text-destructive': !isFieldValid('code'),
+                  }"
+                >
+                  {{ codeColumn.name }}{{ !store.synthesisMode ? ' *' : '' }}
+                </Label>
                 <Select
-                  :model-value="(store.inputHeaders[store.colIndexes.category] || 'none') as string"
-                  @update:model-value="updateColIndex('category', String($event))"
+                  :model-value="(store.inputHeaders[store.colIndexes.code] || 'none') as string"
+                  @update:model-value="updateColIndex('code', String($event))"
                 >
                   <SelectTrigger class="w-full">
                     <SelectValue placeholder="Select column..." />
@@ -461,47 +479,22 @@ function handleExportDownload() {
                 </Select>
               </div>
 
-              <!-- Age / Birthday card -->
-              <div class="rounded-lg border p-3 space-y-3">
-                <!-- Age -->
-                <div class="space-y-2">
-                  <Label for="age">Age</Label>
-                  <Select
-                    :model-value="(store.inputHeaders[store.colIndexes.age] || 'none') as string"
-                    @update:model-value="updateColIndex('age', String($event))"
-                  >
-                    <SelectTrigger class="w-full">
-                      <SelectValue placeholder="Select column..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      <SelectSeparator />
-                      <SelectItem
-                        v-for="header in store.inputHeaders"
-                        :key="header"
-                        :value="header"
-                      >
-                        {{ header }}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <!-- "or" divider -->
+              <!-- Synthesis section (only when code column is unmapped) -->
+              <template v-if="store.colIndexes.code === -1">
                 <div class="flex items-center gap-3">
                   <div class="flex-1 border-t" />
                   <span class="text-muted-foreground text-xs">or</span>
                   <div class="flex-1 border-t" />
                 </div>
 
-                <!-- Birthday -->
+                <!-- Category -->
                 <div class="space-y-2">
-                  <Label for="birthday">Birthday</Label>
+                  <Label for="category">Category</Label>
                   <Select
                     :model-value="
-                      (store.inputHeaders[store.colIndexes.birthday] || 'none') as string
+                      (store.inputHeaders[store.colIndexes.category] || 'none') as string
                     "
-                    @update:model-value="updateColIndex('birthday', String($event))"
+                    @update:model-value="updateColIndex('category', String($event))"
                   >
                     <SelectTrigger class="w-full">
                       <SelectValue placeholder="Select column..." />
@@ -520,151 +513,348 @@ function handleExportDownload() {
                   </Select>
                 </div>
 
-                <!-- Competition date (only when birthday mapped and age not mapped) -->
-                <div
-                  v-if="store.colIndexes.birthday !== -1 && store.colIndexes.age === -1"
-                  class="space-y-2"
-                >
-                  <Label
-                    for="competition-date"
-                    :class="{
-                      'text-destructive': !store.competitionDate,
-                    }"
+                <!-- Age / Birthday card -->
+                <div class="rounded-lg border p-3 space-y-3">
+                  <!-- Age -->
+                  <div class="space-y-2">
+                    <Label for="age">Age</Label>
+                    <Select
+                      :model-value="(store.inputHeaders[store.colIndexes.age] || 'none') as string"
+                      @update:model-value="updateColIndex('age', String($event))"
+                    >
+                      <SelectTrigger class="w-full">
+                        <SelectValue placeholder="Select column..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectSeparator />
+                        <SelectItem
+                          v-for="header in store.inputHeaders"
+                          :key="header"
+                          :value="header"
+                        >
+                          {{ header }}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <!-- "or" divider -->
+                  <div class="flex items-center gap-3">
+                    <div class="flex-1 border-t" />
+                    <span class="text-muted-foreground text-xs">or</span>
+                    <div class="flex-1 border-t" />
+                  </div>
+
+                  <!-- Birthday -->
+                  <div class="space-y-2">
+                    <Label for="birthday">Birthday</Label>
+                    <Select
+                      :model-value="
+                        (store.inputHeaders[store.colIndexes.birthday] || 'none') as string
+                      "
+                      @update:model-value="updateColIndex('birthday', String($event))"
+                    >
+                      <SelectTrigger class="w-full">
+                        <SelectValue placeholder="Select column..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectSeparator />
+                        <SelectItem
+                          v-for="header in store.inputHeaders"
+                          :key="header"
+                          :value="header"
+                        >
+                          {{ header }}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <!-- Competition date (only when birthday mapped and age not mapped) -->
+                  <div
+                    v-if="store.colIndexes.birthday !== -1 && store.colIndexes.age === -1"
+                    class="space-y-2"
                   >
-                    Competition date *
-                  </Label>
-                  <Input
-                    id="competition-date"
-                    type="date"
-                    :model-value="store.competitionDate || ''"
-                    class="w-full"
-                    @update:model-value="
-                      store.updateCompetitionDate($event ? String($event) : undefined)
-                    "
-                  />
+                    <Label
+                      for="competition-date"
+                      :class="{
+                        'text-destructive': !store.competitionDate,
+                      }"
+                    >
+                      Competition date *
+                    </Label>
+                    <Input
+                      id="competition-date"
+                      type="date"
+                      :model-value="store.competitionDate || ''"
+                      class="w-full"
+                      @update:model-value="
+                        store.updateCompetitionDate($event ? String($event) : undefined)
+                      "
+                    />
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <!-- Other field columns -->
+            <div v-for="{ id, name } in mainColumns" :key="id" class="space-y-2">
+              <Label :for="id">{{ name }}</Label>
+              <Select
+                :model-value="(store.inputHeaders[store.colIndexes[id]] || 'none') as string"
+                @update:model-value="updateColIndex(id, String($event))"
+              >
+                <SelectTrigger class="w-full">
+                  <SelectValue placeholder="Select column..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectSeparator />
+                  <SelectItem v-for="header in store.inputHeaders" :key="header" :value="header">
+                    {{ header }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </template>
+
+        <template #submit="{ close }">
+          <Button @click="close()">Done</Button>
+        </template>
+      </DialogWithSidebar>
+
+      <!-- Export settings dialog -->
+      <DialogWithSidebar
+        v-model:open="showExportSettingsSheet"
+        v-model:show-sidebar="exportShowSidebar"
+        title="Export Settings"
+        description="A preview of your output CSV. Bib numbers and formatting can be adjusted as needed."
+      >
+        <!-- Export preview table with merged group header rows -->
+        <div class="border rounded-3xl h-full bg-muted/50 overflow-auto">
+          <table class="text-xs [border-spacing:0] [border-collapse:separate] w-full">
+            <tbody>
+              <tr v-for="(row, rowIndex) in exportPreviewData" :key="rowIndex" class="border-b">
+                <template v-if="isGroupHeaderRow(row)">
+                  <!-- Group header row: name merged across all columns -->
+                  <td
+                    :colspan="row.length"
+                    class="px-2 py-1 align-middle h-8 border-b border-border font-semibold"
+                  >
+                    {{ row[0]?.value }}
+                  </td>
+                </template>
+                <template v-else>
+                  <!-- Regular data or separator row -->
+                  <td
+                    v-for="(cell, colIndex) in row"
+                    :key="colIndex"
+                    class="px-2 py-1 align-middle truncate max-w-xs h-8 border-r border-b border-border"
+                  >
+                    <!-- First dancer in group: show editable bib input instead of plain number -->
+                    <template v-if="colIndex === 0 && exportPreviewFirstDancerRows.has(rowIndex)">
+                      <div class="flex items-center gap-1 -my-1 -mx-2">
+                        <Input
+                          type="number"
+                          :step="BIB_BLOCK_SIZE"
+                          :aria-label="`Start bib for ${exportPreviewFirstDancerRows.get(rowIndex)!.label}`"
+                          :model-value="
+                            exportPreviewFirstDancerRows.get(rowIndex)!.partitionKey in
+                            store.bibGroupRangeOverrides
+                              ? exportPreviewFirstDancerRows.get(rowIndex)!.startBib
+                              : undefined
+                          "
+                          :placeholder="
+                            String(exportPreviewFirstDancerRows.get(rowIndex)!.startBib)
+                          "
+                          class="min-w-20 field-sizing-content h-8 px-2 [font-size:inherit]! border-primary! border-2 ring-inset text-xs"
+                          :class="{
+                            'border-accent!':
+                              exportPreviewFirstDancerRows.get(rowIndex)!.partitionKey in
+                              store.bibGroupRangeOverrides,
+                          }"
+                          @update:model-value="
+                            (value: string | number) =>
+                              store.setBibGroupStartOverride(
+                                exportPreviewFirstDancerRows.get(rowIndex)!.partitionKey,
+                                Number(value),
+                              )
+                          "
+                        />
+                        <Tooltip
+                          v-if="
+                            exportPreviewFirstDancerRows.get(rowIndex)!.partitionKey in
+                            store.bibGroupRangeOverrides
+                          "
+                        >
+                          <TooltipTrigger
+                            class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full hover:bg-accent/15 transition-colors"
+                            @click="
+                              store.clearBibGroupStartOverride(
+                                exportPreviewFirstDancerRows.get(rowIndex)!.partitionKey,
+                              )
+                            "
+                          >
+                            <span class="text-xs font-medium text-accent">Manual</span>
+                            <Delete class="w-3 h-3 text-accent ml-1" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Reset to auto-calculated</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </template>
+                    <template v-else>
+                      {{ cell.value }}
+                    </template>
+                  </td>
+                </template>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <template #sidebar>
+          <div class="space-y-4">
+            <!-- Bib numbering mode toggle -->
+            <div class="space-y-2">
+              <Label>Bib numbering</Label>
+              <div class="flex rounded-lg border overflow-hidden">
+                <button
+                  class="flex-1 px-3 py-1.5 text-sm font-medium transition-colors"
+                  :class="
+                    store.bibNumberingMode === 'global'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-muted'
+                  "
+                  @click="store.updateExportSettings({ bibNumberingMode: 'global' })"
+                >
+                  Global
+                </button>
+                <button
+                  class="flex-1 px-3 py-1.5 text-sm font-medium transition-colors border-l"
+                  :class="
+                    store.bibNumberingMode === 'per-group'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-muted'
+                  "
+                  @click="store.updateExportSettings({ bibNumberingMode: 'per-group' })"
+                >
+                  Per-group
+                </button>
+              </div>
+              <p class="text-xs text-muted-foreground">
+                <template v-if="store.bibNumberingMode === 'global'">
+                  Bibs are numbered across all categories/groups/dancers based on reverse
+                  registration order.
+                </template>
+                <template v-else>
+                  Each age group gets its own bib range. If needed, edit the start number for each
+                  group in the preview.
+                </template>
+              </p>
+            </div>
+
+            <!-- Lowest bib number (used by both modes) -->
+            <div class="flex items-center justify-between">
+              <div class="w-full">
+                <Label for="min-bib">Lowest bib number</Label>
+                <p class="text-xs text-muted-foreground">Bib numbers count up from here</p>
+              </div>
+              <Input
+                id="min-bib"
+                type="number"
+                :step="BIB_BLOCK_SIZE"
+                :model-value="store.minBibNumber"
+                class="w-24"
+                @update:model-value="
+                  (value: string | number) =>
+                    store.updateExportSettings({ minBibNumber: Number(value) })
+                "
+              />
+            </div>
+
+            <!-- Per-group mode: warnings -->
+            <template v-if="store.bibNumberingMode === 'per-group'">
+              <!-- Overlap warnings -->
+              <div v-if="store.bibRangeWarnings.length" class="space-y-1">
+                <div
+                  v-for="(warning, i) in store.bibRangeWarnings"
+                  :key="i"
+                  class="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-400"
+                >
+                  <TriangleAlert class="size-3.5 shrink-0 mt-0.5" />
+                  <span>{{ warning }}</span>
                 </div>
               </div>
             </template>
-          </div>
 
-          <!-- Other field columns -->
-          <div v-for="{ id, name } in mainColumns" :key="id" class="space-y-2">
-            <Label :for="id">{{ name }}</Label>
-            <Select
-              :model-value="(store.inputHeaders[store.colIndexes[id]] || 'none') as string"
-              @update:model-value="updateColIndex(id, String($event))"
-            >
-              <SelectTrigger class="w-full">
-                <SelectValue placeholder="Select column..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                <SelectSeparator />
-                <SelectItem v-for="header in store.inputHeaders" :key="header" :value="header">
-                  {{ header }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </template>
-
-      <template #submit="{ close }">
-        <Button @click="close()">Done</Button>
-      </template>
-    </DialogWithSidebar>
-
-    <!-- Export settings dialog -->
-    <DialogWithSidebar
-      v-model:open="showExportSettingsSheet"
-      v-model:show-sidebar="exportShowSidebar"
-      title="Export Settings"
-        description="A preview of your output CSV. Bib numbers and formatting can be adjusted as needed."
-    >
-      <CellTable
-        :data="exportPreviewData"
-        :show-headers="false"
-        :show-row-headers="false"
-        wrapper-class="border rounded-3xl h-full bg-muted/50"
-      />
-
-      <template #sidebar>
-        <div class="space-y-4">
-          <div class="flex items-center justify-between">
-            <div class="w-full">
-              <Label for="max-bib">Highest bib number</Label>
-              <p class="text-xs text-muted-foreground">
-                Bib numbers will count down from this number
-              </p>
+            <!-- Shared format options -->
+            <div class="flex items-center justify-between">
+              <div>
+                <Label for="printing-years">Include "Years" in age group names</Label>
+                <p class="text-xs text-muted-foreground">
+                  e.g., "Premier 6-8 Years" vs "Premier 6-8"
+                </p>
+              </div>
+              <Switch
+                id="printing-years"
+                :model-value="store.isPrintingYears"
+                @update:model-value="
+                  (value: boolean) => store.updateExportSettings({ isPrintingYears: value })
+                "
+              />
             </div>
-            <Input
-              id="max-bib"
-              type="number"
-              :model-value="store.maxBibNumber"
-              class="w-24"
-              @update:model-value="
-                (value) => store.updateExportSettings({ maxBibNumber: Number(value) })
-              "
-            />
-          </div>
-          <div class="flex items-center justify-between">
-            <div>
-              <Label for="printing-years">Include "Years" in age group names</Label>
-              <p class="text-xs text-muted-foreground">
-                e.g., "Premier 6-8 Years" vs "Premier 6-8"
-              </p>
-            </div>
-            <Switch
-              id="printing-years"
-              :model-value="store.isPrintingYears"
-              @update:model-value="
-                (value) => store.updateExportSettings({ isPrintingYears: value })
-              "
-            />
-          </div>
 
-          <div class="flex items-center justify-between">
-            <div>
-              <Label for="combine-names">Combine names</Label>
-              <p class="text-xs text-muted-foreground">
-                Use one column for full name instead of separate first/last name columns
-              </p>
+            <div class="flex items-center justify-between">
+              <div>
+                <Label for="combine-names">Combine names</Label>
+                <p class="text-xs text-muted-foreground">
+                  Use one column for full name instead of separate first/last name columns
+                </p>
+              </div>
+              <Switch
+                id="combine-names"
+                :model-value="store.combineNames"
+                @update:model-value="
+                  (value: boolean) => store.updateExportSettings({ combineNames: value })
+                "
+              />
             </div>
-            <Switch
-              id="combine-names"
-              :model-value="store.combineNames"
-              @update:model-value="(value) => store.updateExportSettings({ combineNames: value })"
-            />
-          </div>
 
-          <div class="flex items-center justify-between">
-            <div>
-              <Label for="include-country">Include country</Label>
-              <p class="text-xs text-muted-foreground">
-                Add country to dancer locations when available
-              </p>
+            <div class="flex items-center justify-between">
+              <div>
+                <Label for="include-country">Include country</Label>
+                <p class="text-xs text-muted-foreground">
+                  Add country to dancer locations when available
+                </p>
+              </div>
+              <Switch
+                id="include-country"
+                :model-value="store.includeCountry"
+                @update:model-value="
+                  (value: boolean) => store.updateExportSettings({ includeCountry: value })
+                "
+              />
             </div>
-            <Switch
-              id="include-country"
-              :model-value="store.includeCountry"
-              @update:model-value="(value) => store.updateExportSettings({ includeCountry: value })"
-            />
           </div>
-        </div>
-      </template>
+        </template>
 
-      <template #submit="{ close }">
-        <Button
-          @click="
-            () => {
-              handleExportDownload()
-              close()
-            }
-          "
-          >Export</Button
-        >
-      </template>
-    </DialogWithSidebar>
-  </div>
+        <template #submit="{ close }">
+          <Button
+            @click="
+              () => {
+                handleExportDownload()
+                close()
+              }
+            "
+            >Export</Button
+          >
+        </template>
+      </DialogWithSidebar>
+    </div>
   </FileUpload>
 </template>

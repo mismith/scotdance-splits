@@ -280,6 +280,7 @@ import {
   getDefaultNumAgeGroups,
   getPartitionedAgeCounts,
 } from '@/lib/input'
+import { getPartitionKey } from '@/lib/output'
 import { pluralize } from '@/lib/utils'
 
 const props = defineProps({
@@ -440,7 +441,7 @@ const dancersByAgeGroup = computed(() => {
   return partitionedAgeCountsArray.value.map(([ageRange]) => {
     const [minAge, maxAge] = ageRange
 
-    return csvRawData.value
+    const dancers = csvRawData.value
       .map((row, i) => ({ row, code: codes[i] ?? '' }))
       .filter(({ code }) => {
         if (SCRUTINEERING_CODE_REGEX.test(code)) {
@@ -468,17 +469,37 @@ const dancersByAgeGroup = computed(() => {
           locationParts.push(row[store.colIndexes.country])
         }
 
-        const key = `${row[timestampCol] ?? ''}|${row[firstNameCol]}|${row[lastNameCol]}`
-        const globalIndex = lookup.get(key) ?? 0
+        let bibNumber: number
+        if (store.bibNumberingMode === 'per-group') {
+          bibNumber = 0 // placeholder, reassigned below
+        } else {
+          // Global mode: count up from minBibNumber, first registered = highest
+          const key = `${row[timestampCol] ?? ''}|${row[firstNameCol]}|${row[lastNameCol]}`
+          const globalIndex = lookup.get(key) ?? 0
+          const totalCount = lookup.size
+          bibNumber = (store.minBibNumber || 100) + (totalCount - 1 - globalIndex)
+        }
 
         return {
           firstName: row[firstNameCol] || '',
           lastName: row[lastNameCol] || '',
           location: locationParts.filter(Boolean).join(', ') || 'Unknown',
-          bibNumber: (store.maxBibNumber || 100) - globalIndex,
+          bibNumber,
         }
       })
-      .sort((a, b) => a.bibNumber - b.bibNumber)
+
+    // For per-group mode, reassign bibs by local index (already sorted by timestamp)
+    if (store.bibNumberingMode === 'per-group') {
+      const partKey = getPartitionKey(cat, [minAge, maxAge])
+      const range = store.bibGroupRanges.find((r) => r.partitionKey === partKey)
+      const startBib = range?.startBib ?? 100
+      // First registered (index 0) → highest bib in range
+      dancers.forEach((d, i) => {
+        d.bibNumber = startBib + (dancers.length - 1 - i)
+      })
+    }
+
+    return dancers.sort((a, b) => a.bibNumber - b.bibNumber)
   })
 })
 

@@ -196,7 +196,7 @@ test.describe('Validation Interactions', () => {
 
     // Export settings dialog should open with title and controls
     await expect(page.getByText('Export Settings')).toBeVisible()
-    await expect(page.getByLabel('Highest bib number')).toBeVisible()
+    await expect(page.getByLabel('Lowest bib number')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Export' })).toBeVisible()
     await waitForAnimations(page)
     await page.screenshot({ path: screenshotPath(testInfo, '11-export-dialog.png') })
