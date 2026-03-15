@@ -1,7 +1,7 @@
 import { unparse } from 'papaparse'
 import { CATEGORY_CODE_NAMES, CATEGORY_ORDER, type Partition, getAgeGroupName } from './input'
 
-export type BibNumberingMode = 'global' | 'per-group'
+export type BibNumberingMode = 'global' | 'per-category' | 'per-group'
 
 export interface BibGroupRange {
   partitionKey: string
@@ -16,6 +16,7 @@ export interface ExportSettings {
   minBibNumber: number
   bibNumberingMode: BibNumberingMode
   bibGroupRanges: BibGroupRange[]
+  bibCategoryRanges: BibGroupRange[]
   isPrintingYears: boolean
   includeCountry: boolean
   combineNames: boolean
@@ -109,6 +110,44 @@ export function generateExportData(
 
       data.push(...numbered.map(({ row, bibNumber }) => formatDancerRow(row, bibNumber, colIndexes, settings)))
     })
+  } else if (settings.bibNumberingMode === 'per-category') {
+    // Per-category mode: each category gets its own bib range, shared across age groups
+    const catRangeMap = new Map(settings.bibCategoryRanges.map((r) => [r.categoryCode, r]))
+
+    // Group partitions by category
+    const categoryCodes = CATEGORY_ORDER.filter((code) => partitions[code])
+
+    categoryCodes.forEach((categoryCode) => {
+      const catRange = catRangeMap.get(categoryCode)
+      const startBib = catRange?.startBib ?? settings.minBibNumber
+
+      // Collect all dancers in this category across all age groups
+      const categoryPartitions = sortedPartitions.filter((p) => p.categoryCode === categoryCode)
+      const allCategoryCodes = categoryPartitions.flatMap((p) => p.codes)
+      const categoryRows = validRows.filter(({ code }) => allCategoryCodes.includes(code))
+      if (categoryRows.length === 0) return
+
+      // Assign bibs across whole category: first registered = highest
+      const numberedByCategory = categoryRows.map(({ row, code }, index) => ({
+        row,
+        code,
+        bibNumber: startBib + (categoryRows.length - 1 - index),
+      }))
+      numberedByCategory.sort((a, b) => a.bibNumber - b.bibNumber)
+
+      // Render each age group partition within the category
+      categoryPartitions.forEach((partition) => {
+        const matchingRows = numberedByCategory.filter(({ code }) => partition.codes.includes(code))
+        if (matchingRows.length === 0) return
+
+        if (data.length) data.push(['', '', '', ''])
+
+        const name = `${CATEGORY_CODE_NAMES[partition.categoryCode]} ${getAgeGroupName(partition.ageRange[0], partition.ageRange[1], settings.isPrintingYears)}`
+        data.push([name, '', '', ''])
+
+        data.push(...matchingRows.map(({ row, bibNumber }) => formatDancerRow(row, bibNumber, colIndexes, settings)))
+      })
+    })
   } else {
     // Global mode: all dancers numbered from minBibNumber, first registered = highest
     const totalCount = validRows.length
@@ -150,15 +189,13 @@ export function getPartitionKey(categoryCode: string, ageRange: [number, number]
   return `${categoryCode}|${ageRange[0]}|${ageRange[1]}`
 }
 
-export const BIB_BLOCK_SIZE = 10
-
 // Auto-calculate bib group ranges from sorted partitions
 export function calculateBibGroupRanges(
   sortedPartitions: Partition[],
   dancerCountsByPartition: Map<string, number>,
   overrides: Record<string, number>,
   minBibNumber: number = 100,
-  blockSize: number = BIB_BLOCK_SIZE,
+  blockSize: number = 10,
 ): BibGroupRange[] {
   const ranges: BibGroupRange[] = []
   let runningStart = minBibNumber
@@ -173,6 +210,37 @@ export function calculateBibGroupRanges(
       categoryCode: partition.categoryCode,
       ageRange: partition.ageRange,
       label: `${CATEGORY_CODE_NAMES[partition.categoryCode]} ${getAgeGroupName(partition.ageRange[0], partition.ageRange[1])}`,
+      startBib,
+      dancerCount,
+    })
+
+    runningStart = Math.ceil((startBib + dancerCount) / blockSize) * blockSize
+  }
+
+  return ranges
+}
+
+// Auto-calculate bib category ranges (one range per category)
+export function calculateBibCategoryRanges(
+  categoryOrder: string[],
+  dancerCountsByCategory: Map<string, number>,
+  overrides: Record<string, number>,
+  minBibNumber: number = 100,
+  blockSize: number = 10,
+): BibGroupRange[] {
+  const ranges: BibGroupRange[] = []
+  let runningStart = minBibNumber
+
+  for (const categoryCode of categoryOrder) {
+    const dancerCount = dancerCountsByCategory.get(categoryCode) ?? 0
+    if (dancerCount === 0) continue
+    const startBib = overrides[categoryCode] ?? runningStart
+
+    ranges.push({
+      partitionKey: categoryCode,
+      categoryCode,
+      ageRange: [0, Infinity],
+      label: CATEGORY_CODE_NAMES[categoryCode] || categoryCode,
       startBib,
       dancerCount,
     })

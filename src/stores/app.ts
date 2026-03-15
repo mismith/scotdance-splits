@@ -16,6 +16,7 @@ import {
 import {
   type BibGroupRange,
   type BibNumberingMode,
+  calculateBibCategoryRanges,
   calculateBibGroupRanges,
   calculateDefaultMinBib,
   getPartitionKey,
@@ -70,6 +71,9 @@ export const useAppStore = defineStore('app', () => {
   const minBibNumber = ref<number>(100)
   const bibNumberingMode = useLocalStorage<BibNumberingMode>('bibNumberingMode', 'global')
   const bibGroupRangeOverrides = ref<Record<string, number>>({})
+  const bibCategoryRangeOverrides = ref<Record<string, number>>({})
+  const bibCategoryBlockSize = useLocalStorage('bibCategoryBlockSize', 10)
+  const bibGroupBlockSize = useLocalStorage('bibGroupBlockSize', 10)
   const isPrintingYears = useLocalStorage('isPrintingYears', true)
   const includeCountry = useLocalStorage('includeCountry', false)
   const combineNames = useLocalStorage('combineNames', false)
@@ -130,13 +134,43 @@ export const useAppStore = defineStore('app', () => {
       dancerCounts,
       bibGroupRangeOverrides.value,
       minBibNumber.value,
+      bibGroupBlockSize.value,
+    )
+  })
+
+  // Computed bib category ranges for per-category mode
+  const bibCategoryRanges = computed((): BibGroupRange[] => {
+    if (!categories.value) return []
+
+    const presentCategories = CATEGORY_ORDER.filter((code) => categories.value![code])
+
+    // Count dancers per category from raw CSV data
+    const dancerCounts = new Map<string, number>()
+    const inputData = inputCSV.value
+    if (inputData) {
+      const rawData = inputData.map((row) => row.map((cell) => cell.value))
+      const dataRows = hasHeaderRow.value ? rawData.slice(1) : rawData
+      const codes = resolvedCodes.value.length ? resolvedCodes.value : dataRows.map((row) => row[colIndexes.value.code] ?? '')
+
+      for (const categoryCode of presentCategories) {
+        const count = codes.filter((code) => code.startsWith(categoryCode)).length
+        dancerCounts.set(categoryCode, count)
+      }
+    }
+
+    return calculateBibCategoryRanges(
+      presentCategories,
+      dancerCounts,
+      bibCategoryRangeOverrides.value,
+      minBibNumber.value,
+      bibCategoryBlockSize.value,
     )
   })
 
   // Warnings for bib range overlaps
   const bibRangeWarnings = computed((): string[] => {
     const warnings: string[] = []
-    const ranges = bibGroupRanges.value
+    const ranges = bibNumberingMode.value === 'per-category' ? bibCategoryRanges.value : bibGroupRanges.value
 
     for (let i = 0; i < ranges.length - 1; i++) {
       const current = ranges[i]
@@ -286,6 +320,7 @@ export const useAppStore = defineStore('app', () => {
     colIndexes.value = {}
     manualPartitions.value = {}
     bibGroupRangeOverrides.value = {}
+    bibCategoryRangeOverrides.value = {}
     resolvedCodes.value = []
     competitionDate.value = undefined
   }
@@ -332,6 +367,15 @@ export const useAppStore = defineStore('app', () => {
   function clearBibGroupStartOverride(partitionKey: string) {
     const { [partitionKey]: _, ...rest } = bibGroupRangeOverrides.value
     bibGroupRangeOverrides.value = rest
+  }
+
+  function setBibCategoryStartOverride(categoryCode: string, startBib: number) {
+    bibCategoryRangeOverrides.value = { ...bibCategoryRangeOverrides.value, [categoryCode]: startBib }
+  }
+
+  function clearBibCategoryStartOverride(categoryCode: string) {
+    const { [categoryCode]: _, ...rest } = bibCategoryRangeOverrides.value
+    bibCategoryRangeOverrides.value = rest
   }
 
   function updateExportSettings(settings: {
@@ -437,6 +481,10 @@ export const useAppStore = defineStore('app', () => {
     bibNumberingMode,
     bibGroupRanges,
     bibGroupRangeOverrides,
+    bibCategoryRanges,
+    bibCategoryRangeOverrides,
+    bibCategoryBlockSize,
+    bibGroupBlockSize,
     bibRangeWarnings,
     isPrintingYears,
     includeCountry,
@@ -468,6 +516,8 @@ export const useAppStore = defineStore('app', () => {
     clearManualPartitions,
     setBibGroupStartOverride,
     clearBibGroupStartOverride,
+    setBibCategoryStartOverride,
+    clearBibCategoryStartOverride,
     loadFile,
   }
 })

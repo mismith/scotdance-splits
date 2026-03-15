@@ -438,7 +438,7 @@ const dancersByAgeGroup = computed(() => {
   const lookup = bibNumberLookup.value
   const cat = categoryCode.value
 
-  return partitionedAgeCountsArray.value.map(([ageRange]) => {
+  const groups = partitionedAgeCountsArray.value.map(([ageRange]) => {
     const [minAge, maxAge] = ageRange
 
     const dancers = csvRawData.value
@@ -470,7 +470,7 @@ const dancersByAgeGroup = computed(() => {
         }
 
         let bibNumber: number
-        if (store.bibNumberingMode === 'per-group') {
+        if (store.bibNumberingMode === 'per-group' || store.bibNumberingMode === 'per-category') {
           bibNumber = 0 // placeholder, reassigned below
         } else {
           // Global mode: count up from minBibNumber, first registered = highest
@@ -499,8 +499,33 @@ const dancersByAgeGroup = computed(() => {
       })
     }
 
-    return dancers.sort((a, b) => a.bibNumber - b.bibNumber)
+    return dancers
   })
+
+  // For per-category mode, assign bibs across all age groups in this category together
+  if (store.bibNumberingMode === 'per-category') {
+    const catRange = store.bibCategoryRanges.find((r) => r.categoryCode === cat)
+    const startBib = catRange?.startBib ?? 100
+
+    // Flatten all dancers, assign bibs by timestamp order across the whole category
+    const allDancers = groups.flatMap((g: typeof groups[number], groupIndex: number) =>
+      g.map((d: typeof g[number]) => ({ ...d, groupIndex })),
+    )
+    // Bibs assigned by flat index (groups already timestamp-sorted, category order preserved)
+    allDancers.forEach((d: { bibNumber: number }, i: number) => {
+      d.bibNumber = startBib + (allDancers.length - 1 - i)
+    })
+
+    // Distribute back into groups and sort by bib number
+    return groups.map((_, groupIndex) =>
+      allDancers
+        .filter((d) => d.groupIndex === groupIndex)
+        .sort((a, b) => a.bibNumber - b.bibNumber),
+    )
+  }
+
+  // For per-group or global mode, sort each group by bib number
+  return groups.map((dancers) => dancers.sort((a, b) => a.bibNumber - b.bibNumber))
 })
 
 const colsRef = ref()
