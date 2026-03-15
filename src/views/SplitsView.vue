@@ -373,7 +373,7 @@ function handleExportDownload() {
       v-model:open="showColumnMappingSheet"
       v-model:show-sidebar="columnMappingShowSidebar"
       title="Fields"
-      description="Map your CSV columns to the correct fields"
+        description="Your imported dancer registration data. Column mappings can be adjusted as needed."
     >
       <CellTable
         :data="store.hasHeaderRow ? (store.validatedCSV || []).slice(1) : store.validatedCSV || []"
@@ -575,7 +575,7 @@ function handleExportDownload() {
       v-model:open="showExportSettingsSheet"
       v-model:show-sidebar="exportShowSidebar"
       title="Export Settings"
-      description="Configure bib numbers and output format options"
+        description="A preview of your output CSV. Bib numbers and formatting can be adjusted as needed."
     >
       <CellTable
         :data="exportPreviewData"
