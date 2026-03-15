@@ -795,66 +795,76 @@ function handleExportDownload() {
 
         <template #sidebar>
           <div class="space-y-4">
-            <!-- Bib numbering mode -->
-            <div class="space-y-2">
-              <Label for="bib-mode">Bib numbering</Label>
-              <Select
-                :model-value="store.bibNumberingMode"
-                @update:model-value="
-                  (value) =>
-                    store.updateExportSettings({
-                      bibNumberingMode: String(value) as 'global' | 'per-category' | 'per-group',
-                    })
-                "
-              >
-                <SelectTrigger class="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="global">Global</SelectItem>
-                  <SelectItem value="per-category">Per-category</SelectItem>
-                  <SelectItem value="per-group">Per-group</SelectItem>
-                </SelectContent>
-              </Select>
-              <p class="text-xs text-muted-foreground">
-                <template v-if="store.bibNumberingMode === 'global'">
-                  Bibs are numbered across all categories/groups/dancers based on reverse
-                  registration order.
-                </template>
-                <template v-else-if="store.bibNumberingMode === 'per-category'">
-                  Each category gets its own bib range. If needed, edit the start number for each
-                  category in the preview.
-                </template>
-                <template v-else>
-                  Each age group gets its own bib range. If needed, edit the start number for each
-                  group in the preview.
-                </template>
-              </p>
-            </div>
-
-            <!-- Block size (per-category or per-group) -->
+            <!-- Bib numbering settings -->
             <div
-              v-if="store.bibNumberingMode !== 'global'"
-              class="flex items-center justify-between"
+              :class="
+                store.bibNumberingMode !== 'global'
+                  ? 'rounded-xl border p-3 space-y-3'
+                  : 'space-y-3'
+              "
             >
-              <div class="w-full">
-                <Label for="block-size">Block size</Label>
-                <p class="text-xs text-muted-foreground">Gap between each range's start number</p>
+              <!-- Bib numbering mode -->
+              <div class="space-y-2">
+                <Label for="bib-mode">Bib numbering</Label>
+                <Select
+                  :model-value="store.bibNumberingMode"
+                  @update:model-value="
+                    (value) =>
+                      store.updateExportSettings({
+                        bibNumberingMode: String(value) as 'global' | 'per-category' | 'per-group',
+                      })
+                  "
+                >
+                  <SelectTrigger class="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="global">Global</SelectItem>
+                    <SelectItem value="per-category">Per-category</SelectItem>
+                    <SelectItem value="per-group">Per-group</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p class="text-xs text-muted-foreground">
+                  <template v-if="store.bibNumberingMode === 'global'">
+                    Bibs are numbered across all categories/groups/dancers based on reverse
+                    registration order.
+                  </template>
+                  <template v-else-if="store.bibNumberingMode === 'per-category'">
+                    Each category gets its own bib range. If needed, edit the start number for each
+                    category in the preview.
+                  </template>
+                  <template v-else>
+                    Each age group gets its own bib range. If needed, edit the start number for each
+                    group in the preview.
+                  </template>
+                </p>
               </div>
-              <Input
-                id="block-size"
-                type="number"
-                min="1"
-                :model-value="activeBlockSize"
-                class="w-24"
-                @update:model-value="
-                  (value: string | number) => {
-                    if (store.bibNumberingMode === 'per-category')
-                      store.bibCategoryBlockSize = Number(value)
-                    else store.bibGroupBlockSize = Number(value)
-                  }
-                "
-              />
+
+              <!-- Block size (per-category or per-group) -->
+              <div
+                v-if="store.bibNumberingMode !== 'global'"
+                class="flex items-center justify-between"
+              >
+                <div class="w-full">
+                  <Label for="block-size">Block size</Label>
+                  <p class="text-xs text-muted-foreground">Gap between each range's start number</p>
+                </div>
+                <Input
+                  id="block-size"
+                  type="number"
+                  min="1"
+                  :model-value="activeBlockSize"
+                  class="w-24"
+                  @update:model-value="
+                    (value: string | number) => {
+                      if (store.bibNumberingMode === 'per-category')
+                        store.bibCategoryBlockSize = Number(value)
+                      else store.bibGroupBlockSize = Number(value)
+                    }
+                  "
+                />
+              </div>
+
             </div>
 
             <!-- Lowest bib number (used by all modes) -->
