@@ -399,8 +399,12 @@ function handleExportDownload() {
 
           <!-- Code resolution card -->
           <div
-            class="rounded-xl border p-3 space-y-3"
-            :class="store.synthesisMode ? 'border-accent bg-accent/5' : ''"
+              :class="
+                store.colIndexes.code === -1
+                  ? 'rounded-xl border p-3 space-y-3 ' +
+                    (store.synthesisMode ? 'border-accent bg-accent/5' : '')
+                  : 'space-y-3'
+              "
           >
             <!-- Code column select -->
             <div class="space-y-2">
