@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { useIntersectionObserver } from '@vueuse/core'
 import { ArrowDown, ArrowRight } from 'lucide-vue-next'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { Button } from '@/components/ui/button'
 
 const sectionRef = ref<HTMLElement>()
 const isVisible = ref(false)
@@ -40,37 +41,113 @@ const beforeData = [
   { name: 'Hannah Martin', category: 'Beginner', age: 11, date: daysAgo(1) },
 ]
 
-// Bibs assigned by registration order: row 1 (oldest) = 112, row 12 (newest) = 101
-// Listed ascending within each group on the right
-const afterGroups = [
-  {
-    label: 'Beginner 7 & Under 9 Years',
-    dancers: [
-      { bib: 102, name: 'Lily Wright' },
-      { bib: 106, name: 'Olivia Hill' },
-      { bib: 110, name: 'Grace Brown' },
-      { bib: 112, name: 'Isla Morrison' },
-    ],
-  },
-  {
-    label: 'Beginner 10 & 11 Years',
-    dancers: [
-      { bib: 101, name: 'Hannah Martin' },
-      { bib: 104, name: 'Hannah Scott' },
-      { bib: 105, name: 'Isabella Clark' },
-      { bib: 108, name: 'Sophie King' },
-    ],
-  },
-  {
-    label: 'Premier 15 Years & Over',
-    dancers: [
-      { bib: 103, name: 'Megan Grant' },
-      { bib: 107, name: 'Ruby Walker' },
-      { bib: 109, name: 'Freya Scott' },
-      { bib: 111, name: 'Angus Clark' },
-    ],
-  },
+type BibMode = 'global' | 'per-category' | 'per-group'
+const bibMode = ref<BibMode>('global')
+
+const bibModeOptions: { value: BibMode; label: string }[] = [
+  { value: 'global', label: 'Global' },
+  { value: 'per-category', label: 'Per Category' },
+  { value: 'per-group', label: 'Per Group' },
 ]
+
+// Bibs assigned by registration order (oldest registration = highest bib within range)
+// Listed ascending within each group on the right
+interface AfterGroup {
+  label: string
+  dancers: { bib: number; name: string }[]
+}
+
+const afterGroupsByMode: Record<BibMode, AfterGroup[]> = {
+  global: [
+    {
+      label: 'Beginner 7 & Under 9 Years',
+      dancers: [
+        { bib: 102, name: 'Lily Wright' },
+        { bib: 106, name: 'Olivia Hill' },
+        { bib: 110, name: 'Grace Brown' },
+        { bib: 112, name: 'Isla Morrison' },
+      ],
+    },
+    {
+      label: 'Beginner 10 & 11 Years',
+      dancers: [
+        { bib: 101, name: 'Hannah Martin' },
+        { bib: 104, name: 'Hannah Scott' },
+        { bib: 105, name: 'Isabella Clark' },
+        { bib: 108, name: 'Sophie King' },
+      ],
+    },
+    {
+      label: 'Premier 15 Years & Over',
+      dancers: [
+        { bib: 103, name: 'Megan Grant' },
+        { bib: 107, name: 'Ruby Walker' },
+        { bib: 109, name: 'Freya Scott' },
+        { bib: 111, name: 'Angus Clark' },
+      ],
+    },
+  ],
+  'per-category': [
+    {
+      label: 'Beginner 7 & Under 9 Years',
+      dancers: [
+        { bib: 101, name: 'Lily Wright' },
+        { bib: 104, name: 'Olivia Hill' },
+        { bib: 106, name: 'Grace Brown' },
+        { bib: 107, name: 'Isla Morrison' },
+      ],
+    },
+    {
+      label: 'Beginner 10 & 11 Years',
+      dancers: [
+        { bib: 100, name: 'Hannah Martin' },
+        { bib: 102, name: 'Hannah Scott' },
+        { bib: 103, name: 'Isabella Clark' },
+        { bib: 105, name: 'Sophie King' },
+      ],
+    },
+    {
+      label: 'Premier 15 Years & Over',
+      dancers: [
+        { bib: 110, name: 'Megan Grant' },
+        { bib: 111, name: 'Ruby Walker' },
+        { bib: 112, name: 'Freya Scott' },
+        { bib: 113, name: 'Angus Clark' },
+      ],
+    },
+  ],
+  'per-group': [
+    {
+      label: 'Beginner 7 & Under 9 Years',
+      dancers: [
+        { bib: 100, name: 'Lily Wright' },
+        { bib: 101, name: 'Olivia Hill' },
+        { bib: 102, name: 'Grace Brown' },
+        { bib: 103, name: 'Isla Morrison' },
+      ],
+    },
+    {
+      label: 'Beginner 10 & 11 Years',
+      dancers: [
+        { bib: 110, name: 'Hannah Martin' },
+        { bib: 111, name: 'Hannah Scott' },
+        { bib: 112, name: 'Isabella Clark' },
+        { bib: 113, name: 'Sophie King' },
+      ],
+    },
+    {
+      label: 'Premier 15 Years & Over',
+      dancers: [
+        { bib: 120, name: 'Megan Grant' },
+        { bib: 121, name: 'Ruby Walker' },
+        { bib: 122, name: 'Freya Scott' },
+        { bib: 123, name: 'Angus Clark' },
+      ],
+    },
+  ],
+}
+
+const afterGroups = computed(() => afterGroupsByMode[bibMode.value])
 </script>
 
 <template>
@@ -90,21 +167,31 @@ const afterGroups = [
         class="transition-all duration-700 ease-out motion-reduce:transition-none pointer-events-none"
         :class="isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
       >
-        <p class="text-[10px] uppercase tracking-widest text-muted-foreground/60 mb-2 text-center">Before</p>
+        <p class="text-[10px] uppercase tracking-widest text-muted-foreground/60 mb-2 text-center">
+          Before
+        </p>
         <div class="rounded-2xl border border-border/80 bg-muted/30 shadow-lg overflow-hidden">
           <table class="w-full text-[13px]">
             <thead>
               <tr class="bg-muted/50">
-                <th class="text-left py-2.5 px-2 sm:px-4 font-medium text-muted-foreground/80 text-xs">
+                <th
+                  class="text-left py-2.5 px-2 sm:px-4 font-medium text-muted-foreground/80 text-xs"
+                >
                   Name
                 </th>
-                <th class="text-left py-2.5 px-2 sm:px-4 font-medium text-muted-foreground/80 text-xs">
+                <th
+                  class="text-left py-2.5 px-2 sm:px-4 font-medium text-muted-foreground/80 text-xs"
+                >
                   Category
                 </th>
-                <th class="text-left py-2.5 px-2 sm:px-4 font-medium text-muted-foreground/80 text-xs">
+                <th
+                  class="text-left py-2.5 px-2 sm:px-4 font-medium text-muted-foreground/80 text-xs"
+                >
                   Age
                 </th>
-                <th class="text-left py-2.5 px-2 sm:px-4 font-medium text-muted-foreground/80 text-xs">
+                <th
+                  class="text-left py-2.5 px-2 sm:px-4 font-medium text-muted-foreground/80 text-xs"
+                >
                   Registered
                 </th>
               </tr>
@@ -133,7 +220,7 @@ const afterGroups = [
 
       <!-- After -->
       <div
-        class="transition-all duration-700 ease-out delay-150 motion-reduce:transition-none pointer-events-none"
+        class="transition-all duration-700 ease-out delay-150 motion-reduce:transition-none"
         :class="isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
       >
         <p class="text-[10px] uppercase tracking-widest text-primary/60 mb-2 text-center">After</p>
@@ -160,6 +247,25 @@ const afterGroups = [
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Bib mode toggle -->
+        <div class="flex flex-col items-center justify-center gap-2 mt-3">
+          <span class="text-[10px] uppercase tracking-widest text-muted-foreground/60"
+            >Bib numbering</span
+          >
+          <div class="inline-flex rounded-lg border border-border/80 overflow-hidden">
+            <Button
+              v-for="option in bibModeOptions"
+              :key="option.value"
+              size="sm"
+              :variant="bibMode === option.value ? 'default' : 'ghost'"
+              class="rounded-none text-xs px-3 h-7"
+              @click="bibMode = option.value"
+            >
+              {{ option.label }}
+            </Button>
           </div>
         </div>
       </div>
