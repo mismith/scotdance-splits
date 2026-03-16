@@ -1,53 +1,29 @@
 <script setup lang="ts">
-import { useEventListener, useLocalStorage } from '@vueuse/core'
-import {
-  AlertTriangle,
-  Delete,
-  Table,
-  TableProperties,
-  TriangleAlert,
-  Users,
-} from 'lucide-vue-next'
+import { useEventListener } from '@vueuse/core'
+import { AlertTriangle, Table, TableProperties, Users } from 'lucide-vue-next'
 import { computed, nextTick, onMounted, provide, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import { startViewTransition } from 'vue-view-transitions'
 import { useAppStore } from '@/stores/app'
 import CategoryCard from '@/components/CategoryCard.vue'
-import CellTable from '@/components/CellTable.vue'
-import DialogWithSidebar from '@/components/DialogWithSidebar.vue'
+import ExportSettingsDialog from '@/components/ExportSettingsDialog.vue'
+import FieldSettingsDialog from '@/components/FieldSettingsDialog.vue'
 import FileUpload from '@/components/FileUpload.vue'
 import ValidationBanner from '@/components/ValidationBanner.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   CATEGORY_CODE_NAMES,
-  INPUT_COLUMNS,
   type Partition,
-  SYNTHESIS_COLUMN_IDS,
   createPartitions,
   fetchDemoCSV,
 } from '@/lib/input'
-import { type ExportSettings, convertToCSV, downloadCSV, generateExportData } from '@/lib/output'
 
 const store = useAppStore()
 const route = useRoute()
 
 const showColumnMappingSheet = ref(false)
-const columnMappingShowSidebar = useLocalStorage('columnMappingShowSidebar', true)
 const showExportSettingsSheet = ref(false)
-const exportShowSidebar = useLocalStorage('exportShowSidebar', store.isDesktop)
 const validationDismissed = ref(false)
 const showDancers = ref(false)
 const categoryCardRef = ref()
@@ -65,14 +41,6 @@ const hasDismissedIssues = computed(
 // Partitions store - maps category code to age ranges
 const partitions = ref<Record<string, Partition[]>>({})
 
-// Main field columns (excluding code and synthesis-only columns)
-const mainColumns = computed(() =>
-  INPUT_COLUMNS.filter((col) => col.id !== 'code' && !SYNTHESIS_COLUMN_IDS.includes(col.id)),
-)
-
-// Code column rendered separately (before "or" divider)
-const codeColumn = computed(() => INPUT_COLUMNS.find((col) => col.id === 'code')!)
-
 // Provide for CategoryCard components
 provide(
   'isPrintingYears',
@@ -80,7 +48,6 @@ provide(
 )
 provide('showDancers', showDancers)
 
-// Navigation functions
 // Auto-load demo data if in demo mode and no data exists
 onMounted(async () => {
   if (isDemoMode.value && !store.hasData) {
@@ -143,27 +110,6 @@ function handleReviewErrors() {
   validationDismissed.value = true
 }
 
-function handleHeaderRowToggle(value: boolean) {
-  store.hasHeaderRow = value
-  // Force errors to regenerate with correct row offsets
-  store.updateColIndexes(store.colIndexes)
-}
-
-function updateColIndex(id: string, value: string | null) {
-  const newIndexes = { ...store.colIndexes }
-  const stringValue = String(value || 'none')
-  newIndexes[id] = stringValue === 'none' ? -1 : store.inputHeaders.indexOf(stringValue)
-  store.updateColIndexes(newIndexes)
-}
-
-function isFieldValid(fieldId: string) {
-  if (fieldId === 'code') {
-    // Code is valid if mapped OR if synthesis mode is active
-    return store.colIndexes.code >= 0 || store.synthesisMode
-  }
-  return true
-}
-
 function handlePartition(categoryCode: string, partitionedAgeRanges: number[][]) {
   // Update the store's partitioned categories first
   const newPartitionedCategories = {
@@ -183,128 +129,6 @@ function handlePartition(categoryCode: string, partitionedAgeRanges: number[][])
   partitions.value[categoryCode] = categoryPartitions[categoryCode] || []
 }
 
-// Generate export preview data
-const exportPreviewData = computed(() => {
-  if (!store.validatedCSV) return []
-
-  // Extract raw string values for processing
-  const rawData = store.validatedCSV.map((row) => row.map((cell) => cell.value))
-
-  const settings: ExportSettings = {
-    minBibNumber: store.minBibNumber,
-    bibNumberingMode: store.bibNumberingMode,
-    bibGroupRanges: store.bibGroupRanges,
-    bibCategoryRanges: store.bibCategoryRanges,
-    isPrintingYears: store.isPrintingYears,
-    includeCountry: store.includeCountry,
-    combineNames: store.combineNames,
-  }
-
-  const exportData = generateExportData(
-    rawData,
-    store.colIndexes,
-    partitions.value,
-    settings,
-    store.hasHeaderRow,
-    store.synthesisMode ? store.resolvedCodes : undefined,
-  )
-
-  // Convert (string | number)[][] to Cell[][] for display
-  return exportData.map((row) =>
-    row.map((value) => ({ value: String(value), error: false, warning: false })),
-  )
-})
-
-function isGroupHeaderRow(row: { value: string }[]) {
-  return row[0]?.value && row.slice(1).every((cell) => !cell.value)
-}
-
-// Active bib ranges and block size for whichever mode is active
-const activeRanges = computed(() => {
-  if (store.bibNumberingMode === 'per-group') return store.bibGroupRanges
-  if (store.bibNumberingMode === 'per-category') return store.bibCategoryRanges
-  return []
-})
-
-const activeBlockSize = computed(() => {
-  if (store.bibNumberingMode === 'per-category') return store.bibCategoryBlockSize
-  if (store.bibNumberingMode === 'per-group') return store.bibGroupBlockSize
-  return 10
-})
-
-const activeBibOverrides = computed(() => {
-  if (store.bibNumberingMode === 'per-group') return store.bibGroupRangeOverrides
-  if (store.bibNumberingMode === 'per-category') return store.bibCategoryRangeOverrides
-  return {}
-})
-
-// Map first-dancer row indices to their BibRange for interactive editing
-const activeFirstDancerRows = computed(() => {
-  const map = new Map<number, (typeof activeRanges.value)[number]>()
-  const ranges = activeRanges.value
-  if (ranges.length === 0) return map
-
-  if (store.bibNumberingMode === 'per-group') {
-    // Per-group: ranges appear in partition order, one per group header
-    let rangeIndex = 0
-    let expectingFirstDancer = false
-
-    exportPreviewData.value.forEach((row, rowIndex) => {
-      if (isGroupHeaderRow(row) && rangeIndex < ranges.length) {
-        expectingFirstDancer = true
-      } else if (expectingFirstDancer && row.some((cell) => cell.value)) {
-        map.set(rowIndex, ranges[rangeIndex])
-        rangeIndex++
-        expectingFirstDancer = false
-      }
-    })
-  } else if (store.bibNumberingMode === 'per-category') {
-    // Per-category: only the first group header per category gets a range
-    const rangeMap = new Map(ranges.map((r) => [r.categoryCode, r]))
-    const seenCategories = new Set<string>()
-    let pendingCategoryCode = ''
-
-    exportPreviewData.value.forEach((row, rowIndex) => {
-      if (isGroupHeaderRow(row)) {
-        const headerText = row[0]?.value || ''
-        const matchingRange = ranges.find((r) => headerText.startsWith(r.label))
-        if (matchingRange && !seenCategories.has(matchingRange.categoryCode)) {
-          pendingCategoryCode = matchingRange.categoryCode
-        }
-      } else if (pendingCategoryCode && row.some((cell) => cell.value)) {
-        const range = rangeMap.get(pendingCategoryCode)
-        if (range) {
-          map.set(rowIndex, range)
-          seenCategories.add(pendingCategoryCode)
-        }
-        pendingCategoryCode = ''
-      }
-    })
-  }
-
-  return map
-})
-
-function setActiveBibOverride(partitionKey: string, startBib: number) {
-  if (store.bibNumberingMode === 'per-group') {
-    store.bibGroupRangeOverrides = { ...store.bibGroupRangeOverrides, [partitionKey]: startBib }
-  } else if (store.bibNumberingMode === 'per-category') {
-    store.bibCategoryRangeOverrides = { ...store.bibCategoryRangeOverrides, [partitionKey]: startBib }
-  }
-}
-
-function clearActiveBibOverride(partitionKey: string) {
-  if (store.bibNumberingMode === 'per-group') {
-    store.bibGroupRangeOverrides = Object.fromEntries(
-      Object.entries(store.bibGroupRangeOverrides).filter(([key]) => key !== partitionKey),
-    )
-  } else if (store.bibNumberingMode === 'per-category') {
-    store.bibCategoryRangeOverrides = Object.fromEntries(
-      Object.entries(store.bibCategoryRangeOverrides).filter(([key]) => key !== partitionKey),
-    )
-  }
-}
-
 async function handleFileSelected(file: File) {
   if (store.hasData && !isDemoMode.value) {
     const confirmed = window.confirm(
@@ -319,14 +143,6 @@ async function handleFileSelected(file: File) {
 function handleFileRejected(message: string) {
   store.fileLoadError = message
   validationDismissed.value = false
-}
-
-// Export function using shared logic
-function handleExportDownload() {
-  // Extract raw values from Cell[][] for CSV conversion
-  const rawData = exportPreviewData.value.map((row) => row.map((cell) => cell.value))
-  const csvContent = convertToCSV(rawData)
-  downloadCSV(csvContent, store.exportFilename)
 }
 </script>
 
@@ -471,500 +287,11 @@ function handleExportDownload() {
         </div>
       </footer>
 
-      <!-- Column mapping settings dialog -->
-      <DialogWithSidebar
-        v-model:open="showColumnMappingSheet"
-        v-model:show-sidebar="columnMappingShowSidebar"
-        title="Fields"
-        description="Your imported dancer registration data. Column mappings can be adjusted as needed."
-      >
-        <CellTable
-          :data="
-            store.hasHeaderRow ? (store.validatedCSV || []).slice(1) : store.validatedCSV || []
-          "
-          :headers="store.hasHeaderRow ? store.inputHeaders : undefined"
-          wrapper-class="border rounded-3xl h-full bg-muted/50"
-        />
-
-        <template #sidebar>
-          <div class="space-y-4">
-            <div class="space-y-2">
-              <Label for="header-row">Header row</Label>
-              <label
-                class="border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-full items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-              >
-                <span>First row is headers</span>
-                <Switch
-                  id="header-row"
-                  :model-value="store.hasHeaderRow"
-                  @update:model-value="handleHeaderRowToggle"
-                />
-              </label>
-            </div>
-
-            <!-- Code resolution card -->
-            <div
-              :class="
-                store.colIndexes.code === -1
-                  ? 'rounded-xl border p-3 space-y-3 ' +
-                    (store.synthesisMode ? 'border-accent bg-accent/5' : '')
-                  : 'space-y-3'
-              "
-            >
-              <!-- Code column select -->
-              <div class="space-y-2">
-                <Label
-                  for="code"
-                  :class="{
-                    'text-destructive': !isFieldValid('code'),
-                  }"
-                >
-                  {{ codeColumn.name }}{{ !store.synthesisMode ? ' *' : '' }}
-                </Label>
-                <Select
-                  :model-value="(store.inputHeaders[store.colIndexes.code] || 'none') as string"
-                  @update:model-value="updateColIndex('code', String($event))"
-                >
-                  <SelectTrigger class="w-full">
-                    <SelectValue placeholder="Select column..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectSeparator />
-                    <SelectItem v-for="header in store.inputHeaders" :key="header" :value="header">
-                      {{ header }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <!-- Synthesis section (only when code column is unmapped) -->
-              <template v-if="store.colIndexes.code === -1">
-                <div class="flex items-center gap-3">
-                  <div class="flex-1 border-t" />
-                  <span class="text-muted-foreground text-xs">or</span>
-                  <div class="flex-1 border-t" />
-                </div>
-
-                <!-- Category -->
-                <div class="space-y-2">
-                  <Label for="category">Category</Label>
-                  <Select
-                    :model-value="
-                      (store.inputHeaders[store.colIndexes.category] || 'none') as string
-                    "
-                    @update:model-value="updateColIndex('category', String($event))"
-                  >
-                    <SelectTrigger class="w-full">
-                      <SelectValue placeholder="Select column..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      <SelectSeparator />
-                      <SelectItem
-                        v-for="header in store.inputHeaders"
-                        :key="header"
-                        :value="header"
-                      >
-                        {{ header }}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <!-- Age / Birthday card -->
-                <div class="rounded-lg border p-3 space-y-3">
-                  <!-- Age -->
-                  <div class="space-y-2">
-                    <Label for="age">Age</Label>
-                    <Select
-                      :model-value="(store.inputHeaders[store.colIndexes.age] || 'none') as string"
-                      @update:model-value="updateColIndex('age', String($event))"
-                    >
-                      <SelectTrigger class="w-full">
-                        <SelectValue placeholder="Select column..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        <SelectSeparator />
-                        <SelectItem
-                          v-for="header in store.inputHeaders"
-                          :key="header"
-                          :value="header"
-                        >
-                          {{ header }}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <!-- "or" divider -->
-                  <div class="flex items-center gap-3">
-                    <div class="flex-1 border-t" />
-                    <span class="text-muted-foreground text-xs">or</span>
-                    <div class="flex-1 border-t" />
-                  </div>
-
-                  <!-- Birthday -->
-                  <div class="space-y-2">
-                    <Label for="birthday">Birthday</Label>
-                    <Select
-                      :model-value="
-                        (store.inputHeaders[store.colIndexes.birthday] || 'none') as string
-                      "
-                      @update:model-value="updateColIndex('birthday', String($event))"
-                    >
-                      <SelectTrigger class="w-full">
-                        <SelectValue placeholder="Select column..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        <SelectSeparator />
-                        <SelectItem
-                          v-for="header in store.inputHeaders"
-                          :key="header"
-                          :value="header"
-                        >
-                          {{ header }}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <!-- Competition date (only when birthday mapped and age not mapped) -->
-                  <div
-                    v-if="store.colIndexes.birthday !== -1 && store.colIndexes.age === -1"
-                    class="space-y-2"
-                  >
-                    <Label
-                      for="competition-date"
-                      :class="{
-                        'text-destructive': !store.competitionDate,
-                      }"
-                    >
-                      Competition date *
-                    </Label>
-                    <Input
-                      id="competition-date"
-                      type="date"
-                      :model-value="store.competitionDate || ''"
-                      class="w-full"
-                      @update:model-value="
-                        store.updateCompetitionDate($event ? String($event) : undefined)
-                      "
-                    />
-                  </div>
-                </div>
-              </template>
-            </div>
-
-            <!-- Other field columns -->
-            <div v-for="{ id, name } in mainColumns" :key="id" class="space-y-2">
-              <Label :for="id">{{ name }}</Label>
-              <Select
-                :model-value="(store.inputHeaders[store.colIndexes[id]] || 'none') as string"
-                @update:model-value="updateColIndex(id, String($event))"
-              >
-                <SelectTrigger class="w-full">
-                  <SelectValue placeholder="Select column..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectSeparator />
-                  <SelectItem v-for="header in store.inputHeaders" :key="header" :value="header">
-                    {{ header }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </template>
-
-        <template #submit="{ close }">
-          <Button @click="close()">Done</Button>
-        </template>
-      </DialogWithSidebar>
+      <!-- Field settings dialog -->
+      <FieldSettingsDialog v-model:open="showColumnMappingSheet" />
 
       <!-- Export settings dialog -->
-      <DialogWithSidebar
-        v-model:open="showExportSettingsSheet"
-        v-model:show-sidebar="exportShowSidebar"
-        title="Export Settings"
-        description="A preview of your output CSV. Bib numbers and formatting can be adjusted as needed."
-      >
-        <!-- Export preview table with merged group header rows -->
-        <div class="border rounded-3xl h-full bg-muted/50 overflow-auto">
-          <table class="text-xs [border-spacing:0] [border-collapse:separate] w-full">
-            <tbody>
-              <tr
-                v-for="(row, rowIndex) in exportPreviewData"
-                :key="rowIndex"
-                class="border-b"
-                :class="{
-                  'bg-destructive/10':
-                    activeFirstDancerRows.has(rowIndex) &&
-                    store.bibRangeWarnings.has(activeFirstDancerRows.get(rowIndex)!.partitionKey),
-                }"
-              >
-                <template v-if="isGroupHeaderRow(row)">
-                  <!-- Group header row: name merged across all columns -->
-                  <td
-                    :colspan="row.length"
-                    class="px-2 py-1 align-middle h-8 border-b border-border font-semibold"
-                  >
-                    {{ row[0]?.value }}
-                  </td>
-                </template>
-                <template v-else>
-                  <!-- Regular data or separator row -->
-                  <td
-                    v-for="(cell, colIndex) in row"
-                    :key="colIndex"
-                    class="px-2 py-1 align-middle truncate max-w-xs h-8 border-r border-b border-border"
-                  >
-                    <!-- First dancer in group/category: show editable bib input instead of plain number -->
-                    <template v-if="colIndex === 0 && activeFirstDancerRows.has(rowIndex)">
-                      <div class="-my-1 -mx-2">
-                        <div class="flex items-center gap-1">
-                          <Input
-                            type="number"
-                            :step="activeBlockSize"
-                            :aria-label="`Start bib for ${activeFirstDancerRows.get(rowIndex)!.label}`"
-                            :aria-invalid="store.bibRangeWarnings.has(activeFirstDancerRows.get(rowIndex)!.partitionKey) || undefined"
-                            :model-value="
-                              activeFirstDancerRows.get(rowIndex)!.partitionKey in activeBibOverrides
-                                ? activeFirstDancerRows.get(rowIndex)!.startBib
-                                : undefined
-                            "
-                            :placeholder="String(activeFirstDancerRows.get(rowIndex)!.startBib)"
-                            class="min-w-20 field-sizing-content h-8 px-2 [font-size:inherit]! border-primary! border-2 ring-inset text-xs"
-                            :class="{
-                              'border-accent!':
-                                activeFirstDancerRows.get(rowIndex)!.partitionKey in
-                                activeBibOverrides,
-                              'border-destructive!':
-                                store.bibRangeWarnings.has(activeFirstDancerRows.get(rowIndex)!.partitionKey),
-                            }"
-                            @update:model-value="
-                              (value: string | number) => {
-                                const key = activeFirstDancerRows.get(rowIndex)!.partitionKey
-                                if (value === '' || value === undefined)
-                                  clearActiveBibOverride(key)
-                                else
-                                  setActiveBibOverride(key, Number(value))
-                              }
-                            "
-                          />
-                          <Tooltip
-                            v-if="
-                              activeFirstDancerRows.get(rowIndex)!.partitionKey in activeBibOverrides
-                            "
-                          >
-                            <TooltipTrigger
-                              class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full hover:bg-accent/15 transition-colors"
-                              @click="
-                                clearActiveBibOverride(
-                                  activeFirstDancerRows.get(rowIndex)!.partitionKey,
-                                )
-                              "
-                            >
-                              <span class="text-xs font-medium text-accent">Manual</span>
-                              <Delete class="w-3 h-3 text-accent ml-1" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Reset to auto-calculated</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <div
-                          v-if="store.bibRangeWarnings.has(activeFirstDancerRows.get(rowIndex)!.partitionKey)"
-                          class="flex items-center gap-1 text-destructive px-2 py-0.5"
-                        >
-                          <TriangleAlert class="size-3 shrink-0" />
-                          <span class="truncate">{{ store.bibRangeWarnings.get(activeFirstDancerRows.get(rowIndex)!.partitionKey) }}</span>
-                        </div>
-                      </div>
-                    </template>
-                    <template v-else>
-                      {{ cell.value }}
-                    </template>
-                  </td>
-                </template>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <template #sidebar>
-          <div class="space-y-4">
-            <!-- Bib numbering settings -->
-            <div
-              :class="
-                store.bibNumberingMode !== 'global'
-                  ? 'rounded-xl border p-3 space-y-3'
-                  : 'space-y-3'
-              "
-            >
-              <!-- Bib numbering mode -->
-              <div class="space-y-2">
-                <Label for="bib-mode">Bib numbering</Label>
-                <Select
-                  :model-value="store.bibNumberingMode"
-                  @update:model-value="
-                    (value) =>
-                      store.updateExportSettings({
-                        bibNumberingMode: String(value) as 'global' | 'per-category' | 'per-group',
-                      })
-                  "
-                >
-                  <SelectTrigger class="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="global">Global</SelectItem>
-                    <SelectItem value="per-category">Per-category</SelectItem>
-                    <SelectItem value="per-group">Per-group</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p class="text-xs text-muted-foreground">
-                  <template v-if="store.bibNumberingMode === 'global'">
-                    Bibs are numbered across all categories/groups/dancers based on reverse
-                    registration order.
-                  </template>
-                  <template v-else-if="store.bibNumberingMode === 'per-category'">
-                    Each category gets its own bib range. If needed, edit the start number for each
-                    category in the preview.
-                  </template>
-                  <template v-else>
-                    Each age group gets its own bib range. If needed, edit the start number for each
-                    group in the preview.
-                  </template>
-                </p>
-              </div>
-
-              <!-- Block size (per-category or per-group) -->
-              <div
-                v-if="store.bibNumberingMode !== 'global'"
-                class="flex items-center justify-between"
-              >
-                <div class="w-full">
-                  <Label for="block-size">Block size</Label>
-                  <p class="text-xs text-muted-foreground">Gap between each range's start number</p>
-                </div>
-                <Input
-                  id="block-size"
-                  type="number"
-                  min="1"
-                  :model-value="activeBlockSize"
-                  class="w-24"
-                  @update:model-value="
-                    (value: string | number) => {
-                      if (store.bibNumberingMode === 'per-category')
-                        store.bibCategoryBlockSize = Number(value)
-                      else store.bibGroupBlockSize = Number(value)
-                    }
-                  "
-                />
-              </div>
-
-            </div>
-
-            <!-- Lowest bib number (used by all modes) -->
-            <div class="flex items-center justify-between">
-              <div class="w-full">
-                <Label for="min-bib">Lowest bib number</Label>
-                <p class="text-xs text-muted-foreground">Bib numbers count up from here</p>
-              </div>
-              <Input
-                id="min-bib"
-                type="number"
-                :step="activeBlockSize"
-                :model-value="store.minBibNumber"
-                class="w-24"
-                @update:model-value="
-                  (value: string | number) =>
-                    store.updateExportSettings({ minBibNumber: Number(value) })
-                "
-              />
-            </div>
-
-            <div class="border-t" />
-
-            <!-- Shared format options -->
-            <div class="flex items-center justify-between">
-              <div>
-                <Label for="printing-years">Include "Years" in age group names</Label>
-                <p class="text-xs text-muted-foreground">
-                  e.g., "Premier 6-8 Years" vs "Premier 6-8"
-                </p>
-              </div>
-              <Switch
-                id="printing-years"
-                :model-value="store.isPrintingYears"
-                @update:model-value="
-                  (value: boolean) => store.updateExportSettings({ isPrintingYears: value })
-                "
-              />
-            </div>
-
-            <div class="flex items-center justify-between">
-              <div>
-                <Label for="combine-names">Combine names</Label>
-                <p class="text-xs text-muted-foreground">
-                  Use one column for full name instead of separate first/last name columns
-                </p>
-              </div>
-              <Switch
-                id="combine-names"
-                :model-value="store.combineNames"
-                @update:model-value="
-                  (value: boolean) => store.updateExportSettings({ combineNames: value })
-                "
-              />
-            </div>
-
-            <div class="flex items-center justify-between">
-              <div>
-                <Label for="include-country">Include country</Label>
-                <p class="text-xs text-muted-foreground">
-                  Add country to dancer locations when available
-                </p>
-              </div>
-              <Switch
-                id="include-country"
-                :model-value="store.includeCountry"
-                @update:model-value="
-                  (value: boolean) => store.updateExportSettings({ includeCountry: value })
-                "
-              />
-            </div>
-          </div>
-        </template>
-
-        <template #submit="{ close }">
-          <div class="flex items-center gap-2 w-full sm:w-auto">
-            <Button
-              class="flex-1 sm:flex-initial"
-              @click="
-                () => {
-                  handleExportDownload()
-                  close()
-                }
-              "
-            >
-              Export
-            </Button>
-            <Tooltip v-if="store.bibRangeWarnings.size">
-              <TooltipTrigger as-child>
-                <TriangleAlert class="size-4 text-destructive" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{{ store.bibRangeWarnings.size }} bib range overlap{{ store.bibRangeWarnings.size > 1 ? 's' : '' }}</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </template>
-      </DialogWithSidebar>
+      <ExportSettingsDialog v-model:open="showExportSettingsSheet" :partitions="partitions" />
     </div>
   </FileUpload>
 </template>
