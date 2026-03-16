@@ -1,3 +1,70 @@
+<script setup lang="ts">
+import { useIntersectionObserver } from '@vueuse/core'
+import { Shield } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import scotdanceIcon from '@/assets/scotdance-icon.png'
+import { useAppStore } from '@/stores/app'
+import FileUpload from '@/components/FileUpload.vue'
+import TransformationSection from '@/components/TransformationSection.vue'
+import ValidationBanner from '@/components/ValidationBanner.vue'
+import { Button } from '@/components/ui/button'
+import { type ValidationIssue } from '@/lib/input'
+
+// Refs for measuring element positions
+const logoRef = ref<HTMLElement>()
+const buttonsRef = ref<HTMLElement>()
+
+// Sticky detection via IntersectionObserver (passive, no layout thrashing during scroll)
+// rootMargin shrinks the intersection area by 24px from the top (matching top-6),
+// so elements are "not intersecting" once their top edge crosses that 24px line
+const isLogoSticky = ref(false)
+useIntersectionObserver(
+  logoRef,
+  ([entry]) => {
+    isLogoSticky.value = !entry?.isIntersecting
+  },
+  { rootMargin: '-24px 0px 0px 0px', threshold: 1 },
+)
+
+const isButtonsSticky = ref(false)
+useIntersectionObserver(
+  buttonsRef,
+  ([entry]) => {
+    isButtonsSticky.value = !entry?.isIntersecting
+  },
+  { rootMargin: '-24px 0px 0px 0px', threshold: 1 },
+)
+
+const store = useAppStore()
+const router = useRouter()
+
+// Critical errors (file load errors that prevent navigation)
+const criticalErrors = computed((): ValidationIssue[] => {
+  // Only show critical file load errors on home screen (parse errors, empty file, etc.)
+  return store.inputErrors.filter((error) => error.type === 'parse-error')
+})
+
+async function handleFileSelected(file: File) {
+  const success = await store.loadFile(file)
+  if (success) {
+    router.push('/splits')
+  }
+}
+
+function handleFileRejected(message: string) {
+  store.fileLoadError = message
+}
+
+function handleErrorDismiss() {
+  store.fileLoadError = undefined
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+</script>
+
 <template>
   <FileUpload
     :is-loading="store.isLoadingInputFile"
@@ -583,70 +650,3 @@
     </template>
   </FileUpload>
 </template>
-
-<script setup lang="ts">
-import { useIntersectionObserver } from '@vueuse/core'
-import { Shield } from 'lucide-vue-next'
-import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import scotdanceIcon from '@/assets/scotdance-icon.png'
-import { useAppStore } from '@/stores/app'
-import FileUpload from '@/components/FileUpload.vue'
-import TransformationSection from '@/components/TransformationSection.vue'
-import ValidationBanner from '@/components/ValidationBanner.vue'
-import { Button } from '@/components/ui/button'
-import { type ValidationIssue } from '@/lib/input'
-
-// Refs for measuring element positions
-const logoRef = ref<HTMLElement>()
-const buttonsRef = ref<HTMLElement>()
-
-// Sticky detection via IntersectionObserver (passive, no layout thrashing during scroll)
-// rootMargin shrinks the intersection area by 24px from the top (matching top-6),
-// so elements are "not intersecting" once their top edge crosses that 24px line
-const isLogoSticky = ref(false)
-useIntersectionObserver(
-  logoRef,
-  ([entry]) => {
-    isLogoSticky.value = !entry?.isIntersecting
-  },
-  { rootMargin: '-24px 0px 0px 0px', threshold: 1 },
-)
-
-const isButtonsSticky = ref(false)
-useIntersectionObserver(
-  buttonsRef,
-  ([entry]) => {
-    isButtonsSticky.value = !entry?.isIntersecting
-  },
-  { rootMargin: '-24px 0px 0px 0px', threshold: 1 },
-)
-
-const store = useAppStore()
-const router = useRouter()
-
-// Critical errors (file load errors that prevent navigation)
-const criticalErrors = computed((): ValidationIssue[] => {
-  // Only show critical file load errors on home screen (parse errors, empty file, etc.)
-  return store.inputErrors.filter((error) => error.type === 'parse-error')
-})
-
-async function handleFileSelected(file: File) {
-  const success = await store.loadFile(file)
-  if (success) {
-    router.push('/splits')
-  }
-}
-
-function handleFileRejected(message: string) {
-  store.fileLoadError = message
-}
-
-function handleErrorDismiss() {
-  store.fileLoadError = undefined
-}
-
-function scrollToTop() {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
-</script>

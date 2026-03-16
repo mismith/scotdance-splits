@@ -1,265 +1,3 @@
-<template>
-  <Card class="select-none py-3 md:py-6 [view-transition-name:match-element]">
-    <CardContent class="px-3 md:px-6">
-      <div class="relative">
-        <!-- 4-column CSS Grid Layout -->
-        <div
-          ref="colsRef"
-          :class="`grid gap-y-4 grid-cols-[1fr_2rem_1fr_0] md:grid-cols-[1fr_80px_1fr_0] ${showDancers ? 'md:!grid-cols-[1fr_80px_1fr_1fr]' : ''}`"
-        >
-          <!-- Row 1: Header with title and controls -->
-          <div class="flex items-end flex-wrap content-end gap-2">
-            <div class="flex flex-col md:flex-row md:items-center space-x-3">
-              <CardTitle class="text-xl font-bold">
-                {{ name }}
-              </CardTitle>
-              <DancerCount :count="totalDancers" />
-            </div>
-
-            <!-- Manual adjustment indicator -->
-            <div v-if="hasCustomizations" class="flex items-center gap-2 flex-shrink-0 ml-auto">
-              <Tooltip>
-                <TooltipTrigger
-                  class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full hover:bg-accent/15 transition-colors"
-                  @click="resetToDefaults"
-                >
-                  <span class="text-xs font-medium text-accent">Manual</span>
-                  <Delete class="w-3 h-3 text-accent ml-1" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Reset to recommended splits</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          </div>
-
-          <div />
-
-          <div class="flex flex-wrap content-end items-end gap-2">
-            <!-- Left spacer (desktop only) -->
-            <div class="flex-1"></div>
-
-            <!-- Center controls -->
-            <div class="flex-auto flex items-center justify-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                @click="decrementGroups"
-                :disabled="numAgeGroups <= 1"
-                class="w-6 h-6 rounded-full p-0"
-                aria-label="Decrease number of groups"
-              >
-                <Minus class="h-3 w-3" />
-              </Button>
-              <div class="flex items-center gap-2">
-                <input
-                  ref="groupsInputRef"
-                  type="number"
-                  v-model.number="numAgeGroups"
-                  :min="1"
-                  :max="ageCountsArray.length"
-                  aria-label="Number of groups"
-                  class="text-center text-sm font-medium bg-transparent border-none outline-none focus:ring-0 p-0 text-foreground [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [field-sizing:content]"
-                  style="field-sizing: content"
-                  @blur="!numAgeGroups && (numAgeGroups = defaultNumAgeGroups)"
-                  @keyup.enter="($event.target as HTMLInputElement).blur()"
-                />
-                <span class="text-sm font-medium text-foreground" @click="selectGroupsInput">
-                  {{ pluralize(numAgeGroups || 1, 'group') }}
-                </span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                @click="incrementGroups"
-                :disabled="numAgeGroups >= ageCountsArray.length"
-                class="w-6 h-6 rounded-full p-0"
-                aria-label="Increase number of groups"
-              >
-                <Plus class="h-3 w-3" />
-              </Button>
-            </div>
-
-            <!-- Right reset button -->
-            <div class="flex-1 flex justify-end">
-              <Tooltip v-if="hasNonStandardGroupCount">
-                <TooltipTrigger asChild>
-                  <div
-                    class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full hover:bg-accent/15 transition-colors"
-                    @click="resetGroupCount"
-                  >
-                    <span class="text-xs font-medium text-accent">Manual</span>
-                    <Delete class="w-3 h-3 text-accent ml-1" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Reset to recommended number of groups</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          </div>
-
-          <div />
-          <!-- Empty spacer for dancers column -->
-
-          <!-- Row 2: Content columns -->
-          <!-- Individual ages column -->
-          <div class="flex flex-col gap-2 self-start">
-            <div
-              v-for="[age, count] in ageCountsArray"
-              :key="age"
-              ref="leftSideRef"
-              class="p-3 text-sm bg-secondary/50 border border-border rounded-3xl select-text"
-              :class="'[view-transition-name:match-element] [view-transition-class:fixed-height_fit]'"
-            >
-              <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-                <span class="font-medium"> Age {{ age }} </span>
-                <DancerCount :count="count" :total="totalDancers" size="x-small" />
-              </div>
-            </div>
-          </div>
-
-          <!-- Curved lines spacer -->
-          <div></div>
-
-          <!-- Age groups column -->
-          <div class="flex flex-col gap-2">
-            <div
-              v-for="([[minAge, maxAge], count], index) in partitionedAgeCountsArray"
-              :key="index"
-              ref="rightSideRef"
-              class="p-3 text-sm rounded-3xl transition-all select-text"
-              :class="[
-                '[view-transition-name:match-element] [view-transition-class:fixed-height_fit]',
-                count < MIN_GROUP_SIZE
-                  ? 'bg-accent/10 border border-accent/30 hover:bg-accent/15'
-                  : 'bg-secondary/50 border border-border hover:bg-secondary/70',
-              ]"
-              :style="{ flex: `${count} 1 0` }"
-              @click="openAgeGroupSheet(index)"
-            >
-              <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-                <span class="font-semibold text-foreground">
-                  {{ getAgeGroupName(minAge, maxAge, isPrintingYears) }}
-                </span>
-                <DancerCount :count="count" :total="totalDancers" size="x-small" />
-              </div>
-              <p v-if="count < MIN_GROUP_SIZE" class="text-xs mt-1 text-accent">
-                <TriangleAlert class="inline-flex size-4 -mt-0.5" />
-                Below recommended minimum of {{ MIN_GROUP_SIZE }} dancers
-              </p>
-            </div>
-          </div>
-
-          <!-- Preview Dancers column -->
-          <div class="hidden md:flex flex-col gap-2 md:ml-4">
-            <template
-              v-for="([, count], index) in partitionedAgeCountsArray"
-              :key="`preview-${index}`"
-            >
-              <div
-                v-if="showDancers"
-                :style="{
-                  flex: `${count} 1 0`,
-                  viewTransitionName: `CategoryCard-${id}-DancersColumn-${index}`,
-                }"
-                class="p-3 text-sm bg-muted/30 border border-border/50 rounded-3xl flex flex-col justify-start select-text"
-              >
-                <DancerPreview :dancers="dancersByAgeGroup[index] || []" />
-              </div>
-              <div
-                v-else
-                :style="{
-                  flex: `${count} 1 0`,
-                  viewTransitionName: `CategoryCard-${id}-DancersColumn-${index}`,
-                }"
-              ></div>
-            </template>
-          </div>
-        </div>
-
-        <!-- SVG connections -->
-        <svg
-          v-if="rightSideRef?.length > 1"
-          ref="svgRef"
-          class="absolute inset-0 w-full h-full pointer-events-none"
-          style="overflow: visible"
-        ></svg>
-
-        <!-- Drag handles (one per boundary) -->
-        <TransitionGroup
-          enter-active-class="transition-transform duration-200 ease-out"
-          leave-active-class="transition-transform duration-150 ease-in"
-          enter-from-class="scale-y-0 scale-x-95"
-          leave-to-class="scale-y-0 scale-x-95"
-        >
-          <div
-            v-for="(pos, index) in dragHandlePositions"
-            :key="index"
-            v-show="showDragHandle && hoveredBoundaryIndex === index"
-            class="max-sm:flex! absolute cursor-ns-resize z-20 h-3 flex items-center -mt-1.5 justify-center shadow transition-shadow before:absolute before:-inset-y-4 before:inset-x-0 sm:before:hidden [view-transition-name:match-element]"
-            :class="`${index !== -1 && isBoundaryManual(index) ? 'bg-accent text-accent-foreground [&_path]:fill-accent' : 'bg-primary text-primary-foreground [&_path]:fill-primary'} ${isDragging && draggingBoundaryIndex === index ? (index !== -1 && isBoundaryManual(index) ? 'shadow-[0_0_20px_var(--accent)]' : 'shadow-[0_0_20px_var(--primary)]') : ''}`"
-            :style="{
-              left: pos.left + 24 + 'px',
-              top: pos.top + 'px',
-              width: pos.width - 48 + 'px',
-            }"
-            @mousedown="(e) => onDragStart(e, index)"
-            @touchstart="(e) => onDragStart(e, index)"
-            @mouseenter="onDragHandleHover"
-            @mouseleave="onDragHandleLeave"
-          >
-            <div class="w-full h-full relative">
-              <!-- Left horizontal bulge -->
-              <svg
-                class="absolute right-full top-0 w-6 h-full -mr-px"
-                viewBox="0 0 12 12"
-                preserveAspectRatio="none"
-              >
-                <path d="M12,0 C3,0 9,5 0,5 M0,5 0,7 C9,7 3,12 12,12 L12,0Z" />
-              </svg>
-
-              <!-- Right horizontal bulge -->
-              <svg
-                class="absolute left-full top-0 w-6 h-full -ml-px"
-                viewBox="0 0 12 12"
-                preserveAspectRatio="none"
-              >
-                <path d="M0,0 C9,0 3,5 12,5 M12,5 12,7 C3,7 9,12 0,12 L0,0Z" />
-              </svg>
-
-              <!-- Three dots centered -->
-              <div class="flex gap-0.5 items-center justify-center h-full">
-                <div class="w-1 h-1 rounded-full bg-current"></div>
-                <div class="w-1 h-1 rounded-full bg-current"></div>
-                <div class="w-1 h-1 rounded-full bg-current"></div>
-              </div>
-            </div>
-          </div>
-        </TransitionGroup>
-      </div>
-    </CardContent>
-  </Card>
-
-  <!-- Mobile Dancer Sheet -->
-  <Sheet v-model:open="showDancerSheet">
-    <SheetContent side="bottom" class="md:hidden">
-      <SheetHeader>
-        <SheetTitle>{{ sheetTitle }}</SheetTitle>
-      </SheetHeader>
-      <div class="overflow-y-auto -mt-4">
-        <div
-          v-if="selectedAgeGroupIndex !== null"
-          class="p-3 bg-muted/30 border border-border/50 rounded-3xl"
-        >
-          <DancerPreview :dancers="dancersByAgeGroup[selectedAgeGroupIndex] || []" />
-        </div>
-        <div v-else class="text-center text-muted-foreground py-8">No dancers found</div>
-      </div>
-    </SheetContent>
-  </Sheet>
-</template>
-
 <script lang="ts" setup>
 import { useResizeObserver } from '@vueuse/core'
 import { Delete, Minus, Plus, TriangleAlert } from 'lucide-vue-next'
@@ -508,8 +246,8 @@ const dancersByAgeGroup = computed(() => {
     const startBib = catRange?.startBib ?? 100
 
     // Flatten all dancers, assign bibs by timestamp order across the whole category
-    const allDancers = groups.flatMap((g: typeof groups[number], groupIndex: number) =>
-      g.map((d: typeof g[number]) => ({ ...d, groupIndex })),
+    const allDancers = groups.flatMap((g: (typeof groups)[number], groupIndex: number) =>
+      g.map((d: (typeof g)[number]) => ({ ...d, groupIndex })),
     )
     // Bibs assigned by flat index (groups already timestamp-sorted, category order preserved)
     allDancers.forEach((d: { bibNumber: number }, i: number) => {
@@ -1057,3 +795,265 @@ watch(
   { immediate: true },
 )
 </script>
+
+<template>
+  <Card class="select-none py-3 md:py-6 [view-transition-name:match-element]">
+    <CardContent class="px-3 md:px-6">
+      <div class="relative">
+        <!-- 4-column CSS Grid Layout -->
+        <div
+          ref="colsRef"
+          :class="`grid gap-y-4 grid-cols-[1fr_2rem_1fr_0] md:grid-cols-[1fr_80px_1fr_0] ${showDancers ? 'md:!grid-cols-[1fr_80px_1fr_1fr]' : ''}`"
+        >
+          <!-- Row 1: Header with title and controls -->
+          <div class="flex items-end flex-wrap content-end gap-2">
+            <div class="flex flex-col md:flex-row md:items-center space-x-3">
+              <CardTitle class="text-xl font-bold">
+                {{ name }}
+              </CardTitle>
+              <DancerCount :count="totalDancers" />
+            </div>
+
+            <!-- Manual adjustment indicator -->
+            <div v-if="hasCustomizations" class="flex items-center gap-2 flex-shrink-0 ml-auto">
+              <Tooltip>
+                <TooltipTrigger
+                  class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full hover:bg-accent/15 transition-colors"
+                  @click="resetToDefaults"
+                >
+                  <span class="text-xs font-medium text-accent">Manual</span>
+                  <Delete class="w-3 h-3 text-accent ml-1" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Reset to recommended splits</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+
+          <div />
+
+          <div class="flex flex-wrap content-end items-end gap-2">
+            <!-- Left spacer (desktop only) -->
+            <div class="flex-1"></div>
+
+            <!-- Center controls -->
+            <div class="flex-auto flex items-center justify-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                @click="decrementGroups"
+                :disabled="numAgeGroups <= 1"
+                class="w-6 h-6 rounded-full p-0"
+                aria-label="Decrease number of groups"
+              >
+                <Minus class="h-3 w-3" />
+              </Button>
+              <div class="flex items-center gap-2">
+                <input
+                  ref="groupsInputRef"
+                  type="number"
+                  v-model.number="numAgeGroups"
+                  :min="1"
+                  :max="ageCountsArray.length"
+                  aria-label="Number of groups"
+                  class="text-center text-sm font-medium bg-transparent border-none outline-none focus:ring-0 p-0 text-foreground [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [field-sizing:content]"
+                  style="field-sizing: content"
+                  @blur="!numAgeGroups && (numAgeGroups = defaultNumAgeGroups)"
+                  @keyup.enter="($event.target as HTMLInputElement).blur()"
+                />
+                <span class="text-sm font-medium text-foreground" @click="selectGroupsInput">
+                  {{ pluralize(numAgeGroups || 1, 'group') }}
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                @click="incrementGroups"
+                :disabled="numAgeGroups >= ageCountsArray.length"
+                class="w-6 h-6 rounded-full p-0"
+                aria-label="Increase number of groups"
+              >
+                <Plus class="h-3 w-3" />
+              </Button>
+            </div>
+
+            <!-- Right reset button -->
+            <div class="flex-1 flex justify-end">
+              <Tooltip v-if="hasNonStandardGroupCount">
+                <TooltipTrigger asChild>
+                  <div
+                    class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full hover:bg-accent/15 transition-colors"
+                    @click="resetGroupCount"
+                  >
+                    <span class="text-xs font-medium text-accent">Manual</span>
+                    <Delete class="w-3 h-3 text-accent ml-1" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Reset to recommended number of groups</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+
+          <div />
+          <!-- Empty spacer for dancers column -->
+
+          <!-- Row 2: Content columns -->
+          <!-- Individual ages column -->
+          <div class="flex flex-col gap-2 self-start">
+            <div
+              v-for="[age, count] in ageCountsArray"
+              :key="age"
+              ref="leftSideRef"
+              class="p-3 text-sm bg-secondary/50 border border-border rounded-3xl select-text"
+              :class="'[view-transition-name:match-element] [view-transition-class:fixed-height_fit]'"
+            >
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <span class="font-medium"> Age {{ age }} </span>
+                <DancerCount :count="count" :total="totalDancers" size="x-small" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Curved lines spacer -->
+          <div></div>
+
+          <!-- Age groups column -->
+          <div class="flex flex-col gap-2">
+            <div
+              v-for="([[minAge, maxAge], count], index) in partitionedAgeCountsArray"
+              :key="index"
+              ref="rightSideRef"
+              class="p-3 text-sm rounded-3xl transition-all select-text"
+              :class="[
+                '[view-transition-name:match-element] [view-transition-class:fixed-height_fit]',
+                count < MIN_GROUP_SIZE
+                  ? 'bg-accent/10 border border-accent/30 hover:bg-accent/15'
+                  : 'bg-secondary/50 border border-border hover:bg-secondary/70',
+              ]"
+              :style="{ flex: `${count} 1 0` }"
+              @click="openAgeGroupSheet(index)"
+            >
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <span class="font-semibold text-foreground">
+                  {{ getAgeGroupName(minAge, maxAge, isPrintingYears) }}
+                </span>
+                <DancerCount :count="count" :total="totalDancers" size="x-small" />
+              </div>
+              <p v-if="count < MIN_GROUP_SIZE" class="text-xs mt-1 text-accent">
+                <TriangleAlert class="inline-flex size-4 -mt-0.5" />
+                Below recommended minimum of {{ MIN_GROUP_SIZE }} dancers
+              </p>
+            </div>
+          </div>
+
+          <!-- Preview Dancers column -->
+          <div class="hidden md:flex flex-col gap-2 md:ml-4">
+            <template
+              v-for="([, count], index) in partitionedAgeCountsArray"
+              :key="`preview-${index}`"
+            >
+              <div
+                v-if="showDancers"
+                :style="{
+                  flex: `${count} 1 0`,
+                  viewTransitionName: `CategoryCard-${id}-DancersColumn-${index}`,
+                }"
+                class="p-3 text-sm bg-muted/30 border border-border/50 rounded-3xl flex flex-col justify-start select-text"
+              >
+                <DancerPreview :dancers="dancersByAgeGroup[index] || []" />
+              </div>
+              <div
+                v-else
+                :style="{
+                  flex: `${count} 1 0`,
+                  viewTransitionName: `CategoryCard-${id}-DancersColumn-${index}`,
+                }"
+              ></div>
+            </template>
+          </div>
+        </div>
+
+        <!-- SVG connections -->
+        <svg
+          v-if="rightSideRef?.length > 1"
+          ref="svgRef"
+          class="absolute inset-0 w-full h-full pointer-events-none"
+          style="overflow: visible"
+        ></svg>
+
+        <!-- Drag handles (one per boundary) -->
+        <TransitionGroup
+          enter-active-class="transition-transform duration-200 ease-out"
+          leave-active-class="transition-transform duration-150 ease-in"
+          enter-from-class="scale-y-0 scale-x-95"
+          leave-to-class="scale-y-0 scale-x-95"
+        >
+          <div
+            v-for="(pos, index) in dragHandlePositions"
+            :key="index"
+            v-show="showDragHandle && hoveredBoundaryIndex === index"
+            class="max-sm:flex! absolute cursor-ns-resize z-20 h-3 flex items-center -mt-1.5 justify-center shadow transition-shadow before:absolute before:-inset-y-4 before:inset-x-0 sm:before:hidden [view-transition-name:match-element]"
+            :class="`${index !== -1 && isBoundaryManual(index) ? 'bg-accent text-accent-foreground [&_path]:fill-accent' : 'bg-primary text-primary-foreground [&_path]:fill-primary'} ${isDragging && draggingBoundaryIndex === index ? (index !== -1 && isBoundaryManual(index) ? 'shadow-[0_0_20px_var(--accent)]' : 'shadow-[0_0_20px_var(--primary)]') : ''}`"
+            :style="{
+              left: pos.left + 24 + 'px',
+              top: pos.top + 'px',
+              width: pos.width - 48 + 'px',
+            }"
+            @mousedown="(e) => onDragStart(e, index)"
+            @touchstart="(e) => onDragStart(e, index)"
+            @mouseenter="onDragHandleHover"
+            @mouseleave="onDragHandleLeave"
+          >
+            <div class="w-full h-full relative">
+              <!-- Left horizontal bulge -->
+              <svg
+                class="absolute right-full top-0 w-6 h-full -mr-px"
+                viewBox="0 0 12 12"
+                preserveAspectRatio="none"
+              >
+                <path d="M12,0 C3,0 9,5 0,5 M0,5 0,7 C9,7 3,12 12,12 L12,0Z" />
+              </svg>
+
+              <!-- Right horizontal bulge -->
+              <svg
+                class="absolute left-full top-0 w-6 h-full -ml-px"
+                viewBox="0 0 12 12"
+                preserveAspectRatio="none"
+              >
+                <path d="M0,0 C9,0 3,5 12,5 M12,5 12,7 C3,7 9,12 0,12 L0,0Z" />
+              </svg>
+
+              <!-- Three dots centered -->
+              <div class="flex gap-0.5 items-center justify-center h-full">
+                <div class="w-1 h-1 rounded-full bg-current"></div>
+                <div class="w-1 h-1 rounded-full bg-current"></div>
+                <div class="w-1 h-1 rounded-full bg-current"></div>
+              </div>
+            </div>
+          </div>
+        </TransitionGroup>
+      </div>
+    </CardContent>
+  </Card>
+
+  <!-- Mobile Dancer Sheet -->
+  <Sheet v-model:open="showDancerSheet">
+    <SheetContent side="bottom" class="md:hidden">
+      <SheetHeader>
+        <SheetTitle>{{ sheetTitle }}</SheetTitle>
+      </SheetHeader>
+      <div class="overflow-y-auto -mt-4">
+        <div
+          v-if="selectedAgeGroupIndex !== null"
+          class="p-3 bg-muted/30 border border-border/50 rounded-3xl"
+        >
+          <DancerPreview :dancers="dancersByAgeGroup[selectedAgeGroupIndex] || []" />
+        </div>
+        <div v-else class="text-center text-muted-foreground py-8">No dancers found</div>
+      </div>
+    </SheetContent>
+  </Sheet>
+</template>
