@@ -3,6 +3,7 @@ import { useLocalStorage } from '@vueuse/core'
 import { Delete, TriangleAlert } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useAppStore } from '@/stores/app'
+import { useViewTransition } from '@/composables/useViewTransition'
 import DialogWithSidebar from '@/components/DialogWithSidebar.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -134,7 +135,10 @@ function setActiveBibOverride(partitionKey: string, startBib: number) {
   if (store.bibNumberingMode === 'per-group') {
     store.bibGroupRangeOverrides = { ...store.bibGroupRangeOverrides, [partitionKey]: startBib }
   } else if (store.bibNumberingMode === 'per-category') {
-    store.bibCategoryRangeOverrides = { ...store.bibCategoryRangeOverrides, [partitionKey]: startBib }
+    store.bibCategoryRangeOverrides = {
+      ...store.bibCategoryRangeOverrides,
+      [partitionKey]: startBib,
+    }
   }
 }
 
@@ -151,6 +155,20 @@ function clearActiveBibOverride(partitionKey: string) {
 }
 
 // Export function using shared logic
+const { isTransitioning, withViewTransition } = useViewTransition()
+
+function updateBibNumberingMode(value: string | number | null) {
+  if (value === null) return
+  const wasGlobal = store.bibNumberingMode === 'global'
+  const willBeGlobal = String(value) === 'global'
+  const typedValue = String(value) as 'global' | 'per-category' | 'per-group'
+  if (wasGlobal !== willBeGlobal) {
+    withViewTransition(() => store.updateExportSettings({ bibNumberingMode: typedValue }))
+  } else {
+    store.updateExportSettings({ bibNumberingMode: typedValue })
+  }
+}
+
 function handleExportDownload() {
   // Extract raw values from Cell[][] for CSV conversion
   const rawData = exportPreviewData.value.map((row) => row.map((cell) => cell.value))
@@ -205,7 +223,11 @@ function handleExportDownload() {
                         type="number"
                         :step="activeBlockSize"
                         :aria-label="`Start bib for ${activeFirstDancerRows.get(rowIndex)!.label}`"
-                        :aria-invalid="store.bibRangeWarnings.has(activeFirstDancerRows.get(rowIndex)!.partitionKey) || undefined"
+                        :aria-invalid="
+                          store.bibRangeWarnings.has(
+                            activeFirstDancerRows.get(rowIndex)!.partitionKey,
+                          ) || undefined
+                        "
                         :model-value="
                           activeFirstDancerRows.get(rowIndex)!.partitionKey in activeBibOverrides
                             ? activeFirstDancerRows.get(rowIndex)!.startBib
@@ -215,18 +237,16 @@ function handleExportDownload() {
                         class="min-w-20 field-sizing-content h-8 px-2 [font-size:inherit]! border-primary! border-2 ring-inset text-xs"
                         :class="{
                           'border-accent!':
-                            activeFirstDancerRows.get(rowIndex)!.partitionKey in
-                            activeBibOverrides,
-                          'border-destructive!':
-                            store.bibRangeWarnings.has(activeFirstDancerRows.get(rowIndex)!.partitionKey),
+                            activeFirstDancerRows.get(rowIndex)!.partitionKey in activeBibOverrides,
+                          'border-destructive!': store.bibRangeWarnings.has(
+                            activeFirstDancerRows.get(rowIndex)!.partitionKey,
+                          ),
                         }"
                         @update:model-value="
                           (value: string | number) => {
                             const key = activeFirstDancerRows.get(rowIndex)!.partitionKey
-                            if (value === '' || value === undefined)
-                              clearActiveBibOverride(key)
-                            else
-                              setActiveBibOverride(key, Number(value))
+                            if (value === '' || value === undefined) clearActiveBibOverride(key)
+                            else setActiveBibOverride(key, Number(value))
                           }
                         "
                       />
@@ -252,11 +272,19 @@ function handleExportDownload() {
                       </Tooltip>
                     </div>
                     <div
-                      v-if="store.bibRangeWarnings.has(activeFirstDancerRows.get(rowIndex)!.partitionKey)"
+                      v-if="
+                        store.bibRangeWarnings.has(
+                          activeFirstDancerRows.get(rowIndex)!.partitionKey,
+                        )
+                      "
                       class="flex items-center gap-1 text-destructive px-2 py-0.5"
                     >
                       <TriangleAlert class="size-3 shrink-0" />
-                      <span class="truncate">{{ store.bibRangeWarnings.get(activeFirstDancerRows.get(rowIndex)!.partitionKey) }}</span>
+                      <span class="truncate">{{
+                        store.bibRangeWarnings.get(
+                          activeFirstDancerRows.get(rowIndex)!.partitionKey,
+                        )
+                      }}</span>
                     </div>
                   </div>
                 </template>
@@ -274,25 +302,29 @@ function handleExportDownload() {
       <div class="space-y-4">
         <!-- Bib numbering settings -->
         <div
-          :class="
-            store.bibNumberingMode !== 'global'
-              ? 'rounded-xl border p-3 space-y-3'
-              : 'space-y-3'
-          "
+          :class="[
+            'space-y-3',
+            store.bibNumberingMode !== 'global' && 'rounded-xl border p-3',
+            isTransitioning &&
+              '[view-transition-name:match-element] [view-transition-class:contain]',
+          ]"
         >
           <!-- Bib numbering mode -->
           <div class="space-y-2">
-            <Label for="bib-mode">Bib numbering</Label>
+            <Label
+              for="bib-mode"
+              :class="isTransitioning && '[view-transition-name:match-element]'"
+            >
+              Bib numbering
+            </Label>
             <Select
               :model-value="store.bibNumberingMode"
-              @update:model-value="
-                (value) =>
-                  store.updateExportSettings({
-                    bibNumberingMode: String(value) as 'global' | 'per-category' | 'per-group',
-                  })
-              "
+              @update:model-value="updateBibNumberingMode"
             >
-              <SelectTrigger class="w-full">
+              <SelectTrigger
+                class="w-full"
+                :class="isTransitioning && '[view-transition-name:match-element]'"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -301,10 +333,13 @@ function handleExportDownload() {
                 <SelectItem value="per-group">Per-group</SelectItem>
               </SelectContent>
             </Select>
-            <p class="text-xs text-muted-foreground">
+            <p
+              class="text-xs text-muted-foreground"
+              :class="isTransitioning && '[view-transition-name:match-element]'"
+            >
               <template v-if="store.bibNumberingMode === 'global'">
-                Bibs are numbered across all categories/groups/dancers based on reverse
-                registration order.
+                Bibs are numbered across all categories/groups/dancers based on reverse registration
+                order.
               </template>
               <template v-else-if="store.bibNumberingMode === 'per-category'">
                 Each category gets its own bib range. If needed, edit the start number for each
@@ -318,10 +353,7 @@ function handleExportDownload() {
           </div>
 
           <!-- Block size (per-category or per-group) -->
-          <div
-            v-if="store.bibNumberingMode !== 'global'"
-            class="flex items-center justify-between"
-          >
+          <div v-if="store.bibNumberingMode !== 'global'" class="flex items-center justify-between">
             <div class="w-full">
               <Label for="block-size">Block size</Label>
               <p class="text-xs text-muted-foreground">Gap between each range's start number</p>
@@ -341,11 +373,13 @@ function handleExportDownload() {
               "
             />
           </div>
-
         </div>
 
         <!-- Lowest bib number (used by all modes) -->
-        <div class="flex items-center justify-between">
+        <div
+          class="flex items-center justify-between"
+          :class="isTransitioning && '[view-transition-name:match-element]'"
+        >
           <div class="w-full">
             <Label for="min-bib">Lowest bib number</Label>
             <p class="text-xs text-muted-foreground">Bib numbers count up from here</p>
@@ -369,9 +403,7 @@ function handleExportDownload() {
         <div class="flex items-center justify-between">
           <div>
             <Label for="printing-years">Include "Years" in age group names</Label>
-            <p class="text-xs text-muted-foreground">
-              e.g., "Premier 6-8 Years" vs "Premier 6-8"
-            </p>
+            <p class="text-xs text-muted-foreground">e.g., "Premier 6-8 Years" vs "Premier 6-8"</p>
           </div>
           <Switch
             id="printing-years"
@@ -434,7 +466,11 @@ function handleExportDownload() {
             <TriangleAlert class="size-4 text-destructive" />
           </TooltipTrigger>
           <TooltipContent>
-            <p>{{ store.bibRangeWarnings.size }} bib range overlap{{ store.bibRangeWarnings.size > 1 ? 's' : '' }}</p>
+            <p>
+              {{ store.bibRangeWarnings.size }} bib range overlap{{
+                store.bibRangeWarnings.size > 1 ? 's' : ''
+              }}
+            </p>
           </TooltipContent>
         </Tooltip>
       </div>

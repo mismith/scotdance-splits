@@ -1,6 +1,7 @@
 import { nextTick } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { startViewTransition } from 'vue-view-transitions'
+import { useAppStore } from '@/stores/app'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -43,6 +44,9 @@ router.beforeResolve(async (to, from) => {
 
   // Set view-transition-name on document element
   document.documentElement.style.viewTransitionName = direction
+
+  const appStore = useAppStore()
+  appStore.isTransitioningRoute = true
   await nextTick()
 
   const transition = startViewTransition()
@@ -51,6 +55,7 @@ router.beforeResolve(async (to, from) => {
   // Clear after transition completes
   transition.finished.finally(() => {
     document.documentElement.style.viewTransitionName = ''
+    appStore.isTransitioningRoute = false
   })
 })
 

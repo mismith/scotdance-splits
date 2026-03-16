@@ -41,6 +41,9 @@ export interface DancerData {
 }
 
 export const useAppStore = defineStore('app', () => {
+  // Route transition state
+  const isTransitioningRoute = ref(false)
+
   // File input state
   const inputFiles = ref<File[]>()
   const inputCSV = ref<Cell[][]>()
@@ -444,6 +447,9 @@ export const useAppStore = defineStore('app', () => {
   }
 
   return {
+    // Route transition
+    isTransitioningRoute,
+
     // State
     inputFiles,
     validatedCSV,

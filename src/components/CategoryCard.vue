@@ -2,8 +2,8 @@
 import { useResizeObserver } from '@vueuse/core'
 import { Delete, Minus, Plus, TriangleAlert } from 'lucide-vue-next'
 import { computed, inject, nextTick, ref, useId, watch } from 'vue'
-import { startViewTransition } from 'vue-view-transitions'
 import { useAppStore } from '@/stores/app'
+import { useViewTransition } from '@/composables/useViewTransition'
 import DancerCount from '@/components/DancerCount.vue'
 import DancerPreview from '@/components/DancerPreview.vue'
 import { Button } from '@/components/ui/button'
@@ -110,24 +110,24 @@ function isBoundaryManual(boundaryIndex: number): boolean {
   return currentBoundary !== defaultBoundary
 }
 
+const { isTransitioning, withViewTransition } = useViewTransition()
+
 async function incrementGroups() {
   if (numAgeGroups.value < ageCountsArray.value.length) {
-    const viewTransition = startViewTransition()
-    await viewTransition.captured
-    numAgeGroups.value++
-    store.clearManualPartitions(categoryCode.value)
-    await viewTransition.finished
+    await withViewTransition(() => {
+      numAgeGroups.value++
+      store.clearManualPartitions(categoryCode.value)
+    })
     repaint()
   }
 }
 
 async function decrementGroups() {
   if (numAgeGroups.value > 1) {
-    const viewTransition = startViewTransition()
-    await viewTransition.captured
-    numAgeGroups.value--
-    store.clearManualPartitions(categoryCode.value)
-    await viewTransition.finished
+    await withViewTransition(() => {
+      numAgeGroups.value--
+      store.clearManualPartitions(categoryCode.value)
+    })
     repaint()
   }
 }
@@ -294,19 +294,13 @@ function selectGroupsInput() {
 
 // Reset only manual partitions (keep current group count)
 async function resetToDefaults() {
-  const viewTransition = startViewTransition()
-  await viewTransition.captured
-  store.clearManualPartitions(categoryCode.value)
-  await viewTransition.finished
+  await withViewTransition(() => { store.clearManualPartitions(categoryCode.value) })
   repaint()
 }
 
 // Reset only the group count to default
 async function resetGroupCount() {
-  const viewTransition = startViewTransition()
-  await viewTransition.captured
-  numAgeGroups.value = defaultNumAgeGroups.value
-  await viewTransition.finished
+  await withViewTransition(() => { numAgeGroups.value = defaultNumAgeGroups.value })
   repaint()
 }
 
@@ -522,20 +516,16 @@ function onDragStart(event: MouseEvent | TouchEvent, boundaryIndex: number) {
     if (lastValidAge !== null && isValidBoundaryChange(draggingBoundaryIndex.value, lastValidAge)) {
       const newPartitions = createNewPartitions(draggingBoundaryIndex.value, lastValidAge)
       if (newPartitions) {
-        const viewTransition = startViewTransition()
-        await viewTransition.captured
+        await withViewTransition(() => {
+          // Reset drag state before committing so repaint reads final positions
+          isDragging.value = false
+          draggingBoundaryIndex.value = -1
+          dragPreviewY.value = null
+          showDragHandle.value = false
+          hoveredBoundaryIndex.value = -1
 
-        // Reset drag state before committing so repaint reads final positions
-        isDragging.value = false
-        draggingBoundaryIndex.value = -1
-        dragPreviewY.value = null
-        showDragHandle.value = false
-        hoveredBoundaryIndex.value = -1
-
-        store.setManualPartitions(categoryCode.value, newPartitions)
-
-        // Wait for the view transition to finish, then repaint with final DOM positions
-        await viewTransition.finished
+          store.setManualPartitions(categoryCode.value, newPartitions)
+        })
         await nextTick()
         repaint()
         return
@@ -757,14 +747,8 @@ watch(showDancers, async () => {
 async function openAgeGroupSheet(ageGroupIndex: number) {
   if (store.isDesktop) {
     // Desktop: Toggle dancers visibility with smooth scroll to element
-    const viewTransition = startViewTransition()
-    await viewTransition.captured
-    showDancers.value = !showDancers.value
-
     const ageGroupElement = rightSideRef.value?.[ageGroupIndex]
-
-    // Wait for transition to complete, then repaint curves and scroll to tapped element
-    await viewTransition.finished
+    await withViewTransition(() => { showDancers.value = !showDancers.value })
     repaint()
 
     if (ageGroupElement) {
@@ -797,7 +781,7 @@ watch(
 </script>
 
 <template>
-  <Card class="select-none py-3 md:py-6 [view-transition-name:match-element]">
+  <Card class="select-none py-3 md:py-6" :class="isTransitioning && '[view-transition-name:match-element]'">
     <CardContent class="px-3 md:px-6">
       <div class="relative">
         <!-- 4-column CSS Grid Layout -->
@@ -908,7 +892,7 @@ watch(
               :key="age"
               ref="leftSideRef"
               class="p-3 text-sm bg-secondary/50 border border-border rounded-3xl select-text"
-              :class="'[view-transition-name:match-element] [view-transition-class:fixed-height_fit]'"
+              :class="isTransitioning && '[view-transition-name:match-element] [view-transition-class:fixed-height_fit]'"
             >
               <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                 <span class="font-medium"> Age {{ age }} </span>
@@ -928,7 +912,7 @@ watch(
               ref="rightSideRef"
               class="p-3 text-sm rounded-3xl transition-all select-text"
               :class="[
-                '[view-transition-name:match-element] [view-transition-class:fixed-height_fit]',
+                isTransitioning && '[view-transition-name:match-element] [view-transition-class:fixed-height_fit]',
                 count < MIN_GROUP_SIZE
                   ? 'bg-accent/10 border border-accent/30 hover:bg-accent/15'
                   : 'bg-secondary/50 border border-border hover:bg-secondary/70',
@@ -959,7 +943,7 @@ watch(
                 v-if="showDancers"
                 :style="{
                   flex: `${count} 1 0`,
-                  viewTransitionName: `CategoryCard-${id}-DancersColumn-${index}`,
+                  viewTransitionName: isTransitioning ? `CategoryCard-${id}-DancersColumn-${index}` : undefined,
                 }"
                 class="p-3 text-sm bg-muted/30 border border-border/50 rounded-3xl flex flex-col justify-start select-text"
               >
@@ -969,7 +953,7 @@ watch(
                 v-else
                 :style="{
                   flex: `${count} 1 0`,
-                  viewTransitionName: `CategoryCard-${id}-DancersColumn-${index}`,
+                  viewTransitionName: isTransitioning ? `CategoryCard-${id}-DancersColumn-${index}` : undefined,
                 }"
               ></div>
             </template>
@@ -995,8 +979,11 @@ watch(
             v-for="(pos, index) in dragHandlePositions"
             :key="index"
             v-show="showDragHandle && hoveredBoundaryIndex === index"
-            class="max-sm:flex! absolute cursor-ns-resize z-20 h-3 flex items-center -mt-1.5 justify-center shadow transition-shadow before:absolute before:-inset-y-4 before:inset-x-0 sm:before:hidden [view-transition-name:match-element]"
-            :class="`${index !== -1 && isBoundaryManual(index) ? 'bg-accent text-accent-foreground [&_path]:fill-accent' : 'bg-primary text-primary-foreground [&_path]:fill-primary'} ${isDragging && draggingBoundaryIndex === index ? (index !== -1 && isBoundaryManual(index) ? 'shadow-[0_0_20px_var(--accent)]' : 'shadow-[0_0_20px_var(--primary)]') : ''}`"
+            class="max-sm:flex! absolute cursor-ns-resize z-20 h-3 flex items-center -mt-1.5 justify-center shadow transition-shadow before:absolute before:-inset-y-4 before:inset-x-0 sm:before:hidden"
+            :class="[
+              isTransitioning && '[view-transition-name:match-element]',
+              `${index !== -1 && isBoundaryManual(index) ? 'bg-accent text-accent-foreground [&_path]:fill-accent' : 'bg-primary text-primary-foreground [&_path]:fill-primary'} ${isDragging && draggingBoundaryIndex === index ? (index !== -1 && isBoundaryManual(index) ? 'shadow-[0_0_20px_var(--accent)]' : 'shadow-[0_0_20px_var(--primary)]') : ''}`,
+            ]"
             :style="{
               left: pos.left + 24 + 'px',
               top: pos.top + 'px',

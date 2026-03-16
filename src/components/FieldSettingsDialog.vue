@@ -2,6 +2,7 @@
 import { useLocalStorage } from '@vueuse/core'
 import { computed } from 'vue'
 import { useAppStore } from '@/stores/app'
+import { useViewTransition } from '@/composables/useViewTransition'
 import CellTable from '@/components/CellTable.vue'
 import DialogWithSidebar from '@/components/DialogWithSidebar.vue'
 import { Button } from '@/components/ui/button'
@@ -38,11 +39,23 @@ function handleHeaderRowToggle(value: boolean) {
   store.updateColIndexes(store.colIndexes)
 }
 
+const { isTransitioning, withViewTransition } = useViewTransition()
+
 function updateColIndex(id: string, value: string | null) {
   const newIndexes = { ...store.colIndexes }
   const stringValue = String(value || 'none')
   newIndexes[id] = stringValue === 'none' ? -1 : store.inputHeaders.indexOf(stringValue)
   store.updateColIndexes(newIndexes)
+}
+
+function updateCodeColIndex(value: string | null) {
+  const wasUnmapped = store.colIndexes.code === -1
+  const willBeUnmapped = !value || value === 'none'
+  if (wasUnmapped !== willBeUnmapped) {
+    withViewTransition(() => updateColIndex('code', value))
+  } else {
+    updateColIndex('code', value)
+  }
 }
 
 function isFieldValid(fieldId: string) {
@@ -88,28 +101,33 @@ function isFieldValid(fieldId: string) {
 
         <!-- Code resolution card -->
         <div
-          :class="
-            store.colIndexes.code === -1
-              ? 'rounded-xl border p-3 space-y-3 ' +
-                (store.synthesisMode ? 'border-accent bg-accent/5' : '')
-              : 'space-y-3'
-          "
+          :class="[
+            'space-y-3',
+            store.colIndexes.code === -1 &&
+              'rounded-xl border p-3 ' + (store.synthesisMode ? 'border-accent bg-accent/5' : ''),
+            isTransitioning &&
+              '[view-transition-name:match-element] [view-transition-class:contain]',
+          ]"
         >
           <!-- Code column select -->
           <div class="space-y-2">
             <Label
               for="code"
-              :class="{
-                'text-destructive': !isFieldValid('code'),
-              }"
+              :class="[
+                !isFieldValid('code') && 'text-destructive',
+                isTransitioning && '[view-transition-name:match-element]',
+              ]"
             >
               {{ codeColumn.name }}{{ !store.synthesisMode ? ' *' : '' }}
             </Label>
             <Select
               :model-value="(store.inputHeaders[store.colIndexes.code] || 'none') as string"
-              @update:model-value="updateColIndex('code', String($event))"
+              @update:model-value="updateCodeColIndex(String($event))"
             >
-              <SelectTrigger class="w-full">
+              <SelectTrigger
+                class="w-full"
+                :class="isTransitioning && '[view-transition-name:match-element]'"
+              >
                 <SelectValue placeholder="Select column..." />
               </SelectTrigger>
               <SelectContent>

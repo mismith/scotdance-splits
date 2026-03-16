@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { useEventListener } from '@vueuse/core'
 import { AlertTriangle, Table, TableProperties, Users } from 'lucide-vue-next'
-import { computed, nextTick, onMounted, provide, ref } from 'vue'
+import { computed, onMounted, provide, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
-import { startViewTransition } from 'vue-view-transitions'
 import { useAppStore } from '@/stores/app'
+import { useViewTransition } from '@/composables/useViewTransition'
 import CategoryCard from '@/components/CategoryCard.vue'
 import ExportSettingsDialog from '@/components/ExportSettingsDialog.vue'
 import FieldSettingsDialog from '@/components/FieldSettingsDialog.vue'
@@ -88,21 +88,15 @@ onBeforeRouteLeave((to, from, next) => {
   }
 })
 
+const { isTransitioning, withViewTransition } = useViewTransition()
+
 async function toggleDancers() {
-  await nextTick()
-
-  const viewTransition = startViewTransition()
-  await viewTransition.captured
-  showDancers.value = !showDancers.value
-
-  await viewTransition.finished
+  await withViewTransition(() => { showDancers.value = !showDancers.value })
   categoryCardRef.value?.forEach((card: InstanceType<typeof CategoryCard>) => card.repaint())
 }
 
-async function dismissValidationErrors() {
-  const viewTransition = startViewTransition()
-  await viewTransition.captured
-  validationDismissed.value = true
+function dismissValidationErrors() {
+  withViewTransition(() => { validationDismissed.value = true })
 }
 
 function handleReviewErrors() {
@@ -156,7 +150,7 @@ function handleFileRejected(message: string) {
       <!-- Fixed Toolbar -->
       <header
         class="fixed top-0 left-0 right-0 z-50 grid grid-cols-[1fr_auto_1fr] items-center px-4 h-16 bg-gradient-to-b from-background to-transparent pointer-events-none *:pointer-events-auto"
-        :class="'[view-transition-name:header]'"
+        :class="isTransitioning && '[view-transition-name:header]'"
       >
         <!-- Left side -->
         <div class="flex items-center gap-1 justify-self-start">
@@ -169,7 +163,7 @@ function handleFileRejected(message: string) {
                   ? 'bg-red-600 hover:bg-red-700 text-white backdrop-blur-lg'
                   : 'bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30 backdrop-blur-lg'
                 : '',
-              hasDismissedIssues && '[view-transition-name:validation-issues]',
+              hasDismissedIssues && isTransitioning && '[view-transition-name:validation-issues]',
             ]"
             @click="hasDismissedIssues ? handleReviewErrors() : (showColumnMappingSheet = true)"
           >
@@ -196,11 +190,11 @@ function handleFileRejected(message: string) {
                   src="/touchicon.png"
                   alt="Splits Logo"
                   class="size-4"
-                  :class="'[view-transition-name:splits-logo]'"
+                  :class="(isTransitioning || store.isTransitioningRoute) && '[view-transition-name:splits-logo]'"
                 />
                 <span
                   class="text-sm font-semibold text-primary"
-                  :class="'[view-transition-name:splits-name]'"
+                  :class="(isTransitioning || store.isTransitioningRoute) && '[view-transition-name:splits-name]'"
                 >
                   Splits
                 </span>
@@ -264,7 +258,7 @@ function handleFileRejected(message: string) {
       >
         <ValidationBanner
           :issues="allValidationIssues"
-          class="[view-transition-name:validation-issues]"
+          :class="isTransitioning && '[view-transition-name:validation-issues]'"
           @review="handleReviewErrors"
           @dismiss="dismissValidationErrors"
         />
@@ -274,7 +268,7 @@ function handleFileRejected(message: string) {
       <footer
         v-if="store.hasData"
         class="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-[1fr_auto_1fr] items-center px-4 h-16 bg-gradient-to-t from-background to-transparent pointer-events-none *:pointer-events-auto"
-        :class="'[view-transition-name:footer]'"
+        :class="isTransitioning && '[view-transition-name:footer]'"
       >
         <div />
         <div />
