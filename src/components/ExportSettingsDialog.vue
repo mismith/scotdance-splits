@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useLocalStorage } from '@vueuse/core'
 import { Delete, TriangleAlert } from 'lucide-vue-next'
+import { type AcceptableValue } from 'reka-ui'
 import { computed } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { useViewTransition } from '@/composables/useViewTransition'
@@ -157,7 +158,7 @@ function clearActiveBibOverride(partitionKey: string) {
 // Export function using shared logic
 const { isTransitioning, withViewTransition } = useViewTransition()
 
-function updateBibNumberingMode(value: string | number | null) {
+function updateBibNumberingMode(value: AcceptableValue) {
   if (value === null) return
   const wasGlobal = store.bibNumberingMode === 'global'
   const willBeGlobal = String(value) === 'global'
