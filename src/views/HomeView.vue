@@ -3,9 +3,9 @@ import { useIntersectionObserver } from '@vueuse/core'
 import { Shield } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import scotdanceIcon from '@/assets/scotdance-icon.png'
 import { useAppStore } from '@/stores/app'
 import FileUpload from '@/components/FileUpload.vue'
+import ScotDanceMark from '@/components/ScotDanceMark.vue'
 import TransformationSection from '@/components/TransformationSection.vue'
 import ValidationBanner from '@/components/ValidationBanner.vue'
 import { Button } from '@/components/ui/button'
@@ -570,10 +570,10 @@ function scrollToTop() {
                   <span class="flex-1" />
                 </div>
                 <p class="text-lg md:text-xl text-muted-foreground">
-                  Export—and carry on organizing your competition.
+                  Send it in one tap—and carry on organizing your competition.
                 </p>
                 <p class="text-sm text-muted-foreground/70 max-w-lg mx-auto">
-                  Send it straight to your competition on
+                  Your groups and numbers go straight into your competition on
                   <a
                     href="https://scotdance.app"
                     target="_blank"
@@ -581,8 +581,8 @@ function scrollToTop() {
                     class="underline hover:text-muted-foreground transition-colors"
                   >
                     ScotDance.app</a
-                  >, or download a CSV file to bring into Sheets/Excel or Docs/Word and build a
-                  paper program your own way.
+                  >, ready to check and save. Or download a CSV file to bring into Sheets/Excel or
+                  Docs/Word and build a paper program your own way.
                 </p>
 
                 <!-- Made for ScotDance.app Badge -->
@@ -590,10 +590,9 @@ function scrollToTop() {
                   href="https://scotdance.app"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="inline-flex items-center gap-3 px-2 py-1 rounded-sm border-2 bg-[#1976d2] border-[#1976d2] hover:bg-[#1565c0] hover:border-[#1565c0] transition-all shadow-md hover:shadow-lg min-w-[140px]"
-                  style="border-color: #1976d2"
+                  class="scotdance inline-flex items-center gap-3 px-3 py-1.5 rounded-full bg-primary hover:bg-primary/90 transition-all shadow-md hover:shadow-lg min-w-[140px]"
                 >
-                  <img :src="scotdanceIcon" alt="ScotDance.app" class="w-8 h-8 object-contain" />
+                  <ScotDanceMark class="w-7 h-7 text-white" />
                   <div class="flex flex-col items-start -space-y-0.5">
                     <span class="text-[10px] font-medium text-white/90 uppercase tracking-wide">
                       Made for
