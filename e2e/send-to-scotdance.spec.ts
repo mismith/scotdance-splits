@@ -97,7 +97,6 @@ test.describe('Send to ScotDance.app', () => {
     page,
   }, testInfo) => {
     await openExportDialog(page, fakeState())
-    await expect(page.getByText('Your list stays on your device until you send it.')).toBeVisible()
 
     await page.getByRole('button', { name: 'Send to ScotDance.app' }).click()
     const dialog = page.getByRole('dialog', { name: SEND_DIALOG })

@@ -460,9 +460,6 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
 
     <template #submit="{ close }">
       <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-        <p class="text-xs text-muted-foreground text-center sm:text-right">
-          Your list stays on your device until you send it.
-        </p>
         <div class="flex items-center gap-2">
           <Button class="scotdance flex-1 sm:flex-initial font-semibold" @click="isSendOpen = true">
             <ScotDanceMark class="size-4" />
