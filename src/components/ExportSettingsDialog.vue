@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { useLocalStorage } from '@vueuse/core'
-import { Delete, TriangleAlert } from 'lucide-vue-next'
+import { Delete, LoaderCircle, TriangleAlert } from 'lucide-vue-next'
 import { type AcceptableValue } from 'reka-ui'
 import { computed, ref } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { useViewTransition } from '@/composables/useViewTransition'
 import DialogWithSidebar from '@/components/DialogWithSidebar.vue'
 import ScotDanceMark from '@/components/ScotDanceMark.vue'
-import SendToScotDanceDialog from '@/components/SendToScotDanceDialog.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,6 +21,7 @@ import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { type Partition } from '@/lib/input'
 import { type ExportSettings, convertToCSV, downloadCSV, generateExportData } from '@/lib/output'
+import { sendToScotDance } from '@/lib/scotdance'
 
 const props = defineProps<{
   open: boolean
@@ -183,7 +183,27 @@ function handleExportDownload() {
   downloadCSV(exportCSV(), store.exportFilename)
 }
 
-const isSendOpen = ref(false)
+// Send: ScotDance.app's own sheet opens over Splits and says where it went (lib/scotdance.ts)
+const sending = ref(false)
+const sendNote = ref<{ text: string; error?: boolean } | null>(null)
+async function handleSend() {
+  sending.value = true
+  sendNote.value = null
+  try {
+    const result = await sendToScotDance(
+      { name: inputFilename.value, text: exportCSV() },
+      { onOpen: () => (sending.value = false) },
+    )
+    if (result.sent) sendNote.value = { text: `Sent to ${result.competitionName}.` }
+  } catch {
+    sendNote.value = {
+      text: 'Couldn’t reach ScotDance.app. Check your connection and try again.',
+      error: true,
+    }
+  } finally {
+    sending.value = false
+  }
+}
 const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exportFilename}.csv`)
 </script>
 
@@ -460,9 +480,24 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
 
     <template #submit="{ close }">
       <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+        <p
+          v-if="sendNote"
+          :role="sendNote.error ? 'alert' : 'status'"
+          :class="[
+            'text-xs text-center sm:text-right',
+            sendNote.error ? 'text-destructive' : 'text-muted-foreground',
+          ]"
+        >
+          {{ sendNote.text }}
+        </p>
         <div class="flex items-center gap-2">
-          <Button class="scotdance flex-1 sm:flex-initial font-semibold" @click="isSendOpen = true">
-            <ScotDanceMark class="size-4" />
+          <Button
+            class="flex-1 sm:flex-initial font-semibold bg-[#1a6fd0] text-white hover:bg-[#1a6fd0]/90"
+            :disabled="sending"
+            @click="handleSend"
+          >
+            <LoaderCircle v-if="sending" class="size-4 animate-spin" />
+            <ScotDanceMark v-else class="size-4" />
             Send to ScotDance.app
           </Button>
           <Button
@@ -489,11 +524,6 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
             </TooltipContent>
           </Tooltip>
         </div>
-        <SendToScotDanceDialog
-          v-model:open="isSendOpen"
-          :name="inputFilename"
-          :get-text="exportCSV"
-        />
       </div>
     </template>
   </DialogWithSidebar>

@@ -590,7 +590,7 @@ function scrollToTop() {
                   href="https://scotdance.app"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="scotdance inline-flex items-center gap-3 px-3 py-1.5 rounded-full bg-primary hover:bg-primary/90 transition-all shadow-md hover:shadow-lg min-w-[140px]"
+                  class="inline-flex items-center gap-3 px-3 py-1.5 rounded-full bg-[#1a6fd0] hover:bg-[#1a6fd0]/90 transition-all shadow-md hover:shadow-lg min-w-[140px]"
                 >
                   <ScotDanceMark class="w-7 h-7 text-white" />
                   <div class="flex flex-col items-start -space-y-0.5">

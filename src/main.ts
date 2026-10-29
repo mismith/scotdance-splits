@@ -1,6 +1,4 @@
 import './assets/main.css'
-// ScotDance.app's typeface, for Send and its sign-in (only downloaded when shown)
-import '@fontsource-variable/atkinson-hyperlegible-next/wght.css'
 
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
