@@ -573,7 +573,7 @@ function scrollToTop() {
                   Export—and carry on organizing your competition.
                 </p>
                 <p class="text-sm text-muted-foreground/70 max-w-lg mx-auto">
-                  Download a CSV file to import into
+                  Send it straight to your competition on
                   <a
                     href="https://scotdance.app"
                     target="_blank"
@@ -581,8 +581,8 @@ function scrollToTop() {
                     class="underline hover:text-muted-foreground transition-colors"
                   >
                     ScotDance.app</a
-                  >, or bring the formatted data into Sheets/Excel or Docs/Word to build a paper
-                  program your own way.
+                  >, or download a CSV file to bring into Sheets/Excel or Docs/Word and build a
+                  paper program your own way.
                 </p>
 
                 <!-- Made for ScotDance.app Badge -->
@@ -616,11 +616,11 @@ function scrollToTop() {
                 <Shield class="h-8 w-8 text-accent" />
               </div>
               <h2 class="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
-                Your data never leaves your device.
+                Your data stays on your device.
               </h2>
               <p class="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto">
                 Everything happens in your browser—your data is never uploaded, stored, or accessed
-                remotely in any way.
+                remotely, unless you choose to send your finished list to ScotDance.app.
               </p>
               <p class="text-sm text-muted-foreground/70 max-w-xl mx-auto">
                 You can check for yourself since this tool is fully

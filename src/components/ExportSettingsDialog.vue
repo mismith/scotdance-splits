@@ -2,10 +2,11 @@
 import { useLocalStorage } from '@vueuse/core'
 import { Delete, TriangleAlert } from 'lucide-vue-next'
 import { type AcceptableValue } from 'reka-ui'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { useViewTransition } from '@/composables/useViewTransition'
 import DialogWithSidebar from '@/components/DialogWithSidebar.vue'
+import SendToScotDanceDialog from '@/components/SendToScotDanceDialog.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -170,12 +171,19 @@ function updateBibNumberingMode(value: AcceptableValue) {
   }
 }
 
-function handleExportDownload() {
+// The CSV Download saves, and Send to ScotDance.app sends
+function exportCSV() {
   // Extract raw values from Cell[][] for CSV conversion
   const rawData = exportPreviewData.value.map((row) => row.map((cell) => cell.value))
-  const csvContent = convertToCSV(rawData)
-  downloadCSV(csvContent, store.exportFilename)
+  return convertToCSV(rawData)
 }
+
+function handleExportDownload() {
+  downloadCSV(exportCSV(), store.exportFilename)
+}
+
+const isSendOpen = ref(false)
+const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exportFilename}.csv`)
 </script>
 
 <template>
@@ -450,30 +458,43 @@ function handleExportDownload() {
     </template>
 
     <template #submit="{ close }">
-      <div class="flex items-center gap-2 w-full sm:w-auto">
-        <Button
-          class="flex-1 sm:flex-initial"
-          @click="
-            () => {
-              handleExportDownload()
-              close()
-            }
-          "
-        >
-          Export
-        </Button>
-        <Tooltip v-if="store.bibRangeWarnings.size">
-          <TooltipTrigger as-child>
-            <TriangleAlert class="size-4 text-destructive" />
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>
-              {{ store.bibRangeWarnings.size }} bib range overlap{{
-                store.bibRangeWarnings.size > 1 ? 's' : ''
-              }}
-            </p>
-          </TooltipContent>
-        </Tooltip>
+      <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+        <p class="text-xs text-muted-foreground text-center sm:text-right">
+          Your list stays on your device until you send it.
+        </p>
+        <div class="flex items-center gap-2">
+          <Button variant="secondary" class="flex-1 sm:flex-initial" @click="isSendOpen = true">
+            Send to ScotDance.app
+          </Button>
+          <Button
+            class="flex-1 sm:flex-initial"
+            @click="
+              () => {
+                handleExportDownload()
+                close()
+              }
+            "
+          >
+            Download
+          </Button>
+          <Tooltip v-if="store.bibRangeWarnings.size">
+            <TooltipTrigger as-child>
+              <TriangleAlert class="size-4 text-destructive" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>
+                {{ store.bibRangeWarnings.size }} bib range overlap{{
+                  store.bibRangeWarnings.size > 1 ? 's' : ''
+                }}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+        <SendToScotDanceDialog
+          v-model:open="isSendOpen"
+          :name="inputFilename"
+          :get-text="exportCSV"
+        />
       </div>
     </template>
   </DialogWithSidebar>

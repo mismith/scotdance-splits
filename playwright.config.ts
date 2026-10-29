@@ -1,5 +1,8 @@
 import { defineConfig } from '@playwright/test'
 
+// Its own port and mode: `--mode e2e` swaps ScotDance.app's Firebase for a fake.
+const baseURL = 'http://localhost:5190'
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -7,7 +10,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL,
     screenshot: 'off', // we take manual screenshots for the gallery
     contextOptions: {
       reducedMotion: 'reduce',
@@ -24,8 +27,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
+    command: 'npx vite --mode e2e --port 5190 --strictPort',
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
   },
 })
