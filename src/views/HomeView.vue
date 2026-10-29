@@ -570,7 +570,7 @@ function scrollToTop() {
                   <span class="flex-1" />
                 </div>
                 <p class="text-lg md:text-xl text-muted-foreground">
-                  Send it in one tap—and carry on organizing your competition.
+                  Send it in one step—and carry on organizing your competition.
                 </p>
                 <p class="text-sm text-muted-foreground/70 max-w-lg mx-auto">
                   Your groups and numbers go straight into your competition on
