@@ -248,3 +248,53 @@
     animation-duration: 0s !important;
   }
 }
+
+/* ScotDance.app's own look (its dark theme, from scotdance web/src/style.css), for the
+   parts of Splits that are ScotDance.app: Send and its sign-in. Shared shadcn parts pick
+   it up through the same variables. */
+.scotdance {
+  --background: #161b21;
+  --foreground: #eef2f6;
+  --card: #161b21;
+  --card-foreground: #eef2f6;
+  --popover: #222a33;
+  --popover-foreground: #eef2f6;
+  --primary: #1a6fd0;
+  --primary-foreground: #ffffff;
+  --secondary: #1f262e;
+  --secondary-foreground: #eef2f6;
+  --muted: #1f262e;
+  --muted-foreground: #b4beca;
+  --accent: #1f262e;
+  --accent-foreground: #eef2f6;
+  --destructive: #ff8a7a;
+  --border: #2b343e;
+  --input: #5d6875;
+  --ring: #62aaf0;
+  /* Links and text buttons: the fill blue is too dark to read as text */
+  --scotdance-link: #62aaf0;
+  font-family:
+    'Atkinson Hyperlegible Next Variable',
+    'Atkinson Hyperlegible Next',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}
+
+/* ScotDance.app's form fields: a well with a quiet edge; focus adds a blue edge and halo */
+.scotdance-field {
+  background-color: var(--card);
+  box-shadow:
+    inset 0 0 0 1px var(--input),
+    inset 0 1px 2px rgb(16 24 40 / 0.04);
+  transition: box-shadow 150ms ease;
+  &:focus {
+    outline: none;
+    box-shadow:
+      inset 0 0 0 1.5px var(--ring),
+      0 0 0 4px color-mix(in oklab, var(--ring) 18%, transparent);
+  }
+}

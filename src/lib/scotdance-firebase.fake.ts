@@ -12,6 +12,8 @@ export interface ScotDanceFakeState {
   /** Makes the next send fail, as a rules rejection would. */
   failSend?: boolean
   sent?: { uid: string; key: string; value: Record<string, unknown> }[]
+  /** Emails a reset link was asked for. */
+  resetsSent?: string[]
 }
 
 declare global {
@@ -46,6 +48,22 @@ export const backend: ScotDanceBackend = {
     if (!account || account.password !== password) throw authError('auth/invalid-credential')
     state().signedInUid = account.uid
     return userFor(account.uid)
+  },
+  async register(email, password) {
+    const s = state()
+    if (s.accounts.some((a) => a.email.toLowerCase() === email.trim().toLowerCase())) {
+      throw authError('auth/email-already-in-use')
+    }
+    if (password.length < 6) throw authError('auth/weak-password')
+    const uid = `fake-${s.accounts.length + 1}`
+    s.accounts.push({ uid, email: email.trim(), password })
+    s.signedInUid = uid
+    return userFor(uid)
+  },
+  async resetPassword(email) {
+    const s = state()
+    s.resetsSent ??= []
+    s.resetsSent.push(email.trim())
   },
   async signOut() {
     state().signedInUid = null

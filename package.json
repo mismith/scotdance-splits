@@ -18,6 +18,7 @@
     "analyze": "ANALYZE=true vite build"
   },
   "dependencies": {
+    "@fontsource-variable/atkinson-hyperlegible-next": "^5.3.0",
     "@tailwindcss/vite": "^4.1.11",
     "@tanstack/vue-table": "^8.21.3",
     "@vueuse/core": "^13.9.0",

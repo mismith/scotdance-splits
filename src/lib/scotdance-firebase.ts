@@ -2,8 +2,10 @@ import { initializeApp } from 'firebase/app'
 import {
   browserLocalPersistence,
   connectAuthEmulator,
+  createUserWithEmailAndPassword,
   indexedDBLocalPersistence,
   initializeAuth,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth'
@@ -61,6 +63,13 @@ export const backend: ScotDanceBackend = {
   async signIn(email, password) {
     const { user } = await signInWithEmailAndPassword(auth, email, password)
     return toUser(user)
+  },
+  async register(email, password) {
+    const { user } = await createUserWithEmailAndPassword(auth, email, password)
+    return toUser(user)
+  },
+  async resetPassword(email) {
+    await sendPasswordResetEmail(auth, email)
   },
   async signOut() {
     await signOut(auth)

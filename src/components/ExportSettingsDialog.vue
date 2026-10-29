@@ -6,6 +6,7 @@ import { computed, ref } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { useViewTransition } from '@/composables/useViewTransition'
 import DialogWithSidebar from '@/components/DialogWithSidebar.vue'
+import ScotDanceMark from '@/components/ScotDanceMark.vue'
 import SendToScotDanceDialog from '@/components/SendToScotDanceDialog.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -463,7 +464,8 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
           Your list stays on your device until you send it.
         </p>
         <div class="flex items-center gap-2">
-          <Button variant="secondary" class="flex-1 sm:flex-initial" @click="isSendOpen = true">
+          <Button class="scotdance flex-1 sm:flex-initial font-semibold" @click="isSendOpen = true">
+            <ScotDanceMark class="size-4" />
             Send to ScotDance.app
           </Button>
           <Button

@@ -23,6 +23,9 @@ export interface InboxItem {
 export interface ScotDanceBackend {
   currentUser(): Promise<ScotDanceUser | null>
   signIn(_email: string, _password: string): Promise<ScotDanceUser>
+  /** Creates a ScotDance.app account and signs in with it. */
+  register(_email: string, _password: string): Promise<ScotDanceUser>
+  resetPassword(_email: string): Promise<void>
   signOut(): Promise<void>
   /** A value under the environment root, or null. */
   read(_path: string): Promise<unknown>
@@ -124,7 +127,11 @@ export function signInErrorMessage(error: unknown) {
     case 'auth/invalid-credential':
     case 'auth/wrong-password':
     case 'auth/user-not-found':
-      return 'That email and password don’t match. Check them and try again.'
+      return 'That email and password don’t match. Check them, or choose “Forgot your password?”'
+    case 'auth/email-already-in-use':
+      return 'That email already has an account. Choose “Back to sign in” to use its password.'
+    case 'auth/weak-password':
+      return 'Choose a password with at least 6 characters.'
     case 'auth/invalid-email':
       return 'That email address doesn’t look right. Check it for typos.'
     case 'auth/too-many-requests':

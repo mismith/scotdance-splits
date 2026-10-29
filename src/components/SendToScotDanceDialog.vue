@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { LoaderCircle } from 'lucide-vue-next'
+import { Eye, EyeOff, LoaderCircle } from 'lucide-vue-next'
 import { type AcceptableValue } from 'reka-ui'
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
+import ScotDanceMark from '@/components/ScotDanceMark.vue'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -12,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -42,27 +42,47 @@ const props = defineProps<{
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
 
 type Step = 'loading' | 'signIn' | 'pick' | 'sent' | 'failed'
+/** The sign-in step's three forms, as in ScotDance.app's own sign-in. */
+type Form = 'signin' | 'register' | 'forgot'
 
 const step = ref<Step>('loading')
 const user = ref<ScotDanceUser | null>(null)
 const competitions = ref<CompetitionOption[]>([])
 const competitionId = ref<string>()
+const form = ref<Form>('signin')
 const email = ref('')
 const password = ref('')
+const passwordVisible = ref(false)
+const passwordId = useId()
+const errorId = useId()
 const busy = ref(false)
 const error = ref('')
+const info = ref('')
 const sent = ref<{ url: string; competitionName: string; tabOpened: boolean }>()
+
+// ScotDance.app's capsule buttons and text buttons
+const pill = 'h-11 px-5 text-[15px] font-semibold'
+const textButton =
+  'block h-11 w-full rounded-full font-semibold text-(--scotdance-link) hover:bg-white/5'
 
 const NO_CONNECTION = 'Couldn’t reach ScotDance.app. Check your internet and try again.'
 
-const title = computed(() => (step.value === 'sent' ? 'Sent' : 'Send to ScotDance.app'))
+const title = computed(() => {
+  if (step.value === 'sent') return 'Sent'
+  if (step.value !== 'signIn') return 'Send to ScotDance.app'
+  if (form.value === 'register') return 'Create an account'
+  if (form.value === 'forgot') return 'Reset your password'
+  return 'Sign in to ScotDance.app'
+})
 
 const description = computed(() => {
   switch (step.value) {
     case 'loading':
       return 'One moment…'
     case 'signIn':
-      return 'Sign in with your ScotDance.app account.'
+      return form.value === 'register'
+        ? 'Your ScotDance.app account works here and in the app.'
+        : 'Your list goes to the competitions you manage there.'
     case 'pick':
       return competitions.value.length
         ? 'Which competition are these dancers for?'
@@ -96,7 +116,15 @@ async function start() {
     return
   }
   if (user.value) await showCompetitions()
-  else step.value = 'signIn'
+  else showForm('signin')
+}
+
+function showForm(next: Form) {
+  form.value = next
+  error.value = ''
+  info.value = ''
+  passwordVisible.value = false
+  step.value = 'signIn'
 }
 
 async function showCompetitions() {
@@ -114,11 +142,21 @@ async function showCompetitions() {
   step.value = 'pick'
 }
 
-async function signIn() {
+async function submit() {
   busy.value = true
   error.value = ''
+  info.value = ''
   try {
-    user.value = await (await loadBackend()).signIn(email.value.trim(), password.value)
+    const backend = await loadBackend()
+    if (form.value === 'forgot') {
+      await backend.resetPassword(email.value.trim())
+      info.value = `A reset link is on its way to ${email.value.trim()}.`
+      return
+    }
+    user.value =
+      form.value === 'register'
+        ? await backend.register(email.value.trim(), password.value)
+        : await backend.signIn(email.value.trim(), password.value)
     password.value = ''
   } catch (e) {
     error.value = signInErrorMessage(e)
@@ -133,8 +171,7 @@ async function signOut() {
   await (await loadBackend()).signOut()
   user.value = null
   competitions.value = []
-  error.value = ''
-  step.value = 'signIn'
+  showForm('signin')
 }
 
 function pickCompetition(value: AcceptableValue) {
@@ -171,22 +208,25 @@ async function send() {
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent class="md:max-w-md">
-      <DialogHeader class="gap-1">
-        <DialogTitle class="text-xl">{{ title }}</DialogTitle>
-        <DialogDescription>{{ description }}</DialogDescription>
+    <DialogContent class="scotdance md:max-w-md">
+      <DialogHeader class="flex-row items-center gap-3 text-left">
+        <ScotDanceMark badge class="size-10 shrink-0" />
+        <div class="space-y-0.5">
+          <DialogTitle class="text-xl font-bold">{{ title }}</DialogTitle>
+          <DialogDescription>{{ description }}</DialogDescription>
+        </div>
       </DialogHeader>
 
       <div v-if="step === 'loading'" class="flex justify-center py-4">
         <LoaderCircle class="size-6 animate-spin text-muted-foreground" />
       </div>
 
-      <!-- A real form with standard autocomplete, so saved ScotDance.app passwords are offered -->
-      <form v-else-if="step === 'signIn'" class="space-y-4" @submit.prevent="signIn">
-        <div class="space-y-2">
-          <Label for="scotdance-email">Email address</Label>
-          <Input
-            id="scotdance-email"
+      <!-- As ScotDance.app's own sign-in, with standard autocomplete, so saved
+           ScotDance.app passwords are offered -->
+      <form v-else-if="step === 'signIn'" class="space-y-3" @submit.prevent="submit">
+        <label class="block space-y-1.5">
+          <span class="text-[15px] font-medium">Email address</span>
+          <input
             v-model="email"
             type="email"
             name="email"
@@ -195,43 +235,80 @@ async function send() {
             autocapitalize="off"
             spellcheck="false"
             required
+            :aria-invalid="error ? 'true' : undefined"
+            :aria-describedby="error ? errorId : undefined"
+            class="scotdance-field h-12 w-full rounded-xl px-3 text-base"
           />
+        </label>
+
+        <!-- Not one <label>: the Show button inside it would join the field's name -->
+        <div v-if="form !== 'forgot'" class="space-y-1.5">
+          <label :for="passwordId" class="block text-[15px] font-medium">
+            {{ form === 'register' ? 'Choose a password' : 'Password' }}
+          </label>
+          <span class="relative block">
+            <input
+              :id="passwordId"
+              v-model="password"
+              :type="passwordVisible ? 'text' : 'password'"
+              name="password"
+              :autocomplete="form === 'register' ? 'new-password' : 'current-password'"
+              required
+              :aria-invalid="error ? 'true' : undefined"
+              :aria-describedby="error ? errorId : undefined"
+              class="scotdance-field h-12 w-full rounded-xl pr-24 pl-3 text-base"
+            />
+            <button
+              type="button"
+              class="absolute top-1/2 right-1 flex h-10 -translate-y-1/2 items-center gap-1 rounded-full px-3 text-sm font-semibold text-(--scotdance-link) hover:bg-white/5"
+              :aria-label="passwordVisible ? 'Hide password' : 'Show password'"
+              :aria-pressed="passwordVisible"
+              @click="passwordVisible = !passwordVisible"
+            >
+              <component :is="passwordVisible ? EyeOff : Eye" class="size-4" />
+              {{ passwordVisible ? 'Hide' : 'Show' }}
+            </button>
+          </span>
         </div>
-        <div class="space-y-2">
-          <Label for="scotdance-password">Password</Label>
-          <Input
-            id="scotdance-password"
-            v-model="password"
-            type="password"
-            name="password"
-            autocomplete="current-password"
-            required
-          />
-        </div>
-        <p v-if="error" role="alert" class="text-sm text-destructive">{{ error }}</p>
-        <p class="text-xs text-muted-foreground">
-          No account yet, or forgot your password? Head to
-          <a
-            :href="scotdanceUrl('/manage')"
-            target="_blank"
-            rel="noopener"
-            class="underline font-medium"
-            >ScotDance.app</a
-          >, then come back here.
+
+        <p v-if="error" :id="errorId" role="alert" class="text-[15px] font-medium text-destructive">
+          {{ error }}
         </p>
-        <DialogFooter>
-          <Button type="submit" :disabled="busy">{{ busy ? 'Signing in…' : 'Sign in' }}</Button>
-        </DialogFooter>
+        <p v-if="info" role="status" class="text-[15px] font-medium text-[#86dda0]">{{ info }}</p>
+
+        <Button type="submit" :disabled="busy" class="h-12 w-full text-base font-semibold">
+          <LoaderCircle v-if="busy" class="size-5 animate-spin" />
+          <template v-if="form === 'signin'">Sign in</template>
+          <template v-else-if="form === 'register'">Create account</template>
+          <template v-else>Send reset link</template>
+        </Button>
+
+        <div class="space-y-1 text-center text-[15px]">
+          <template v-if="form === 'signin'">
+            <button type="button" :class="textButton" @click="showForm('forgot')">
+              Forgot your password?
+            </button>
+            <button type="button" :class="textButton" @click="showForm('register')">
+              New here? Create an account
+            </button>
+          </template>
+          <button v-else type="button" :class="textButton" @click="showForm('signin')">
+            Back to sign in
+          </button>
+        </div>
       </form>
 
       <template v-else-if="step === 'pick'">
         <div v-if="competitions.length" class="space-y-2">
-          <Label for="scotdance-competition">Competition</Label>
+          <Label for="scotdance-competition" class="text-[15px]">Competition</Label>
           <Select :model-value="competitionId" @update:model-value="pickCompetition">
-            <SelectTrigger id="scotdance-competition" class="w-full">
+            <SelectTrigger
+              id="scotdance-competition"
+              class="scotdance-field h-12! w-full rounded-xl border-0"
+            >
               <SelectValue placeholder="Pick a competition" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent class="scotdance">
               <SelectItem v-for="c in competitions" :key="c.id" :value="c.id">
                 {{ c.name }}
                 <span v-if="c.date" class="text-muted-foreground">
@@ -240,17 +317,26 @@ async function send() {
               </SelectItem>
             </SelectContent>
           </Select>
-          <p class="text-xs text-muted-foreground">
+          <p class="text-sm text-muted-foreground">
             Your list waits in its Import dancers until you save it there.
           </p>
         </div>
-        <p v-if="error" role="alert" class="text-sm text-destructive">{{ error }}</p>
-        <p class="text-xs text-muted-foreground">
+        <p v-if="error" role="alert" class="text-[15px] font-medium text-destructive">
+          {{ error }}
+        </p>
+        <p class="text-sm text-muted-foreground">
           Signed in as {{ user?.email }}.
-          <button type="button" class="underline font-medium" @click="signOut">Sign out</button>
+          <button type="button" class="font-semibold text-(--scotdance-link)" @click="signOut">
+            Sign out
+          </button>
         </p>
         <DialogFooter>
-          <Button v-if="competitions.length" :disabled="busy || !competitionId" @click="send">
+          <Button
+            v-if="competitions.length"
+            :disabled="busy || !competitionId"
+            :class="pill"
+            @click="send"
+          >
             {{ busy ? 'Sending…' : 'Send' }}
           </Button>
           <Button
@@ -259,6 +345,7 @@ async function send() {
             :href="scotdanceUrl('/competitions/add')"
             target="_blank"
             rel="noopener"
+            :class="pill"
           >
             Add a competition
           </Button>
@@ -267,7 +354,7 @@ async function send() {
 
       <DialogFooter v-else-if="step === 'sent' && sent">
         <DialogClose as-child>
-          <Button variant="outline">Done</Button>
+          <Button variant="secondary" :class="pill">Done</Button>
         </DialogClose>
         <Button
           as="a"
@@ -275,13 +362,14 @@ async function send() {
           target="_blank"
           rel="noopener"
           :variant="sent.tabOpened ? 'secondary' : 'default'"
+          :class="pill"
         >
           Open Import dancers
         </Button>
       </DialogFooter>
 
       <DialogFooter v-else-if="step === 'failed'">
-        <Button @click="start">Try again</Button>
+        <Button :class="pill" @click="start">Try again</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
