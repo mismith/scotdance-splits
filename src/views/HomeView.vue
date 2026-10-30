@@ -6,6 +6,7 @@ import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import FileUpload from '@/components/FileUpload.vue'
 import ScotDanceMark from '@/components/ScotDanceMark.vue'
+import { scotdanceUrl } from '@/lib/scotdance'
 import TransformationSection from '@/components/TransformationSection.vue'
 import ValidationBanner from '@/components/ValidationBanner.vue'
 import { Button } from '@/components/ui/button'
@@ -575,7 +576,7 @@ function scrollToTop() {
                 <p class="text-sm text-muted-foreground/70 max-w-lg mx-auto">
                   Your groups and numbers go straight into your competition on
                   <a
-                    href="https://scotdance.app"
+                    :href="scotdanceUrl()"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="underline hover:text-muted-foreground transition-colors"
@@ -587,7 +588,7 @@ function scrollToTop() {
 
                 <!-- Made for ScotDance.app Badge -->
                 <a
-                  href="https://scotdance.app"
+                  :href="scotdanceUrl()"
                   target="_blank"
                   rel="noopener noreferrer"
                   class="inline-flex items-center gap-3 px-3 py-1.5 rounded-full bg-[#1a6fd0] hover:bg-[#1a6fd0]/90 transition-all shadow-md hover:shadow-lg min-w-[140px]"
