@@ -21,3 +21,5 @@ Environment variables (optional, see `env.d.ts`):
 
 - `VITE_SCOTDANCE_URL`: the ScotDance.app whose `embed.js` Send opens (default `https://scotdance.app`)
 
+Analytics: Cloudflare Web Analytics (cookieless) is injected at the edge by the `scotdance.app` zone's automatic setup, route changes included, so there's no snippet here and none in dev.
+
