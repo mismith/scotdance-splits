@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { Delete, LoaderCircle, TriangleAlert } from '@lucide/vue'
 import { useLocalStorage } from '@vueuse/core'
-import { Delete, LoaderCircle, TriangleAlert } from 'lucide-vue-next'
 import { type AcceptableValue } from 'reka-ui'
 import { computed, ref } from 'vue'
 import { useAppStore } from '@/stores/app'

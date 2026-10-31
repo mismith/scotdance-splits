@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AlertTriangle, X } from 'lucide-vue-next'
+import { AlertTriangle, X } from '@lucide/vue'
 import { computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import type { ValidationIssue } from '@/lib/input'

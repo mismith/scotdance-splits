@@ -1,16 +1,16 @@
 <script setup lang="ts">
+import { Shield } from '@lucide/vue'
 import { useIntersectionObserver } from '@vueuse/core'
-import { Shield } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import FileUpload from '@/components/FileUpload.vue'
 import ScotDanceMark from '@/components/ScotDanceMark.vue'
-import { scotdanceUrl } from '@/lib/scotdance'
 import TransformationSection from '@/components/TransformationSection.vue'
 import ValidationBanner from '@/components/ValidationBanner.vue'
 import { Button } from '@/components/ui/button'
 import { type ValidationIssue } from '@/lib/input'
+import { scotdanceUrl } from '@/lib/scotdance'
 
 // Refs for measuring element positions
 const logoRef = ref<HTMLElement>()

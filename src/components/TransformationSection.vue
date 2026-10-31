@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { ArrowDown, ArrowRight } from '@lucide/vue'
 import { useIntersectionObserver } from '@vueuse/core'
-import { ArrowDown, ArrowRight } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import { Button } from '@/components/ui/button'
 

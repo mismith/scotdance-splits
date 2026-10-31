@@ -404,8 +404,8 @@ export const useAppStore = defineStore('app', () => {
 
     try {
       const results = await new Promise<{ data: string[][] }>((resolve, reject) => {
+        // No `worker: true`: Papa's worker runs its own source via toString(), which breaks once minified
         parse(file, {
-          worker: true,
           complete: resolve,
           error: reject,
         })

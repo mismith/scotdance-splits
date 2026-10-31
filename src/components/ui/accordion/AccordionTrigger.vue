@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { ChevronRight } from '@lucide/vue'
 import { reactiveOmit } from '@vueuse/core'
-import { ChevronRight } from 'lucide-vue-next'
 import type { AccordionTriggerProps } from 'reka-ui'
 import { AccordionHeader, AccordionTrigger } from 'reka-ui'
 import type { HTMLAttributes } from 'vue'

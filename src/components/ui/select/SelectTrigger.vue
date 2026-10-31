@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { ChevronDown } from '@lucide/vue'
 import { reactiveOmit } from '@vueuse/core'
-import { ChevronDown } from 'lucide-vue-next'
 import { SelectIcon, SelectTrigger, type SelectTriggerProps, useForwardProps } from 'reka-ui'
 import type { HTMLAttributes } from 'vue'
 import { cn } from '@/lib/utils'

@@ -1,6 +1,6 @@
 import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
 import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript'
-import pluginImport from 'eslint-plugin-import'
+import { importX } from 'eslint-plugin-import-x'
 import pluginVue from 'eslint-plugin-vue'
 
 // To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
@@ -23,11 +23,11 @@ export default defineConfigWithVueTs(
   vueTsConfigs.recommended,
   skipFormatting,
 
-  { plugins: { import: pluginImport } },
+  { plugins: { 'import-x': importX } },
   {
     rules: {
       'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-      'import/order': [
+      'import-x/order': [
         'error',
         {
           groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],

@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { AlertTriangle, Table, TableProperties, Users } from '@lucide/vue'
 import { useEventListener } from '@vueuse/core'
-import { AlertTriangle, Table, TableProperties, Users } from 'lucide-vue-next'
 import { computed, onMounted, provide, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
+import { Delete, Minus, Plus, TriangleAlert } from '@lucide/vue'
 import { useResizeObserver } from '@vueuse/core'
-import { Delete, Minus, Plus, TriangleAlert } from 'lucide-vue-next'
 import { computed, inject, nextTick, ref, useId, watch } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { useViewTransition } from '@/composables/useViewTransition'
