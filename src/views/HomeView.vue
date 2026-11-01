@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Shield } from '@lucide/vue'
+import { ArrowUpRight, Shield } from '@lucide/vue'
 import { useIntersectionObserver } from '@vueuse/core'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -633,6 +633,23 @@ function scrollToTop() {
                 >.
               </p>
             </div>
+
+            <!-- Part of the ScotDance Toolkit: the same badge as Made for ScotDance.app, but quiet -->
+            <a
+              href="https://toolkit.scotdance.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-3 px-3 py-1.5 rounded-full bg-foreground/5 hover:bg-foreground/10 ring-1 ring-foreground/10 transition-all"
+            >
+              <img src="/toolkit.png" alt="" class="w-7 h-7 rounded-md" />
+              <div class="flex flex-col items-start -space-y-0.5">
+                <span class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                  Part of the
+                </span>
+                <span class="text-base font-semibold text-foreground"> ScotDance Toolkit </span>
+              </div>
+              <ArrowUpRight class="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            </a>
           </div>
         </section>
 

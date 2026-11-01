@@ -52,9 +52,20 @@ test.describe('Send to ScotDance.app', () => {
     expect(sent).toMatchObject({ source: 'Splits', name: 'clean-small.csv' })
 
     await page.evaluate(() =>
-      window.__close!({ sent: true, competitionId: 'winter', competitionName: 'Winter Highland' }),
+      window.__close!({
+        sent: true,
+        competitionId: 'winter',
+        competitionName: 'Winter Highland',
+        url: 'http://scotdance.test/competitions/winter/import',
+      }),
     )
-    await expect(page.getByRole('status')).toHaveText('Sent to Winter Highland.')
+    const note = page.getByRole('status')
+    await expect(note).toContainText('Sent to Winter Highland.')
+    // and opens that competition's Import dancers, where the list is waiting
+    await expect(note.getByRole('link', { name: 'Open it' })).toHaveAttribute(
+      'href',
+      `${SCOTDANCE}/competitions/winter/import`,
+    )
 
     const downloadPromise = page.waitForEvent('download')
     await page.getByRole('button', { name: 'Download' }).click()

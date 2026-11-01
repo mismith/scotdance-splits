@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Delete, LoaderCircle, TriangleAlert } from '@lucide/vue'
+import { ArrowUpRight, Delete, LoaderCircle, TriangleAlert } from '@lucide/vue'
 import { useLocalStorage } from '@vueuse/core'
 import { type AcceptableValue } from 'reka-ui'
 import { computed, ref } from 'vue'
@@ -185,7 +185,7 @@ function handleExportDownload() {
 
 // Send: ScotDance.app's own sheet opens over Splits and says where it went (lib/scotdance.ts)
 const sending = ref(false)
-const sendNote = ref<{ text: string; error?: boolean } | null>(null)
+const sendNote = ref<{ text: string; url?: string; error?: boolean } | null>(null)
 async function handleSend() {
   sending.value = true
   sendNote.value = null
@@ -194,7 +194,8 @@ async function handleSend() {
       { name: inputFilename.value, text: exportCSV() },
       { onOpen: () => (sending.value = false) },
     )
-    if (result.sent) sendNote.value = { text: `Sent to ${result.competitionName}.` }
+    if (result.sent)
+      sendNote.value = { text: `Sent to ${result.competitionName}.`, url: result.url }
   } catch {
     sendNote.value = {
       text: 'Couldn’t reach ScotDance.app. Check your connection and try again.',
@@ -489,6 +490,16 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
           ]"
         >
           {{ sendNote.text }}
+          <a
+            v-if="sendNote.url"
+            :href="sendNote.url"
+            target="_blank"
+            rel="noopener"
+            class="ml-1 inline-flex items-center gap-0.5 font-semibold text-[#1a6fd0] hover:underline"
+          >
+            Open it
+            <ArrowUpRight class="size-3.5" aria-hidden="true" />
+          </a>
         </p>
         <div class="flex items-center gap-2">
           <Button
