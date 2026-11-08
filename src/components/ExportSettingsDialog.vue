@@ -501,18 +501,23 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
             <ArrowUpRight class="size-3.5" aria-hidden="true" />
           </a>
         </p>
-        <div class="flex items-center gap-2">
+        <!-- on a phone Send takes the whole first row, Download the next -->
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- ScotDance.app's own button, as on every tool: Scott in the round left end, the words
+               centred in the rest (14px after him when the button is only as wide as its words) -->
           <Button
-            class="flex-1 sm:flex-initial font-semibold bg-[#1a6fd0] text-white hover:bg-[#1a6fd0]/90"
+            class="relative w-full sm:w-auto h-13 border-0 pl-13 sm:pl-14 pr-[26px] text-base font-bold bg-[#1a6fd0] text-white hover:bg-[#1a6fd0]/90"
             :disabled="sending"
             @click="handleSend"
           >
-            <LoaderCircle v-if="sending" class="size-4 animate-spin" />
-            <ScotDanceMark v-else class="size-4" />
+            <span class="absolute top-2.5 left-2.5 size-8" aria-hidden="true">
+              <LoaderCircle v-if="sending" class="size-8 p-1 animate-spin" />
+              <ScotDanceMark v-else class="size-8" />
+            </span>
             Send to ScotDance.app
           </Button>
           <Button
-            class="flex-1 sm:flex-initial"
+            class="flex-1 sm:flex-initial h-13 px-6 text-base"
             @click="
               () => {
                 handleExportDownload()
