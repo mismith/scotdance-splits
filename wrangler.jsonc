@@ -11,5 +11,7 @@
       "pattern": "splits.scotdance.app",
       "custom_domain": true
     }
-  ]
+  ],
+  "workers_dev": true,
+  "preview_urls": true
 }
