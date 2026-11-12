@@ -55,10 +55,7 @@ export function resolveCategoryCode(categoryName: string): string | undefined {
 }
 
 // Calculate age on a given date from a birthday string
-export function calculateAgeOnDate(
-  birthdayStr: string,
-  competitionDate: Date,
-): number | undefined {
+export function calculateAgeOnDate(birthdayStr: string, competitionDate: Date): number | undefined {
   const birthday = dayjs(birthdayStr, DATE_FORMATS, true)
   if (!birthday.isValid()) return undefined
 
@@ -116,6 +113,12 @@ export const INPUT_COLUMNS: InputColumn[] = [
     regex: /l(ast)[-_\. ]?name$/i,
   },
   {
+    id: 'studio',
+    name: 'Studio',
+    regex: /^(studio|school|dance school|teacher|studio\s*\/\s*teacher)$/i,
+    optional: true,
+  },
+  {
     id: 'code',
     name: 'Highland Scrutineer code',
     regex: /(highland)?[-_\. ]?(scrutineer(ing)?)[-_\. ]?code$/i,
@@ -138,12 +141,12 @@ export const INPUT_COLUMNS: InputColumn[] = [
   {
     id: 'timestamp',
     name: 'Registration date',
-    regex: /(^|(entry|registration)[-_\. ]?)date$/i,
+    regex: /(^|(entry|registration)[-_\. ]?)date$|^entered$/i,
   },
   {
     id: 'location',
     name: 'City / Location',
-    regex: /city|suburb/i,
+    regex: /city|suburb|^town$|^location$/i,
     optional: true,
   },
   {
@@ -218,7 +221,12 @@ export function resolveCode(row: string[], config: SynthesisConfig): string {
   }
 
   // Fall back to birthday column
-  if (age === undefined && colIndexes.birthday !== -1 && row[colIndexes.birthday] && competitionDate) {
+  if (
+    age === undefined &&
+    colIndexes.birthday !== -1 &&
+    row[colIndexes.birthday] &&
+    competitionDate
+  ) {
     age = calculateAgeOnDate(row[colIndexes.birthday], competitionDate)
   }
 

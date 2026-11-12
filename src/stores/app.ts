@@ -3,6 +3,7 @@ import dayjs from 'dayjs'
 import { parse } from 'papaparse'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import type { EntriesImport } from '@/lib/entries'
 import {
   CATEGORY_ORDER,
   SCRUTINEERING_CODE_REGEX,
@@ -62,6 +63,10 @@ export const useAppStore = defineStore('app', () => {
   const hasHeaderRow = useLocalStorage('hasHeaderRow', true)
   const inputHeaders = ref<string[]>([])
   const colIndexes = ref<Record<string, number>>({})
+
+  // Destination travels with this in-memory dataset, never with another chosen file.
+  const datasetRevision = ref(0)
+  const entriesSource = ref<{ competitionId: string; name: string }>()
 
   // Synthesis state
   const competitionDate = useLocalStorage<string | undefined>('competitionDate', undefined)
@@ -123,9 +128,9 @@ export const useAppStore = defineStore('app', () => {
     }
 
     const parts = createPartitions(categories.value, partitionedCategories.value)
-    const sortedPartitions = CATEGORY_ORDER
-      .filter((code) => parts[code])
-      .flatMap((code) => parts[code].sort((a, b) => a.ageRange[0] - b.ageRange[0]))
+    const sortedPartitions = CATEGORY_ORDER.filter((code) => parts[code]).flatMap((code) =>
+      parts[code].sort((a, b) => a.ageRange[0] - b.ageRange[0]),
+    )
 
     const { codes } = resolvedDataRowsAndCodes.value
     const dancerCounts = new Map<string, number>()
@@ -167,7 +172,8 @@ export const useAppStore = defineStore('app', () => {
   // Warnings for bib range overlaps, keyed by partitionKey of each involved group
   const bibRangeWarnings = computed((): Map<string, string> => {
     const warnings = new Map<string, string>()
-    const ranges = bibNumberingMode.value === 'per-category' ? bibCategoryRanges.value : bibGroupRanges.value
+    const ranges =
+      bibNumberingMode.value === 'per-category' ? bibCategoryRanges.value : bibGroupRanges.value
 
     // Check all pairs for overlap (ranges may not be in startBib order due to manual overrides)
     for (let i = 0; i < ranges.length; i++) {
@@ -279,11 +285,7 @@ export const useAppStore = defineStore('app', () => {
       errors.push(...categorizeErrors)
     } else if (synthesisMode.value) {
       // Synthesis mode: validate synthesized codes
-      const synthErrors = validateSynthesizedCodes(
-        dataRows,
-        colIndexes.value,
-        resolvedCodes.value,
-      )
+      const synthErrors = validateSynthesizedCodes(dataRows, colIndexes.value, resolvedCodes.value)
       errors.push(...synthErrors)
     }
 
@@ -292,6 +294,8 @@ export const useAppStore = defineStore('app', () => {
 
   // Actions
   function setInputData(files: File[], cellData: Cell[][]) {
+    datasetRevision.value++
+    entriesSource.value = undefined
     inputFiles.value = files
     inputCSV.value = cellData
 
@@ -316,6 +320,8 @@ export const useAppStore = defineStore('app', () => {
   }
 
   function clearAllData() {
+    datasetRevision.value++
+    entriesSource.value = undefined
     inputFiles.value = undefined
     inputCSV.value = undefined
     fileLoadError.value = undefined
@@ -430,7 +436,11 @@ export const useAppStore = defineStore('app', () => {
         row.map((value) => ({ value, error: false, warning: false })),
       )
 
-      // Set enriched cell data
+      // Replace only after parsing succeeds. Old group/bib overrides belong to the old list.
+      manualPartitions.value = {}
+      bibGroupRangeOverrides.value = {}
+      bibCategoryRangeOverrides.value = {}
+      hasHeaderRow.value = hasHeaders
       setInputData([file], cellData)
 
       // Update column indexes (this will reprocess data)
@@ -446,7 +456,20 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  async function loadEntries(payload: EntriesImport) {
+    const loaded = await loadFile(new File([payload.text], payload.name, { type: 'text/csv' }))
+    if (!loaded) throw new Error(fileLoadError.value || 'Could not read the entries.')
+    updateCompetitionDate(payload.date)
+    entriesSource.value = {
+      competitionId: payload.competitionId,
+      name: payload.name.replace(/\.csv$/i, ''),
+    }
+  }
+
   return {
+    datasetRevision,
+    entriesSource,
+    loadEntries,
     // Route transition
     isTransitioningRoute,
 
