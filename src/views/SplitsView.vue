@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { AlertTriangle, Table, TableProperties, Users } from '@lucide/vue'
 import { useEventListener } from '@vueuse/core'
-import { computed, onMounted, provide, ref } from 'vue'
+import { computed, onMounted, provide, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useViewTransition } from '@/composables/useViewTransition'
@@ -12,12 +12,7 @@ import FileUpload from '@/components/FileUpload.vue'
 import ValidationBanner from '@/components/ValidationBanner.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  CATEGORY_CODE_NAMES,
-  type Partition,
-  createPartitions,
-  fetchDemoCSV,
-} from '@/lib/input'
+import { CATEGORY_CODE_NAMES, type Partition, createPartitions, fetchDemoCSV } from '@/lib/input'
 
 const store = useAppStore()
 const route = useRoute()
@@ -40,6 +35,14 @@ const hasDismissedIssues = computed(
 
 // Partitions store - maps category code to age ranges
 const partitions = ref<Record<string, Partition[]>>({})
+watch(
+  () => store.datasetRevision,
+  () => {
+    partitions.value = {}
+    validationDismissed.value = false
+  },
+  { flush: 'sync' },
+)
 
 // Provide for CategoryCard components
 provide(
@@ -91,12 +94,16 @@ onBeforeRouteLeave((to, from, next) => {
 const { isTransitioning, withViewTransition } = useViewTransition()
 
 async function toggleDancers() {
-  await withViewTransition(() => { showDancers.value = !showDancers.value })
+  await withViewTransition(() => {
+    showDancers.value = !showDancers.value
+  })
   categoryCardRef.value?.forEach((card: InstanceType<typeof CategoryCard>) => card.repaint())
 }
 
 function dismissValidationErrors() {
-  withViewTransition(() => { validationDismissed.value = true })
+  withViewTransition(() => {
+    validationDismissed.value = true
+  })
 }
 
 function handleReviewErrors() {
@@ -190,11 +197,17 @@ function handleFileRejected(message: string) {
                   src="/touchicon.png"
                   alt="Splits Logo"
                   class="size-4"
-                  :class="(isTransitioning || store.isTransitioningRoute) && '[view-transition-name:splits-logo]'"
+                  :class="
+                    (isTransitioning || store.isTransitioningRoute) &&
+                    '[view-transition-name:splits-logo]'
+                  "
                 />
                 <span
                   class="text-sm font-semibold text-primary"
-                  :class="(isTransitioning || store.isTransitioningRoute) && '[view-transition-name:splits-name]'"
+                  :class="
+                    (isTransitioning || store.isTransitioningRoute) &&
+                    '[view-transition-name:splits-name]'
+                  "
                 >
                   Splits
                 </span>
@@ -225,6 +238,9 @@ function handleFileRejected(message: string) {
 
       <!-- Main content with top padding to account for fixed header -->
       <main class="pt-16 pb-16 flex-auto">
+        <p v-if="store.entriesSource" class="px-4 pt-3 text-sm text-muted-foreground" role="status">
+          From Entries · {{ store.entriesSource.name }} · {{ store.competitionDate }}
+        </p>
         <h1 class="sr-only">Age Group Splits</h1>
         <div
           v-if="!store.hasData"
@@ -242,7 +258,7 @@ function handleFileRejected(message: string) {
             v-for="categoryCode in Object.keys(CATEGORY_CODE_NAMES).filter(
               (c) => store.categories?.[c],
             )"
-            :key="categoryCode"
+            :key="`${store.datasetRevision}:${categoryCode}`"
             ref="categoryCardRef"
             :name="CATEGORY_CODE_NAMES[categoryCode]"
             :ages="store.categories?.[categoryCode] || {}"

@@ -4,5 +4,14 @@
   "assets": {
     "directory": "./dist",
     "not_found_handling": "single-page-application"
-  }
+  },
+  "account_id": "f9b1ba7aa72b02f28e63a13fd4aa7184",
+  "routes": [
+    {
+      "pattern": "splits.scotdance.app",
+      "custom_domain": true
+    }
+  ],
+  "workers_dev": true,
+  "preview_urls": true
 }

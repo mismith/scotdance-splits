@@ -54,7 +54,8 @@ function formatDancerRow(
   }
   const location = locationParts.join(', ')
 
-  return [bibNumber, ...nameParts, location].filter(Boolean)
+  // Empty cells keep their column: otherwise a studio can become a surname or location.
+  return [bibNumber, ...nameParts, location, row[colIndexes.studio] || '']
 }
 
 // Generate export-ready data structure
@@ -66,7 +67,10 @@ export function generateExportData(
   hasHeaderRow: boolean,
   resolvedCodes?: string[],
 ): (string | number)[][] {
-  const data: (string | number)[][] = []
+  const headers = settings.combineNames
+    ? ['Number', 'Full name', 'Location', 'Studio']
+    : ['Number', 'First name', 'Last name', 'Location', 'Studio']
+  const data: (string | number)[][] = [headers]
 
   // Prepare input data and resolved codes
   const inputData = hasHeaderRow ? csvData.slice(1) : csvData
@@ -81,10 +85,11 @@ export function generateExportData(
     )
 
   // Sort categories by the defined order: P, B, N, I, R, X
-  const sortedPartitions = CATEGORY_ORDER.filter((categoryCode) => partitions[categoryCode])
-    .flatMap((categoryCode) =>
-      partitions[categoryCode].sort((a, b) => a.ageRange[0] - b.ageRange[0]),
-    )
+  const sortedPartitions = CATEGORY_ORDER.filter(
+    (categoryCode) => partitions[categoryCode],
+  ).flatMap((categoryCode) =>
+    partitions[categoryCode].sort((a, b) => a.ageRange[0] - b.ageRange[0]),
+  )
 
   // Step 1: Assign bib numbers based on mode
   const bibMap = new Map<string[], number>()
@@ -127,12 +132,16 @@ export function generateExportData(
       .sort((a, b) => a.bibNumber - b.bibNumber)
 
     if (matchingRows.length === 0) continue
-    if (data.length) data.push(['', '', '', ''])
+    if (data.length > 1) data.push(Array(headers.length).fill(''))
 
     const name = `${CATEGORY_CODE_NAMES[partition.categoryCode]} ${getAgeGroupName(partition.ageRange[0], partition.ageRange[1], settings.isPrintingYears)}`
-    data.push([name, '', '', ''])
+    data.push([name, ...Array(headers.length - 1).fill('')])
 
-    data.push(...matchingRows.map(({ row, bibNumber }) => formatDancerRow(row, bibNumber, colIndexes, settings)))
+    data.push(
+      ...matchingRows.map(({ row, bibNumber }) =>
+        formatDancerRow(row, bibNumber, colIndexes, settings),
+      ),
+    )
   }
 
   return data

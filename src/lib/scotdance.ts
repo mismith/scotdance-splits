@@ -13,7 +13,12 @@ export interface SendResult {
 }
 
 interface ScotDanceEmbed {
-  send(_item: { source: string; name: string; text: string }): Promise<SendResult>
+  send(_item: {
+    source: string
+    name: string
+    text: string
+    competitionId?: string
+  }): Promise<SendResult>
 }
 
 declare global {
@@ -22,7 +27,7 @@ declare global {
   }
 }
 
-const SCOTDANCE_URL = (import.meta.env.VITE_SCOTDANCE_URL || 'https://scotdance.app').replace(
+const SCOTDANCE_URL = (import.meta.env.VITE_SCOTDANCE_URL || 'https://next.scotdance.app').replace(
   /\/+$/,
   '',
 )
@@ -58,7 +63,7 @@ function loadEmbed(): Promise<ScotDanceEmbed> {
  * `onOpen` once ScotDance.app has taken over (it shows its own loading from there).
  */
 export async function sendToScotDance(
-  item: { name: string; text: string },
+  item: { name: string; text: string; competitionId?: string },
   { onOpen }: { onOpen?: () => void } = {},
 ) {
   const embed = await loadEmbed()

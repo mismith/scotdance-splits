@@ -191,7 +191,11 @@ async function handleSend() {
   sendNote.value = null
   try {
     const result = await sendToScotDance(
-      { name: inputFilename.value, text: exportCSV() },
+      {
+        name: inputFilename.value,
+        text: exportCSV(),
+        ...(store.entriesSource ? { competitionId: store.entriesSource.competitionId } : {}),
+      },
       { onOpen: () => (sending.value = false) },
     )
     if (result.sent)
