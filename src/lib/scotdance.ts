@@ -27,7 +27,7 @@ declare global {
   }
 }
 
-const SCOTDANCE_URL = (import.meta.env.VITE_SCOTDANCE_URL || 'https://scotdance.app').replace(
+const SCOTDANCE_URL = (import.meta.env.VITE_SCOTDANCE_URL || 'https://next.scotdance.app').replace(
   /\/+$/,
   '',
 )
