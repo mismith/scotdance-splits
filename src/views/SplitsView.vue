@@ -203,13 +203,13 @@ function handleFileRejected(message: string) {
                   "
                 />
                 <span
-                  class="text-sm font-semibold text-primary"
+                  class="text-sm font-semibold text-foreground whitespace-nowrap"
                   :class="
                     (isTransitioning || store.isTransitioningRoute) &&
                     '[view-transition-name:splits-name]'
                   "
                 >
-                  Splits
+                  Splits<span class="text-primary" aria-hidden="true">.</span>
                 </span>
               </div>
             </router-link>

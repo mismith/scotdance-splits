@@ -92,10 +92,10 @@ function scrollToTop() {
               :class="{ '[view-transition-name:splits-logo]': isLogoSticky }"
             />
             <span
-              class="font-semibold text-primary"
+              class="font-semibold text-foreground whitespace-nowrap"
               :class="{ '[view-transition-name:splits-name]': isLogoSticky }"
             >
-              Splits
+              Splits<span class="text-primary" aria-hidden="true">.</span>
             </span>
           </div>
         </Button>
@@ -166,10 +166,10 @@ function scrollToTop() {
                         :class="{ '[view-transition-name:splits-logo]': !isLogoSticky }"
                       />
                       <span
-                        class="text-2xl font-semibold text-primary"
+                        class="text-2xl font-semibold text-foreground whitespace-nowrap"
                         :class="{ '[view-transition-name:splits-name]': !isLogoSticky }"
                       >
-                        Splits
+                        Splits<span class="text-primary" aria-hidden="true">.</span>
                       </span>
                     </div>
                   </Button>
@@ -646,7 +646,11 @@ function scrollToTop() {
                 <span class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
                   Part of the
                 </span>
-                <span class="text-base font-semibold text-foreground"> ScotDance Toolkit </span>
+                <span class="text-base font-semibold text-foreground"
+                  >ScotDance Toolkit<span class="text-toolkit-blue" aria-hidden="true"
+                    >.</span
+                  ></span
+                >
               </div>
               <ArrowUpRight class="w-4 h-4 text-muted-foreground" aria-hidden="true" />
             </a>
