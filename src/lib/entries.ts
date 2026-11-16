@@ -29,7 +29,7 @@ export interface EntriesImport {
 }
 
 export function entriesOrigins(dev: boolean, override?: string): string[] {
-  const origins = [ENTRIES_ORIGIN]
+  const origins = [ENTRIES_ORIGIN, 'https://dev.entries.scotdance.app']
   if (!dev) return origins
   origins.push('http://localhost:5290', 'http://127.0.0.1:5290')
   if (override) {

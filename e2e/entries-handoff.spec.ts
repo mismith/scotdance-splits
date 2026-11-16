@@ -19,6 +19,8 @@ async function openFromEntries(page: Page, origin = 'http://localhost:5290') {
   await page.context().route(`${origin}/**`, (route) =>
     route.fulfill({
       contentType: 'text/html',
+      // Preserve the hosted HTTPS origin when the test popup uses local HTTP.
+      headers: { 'Referrer-Policy': 'origin' },
       body: '<!doctype html><title>Entries stand-in</title><script>window.messages=[]; addEventListener("message", e => window.messages.push(e.data));</script>',
     }),
   )
@@ -53,6 +55,18 @@ async function download(popup: Page) {
   return readFile(await (await waiting).path(), 'utf8')
 }
 
+test('accepts the hosted development Entries roster', async ({ page }) => {
+  const popup = await openFromEntries(page, 'https://dev.entries.scotdance.app')
+  await expect.poll(async () => (await messages(page)).some((m) => m.type === 'ready')).toBe(true)
+  await send(page)
+  await expect
+    .poll(async () => (await messages(page)).some((m) => m.type === 'imported'))
+    .toBe(true)
+  await expect(popup).toHaveURL(/\/splits$/)
+  await expect(popup.getByRole('status')).toContainText('Winter Highland')
+  await popup.close({ runBeforeUnload: false })
+})
+
 // Contract validation protects the current dataset before a replacement is attempted.
 test('rejects unsupported, oversized, birthday and invalid age/date payloads', async ({ page }) => {
   await page.goto('/')
@@ -85,7 +99,10 @@ test('rejects unsupported, oversized, birthday and invalid age/date payloads', a
   )
   expect(result.competitionId).toBe('winter-2026')
   expect(result.rejected).toEqual([true, true, true, true, true, true])
-  expect(result.production).toEqual(['https://entries.scotdance.app'])
+  expect(result.production).toEqual([
+    'https://entries.scotdance.app',
+    'https://dev.entries.scotdance.app',
+  ])
   expect(result.development).not.toContain('https://evil.test')
 })
 
