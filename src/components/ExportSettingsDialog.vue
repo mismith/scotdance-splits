@@ -136,7 +136,10 @@ const activeFirstDancerRows = computed(() => {
 
 function setActiveNumberOverride(partitionKey: string, startNumber: number) {
   if (store.numberingMode === 'per-group') {
-    store.groupNumberRangeOverrides = { ...store.groupNumberRangeOverrides, [partitionKey]: startNumber }
+    store.groupNumberRangeOverrides = {
+      ...store.groupNumberRangeOverrides,
+      [partitionKey]: startNumber,
+    }
   } else if (store.numberingMode === 'per-category') {
     store.categoryNumberRangeOverrides = {
       ...store.categoryNumberRangeOverrides,
@@ -185,8 +188,11 @@ function handleExportDownload() {
 
 // Send: ScotDance.app's own sheet opens over Splits and says where it went (lib/scotdance.ts)
 const sending = ref(false)
+const sendPending = ref(false)
 const sendNote = ref<{ text: string; url?: string; error?: boolean } | null>(null)
 async function handleSend() {
+  if (sendPending.value) return
+  sendPending.value = true
   sending.value = true
   sendNote.value = null
   try {
@@ -206,6 +212,7 @@ async function handleSend() {
       error: true,
     }
   } finally {
+    sendPending.value = false
     sending.value = false
   }
 }
@@ -272,7 +279,8 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
                         class="min-w-20 field-sizing-content h-8 px-2 [font-size:inherit]! border-primary! border-2 ring-inset text-xs"
                         :class="{
                           'border-accent!':
-                            activeFirstDancerRows.get(rowIndex)!.partitionKey in activeNumberOverrides,
+                            activeFirstDancerRows.get(rowIndex)!.partitionKey in
+                            activeNumberOverrides,
                           'border-destructive!': store.numberRangeWarnings.has(
                             activeFirstDancerRows.get(rowIndex)!.partitionKey,
                           ),
@@ -352,10 +360,7 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
             >
               Numbering
             </Label>
-            <Select
-              :model-value="store.numberingMode"
-              @update:model-value="updateNumberingMode"
-            >
+            <Select :model-value="store.numberingMode" @update:model-value="updateNumberingMode">
               <SelectTrigger
                 class="w-full"
                 :class="isTransitioning && '[view-transition-name:match-element]'"
@@ -425,8 +430,7 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
             :model-value="store.minNumber"
             class="w-24"
             @update:model-value="
-              (value: string | number) =>
-                store.updateExportSettings({ minNumber: Number(value) })
+              (value: string | number) => store.updateExportSettings({ minNumber: Number(value) })
             "
           />
         </div>
@@ -508,17 +512,22 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
         <div class="flex flex-wrap items-center gap-2">
           <!-- ScotDance.app's own button, as on every tool: Scott in the round left end, the words
                centred in the rest (14px after him when the button is only as wide as its words) -->
-          <Button
-            class="relative w-full sm:w-auto h-13 border-0 pl-13 sm:pl-14 pr-[26px] text-base font-bold bg-[#1a6fd0] text-white hover:bg-[#1a6fd0]/90"
-            :disabled="sending"
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-full relative w-full sm:w-auto h-13 border-0 pl-13 sm:pl-14 pr-[26px] text-base font-bold bg-[#1a6fd0] text-white hover:bg-[#1a6fd0]/90"
+            :disabled="sendPending"
+            :aria-busy="sendPending || undefined"
             @click="handleSend"
           >
             <span class="absolute top-2.5 left-2.5 size-8" aria-hidden="true">
-              <LoaderCircle v-if="sending" class="size-8 p-1 animate-spin" />
+              <LoaderCircle
+                v-if="sendPending"
+                class="size-8 p-1 animate-spin motion-reduce:animate-none"
+              />
               <ScotDanceMark v-else class="size-8" />
             </span>
             Send to ScotDance.app
-          </Button>
+          </button>
           <Button
             class="flex-1 sm:flex-initial h-13 px-6 text-base"
             @click="

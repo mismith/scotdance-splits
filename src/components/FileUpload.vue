@@ -23,7 +23,7 @@ const fileInputRef = ref<HTMLInputElement>()
 
 const { isOverDropZone } = useDropZone(dropZoneRef, {
   onDrop(files) {
-    if (!files?.length) return
+    if (props.isLoading || !files?.length) return
     if (files.length > 1) {
       emit('file-rejected', 'Please drop a single CSV file')
     } else if (files[0].type !== props.accept) {
@@ -35,6 +35,7 @@ const { isOverDropZone } = useDropZone(dropZoneRef, {
 })
 
 function handleFileChange(event: Event) {
+  if (props.isLoading) return
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
   if (file) {
@@ -73,16 +74,11 @@ function handleFileChange(event: Event) {
 
           <Button
             size="lg"
-            :disabled="isLoading"
+            :busy="isLoading"
             @click="fileInputRef?.click()"
             class="relative px-8 py-3 text-lg"
           >
-            <span v-if="isLoading" class="flex items-center gap-2">
-              <div
-                class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
-              ></div>
-              Processing...
-            </span>
+            <span v-if="isLoading" class="flex items-center gap-2"> Processing... </span>
             <span v-else>Choose CSV File</span>
           </Button>
         </div>
