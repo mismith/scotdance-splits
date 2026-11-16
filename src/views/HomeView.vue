@@ -185,7 +185,7 @@ function scrollToTop() {
               <p
                 class="text-xl md:text-2xl shimmer-text text-muted-foreground leading-relaxed max-w-2xl mx-auto"
               >
-                Organize dancers into balanced groups with proper bib numbers.
+                Organize dancers into balanced groups and assign their numbers.
               </p>
 
               <!-- CTAs (scale down and fade out when buttons become sticky) -->
@@ -302,7 +302,7 @@ function scrollToTop() {
                 </p>
 
                 <p class="text-sm text-muted-foreground/70 max-w-lg mx-auto">
-                  Each age group gets as close to an equal number of dancers as possible. Assign bib
+                  Each age group gets as close to an equal number of dancers as possible. Assign number
                   numbers by registration order—globally, per category, or per age group. You can
                   tweak these settings and/or drag to resize groups as needed.
                 </p>

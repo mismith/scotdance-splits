@@ -40,10 +40,10 @@ const exportPreviewData = computed(() => {
   const rawData = store.validatedCSV.map((row) => row.map((cell) => cell.value))
 
   const settings: ExportSettings = {
-    minBibNumber: store.minBibNumber,
-    bibNumberingMode: store.bibNumberingMode,
-    bibGroupRanges: store.bibGroupRanges,
-    bibCategoryRanges: store.bibCategoryRanges,
+    minNumber: store.minNumber,
+    numberingMode: store.numberingMode,
+    groupNumberRanges: store.groupNumberRanges,
+    categoryNumberRanges: store.categoryNumberRanges,
     isPrintingYears: store.isPrintingYears,
     includeCountry: store.includeCountry,
     combineNames: store.combineNames,
@@ -68,32 +68,32 @@ function isGroupHeaderRow(row: { value: string }[]) {
   return row[0]?.value && row.slice(1).every((cell) => !cell.value)
 }
 
-// Active bib ranges and block size for whichever mode is active
+// Active number ranges and block size for whichever mode is active
 const activeRanges = computed(() => {
-  if (store.bibNumberingMode === 'per-group') return store.bibGroupRanges
-  if (store.bibNumberingMode === 'per-category') return store.bibCategoryRanges
+  if (store.numberingMode === 'per-group') return store.groupNumberRanges
+  if (store.numberingMode === 'per-category') return store.categoryNumberRanges
   return []
 })
 
 const activeBlockSize = computed(() => {
-  if (store.bibNumberingMode === 'per-category') return store.bibCategoryBlockSize
-  if (store.bibNumberingMode === 'per-group') return store.bibGroupBlockSize
+  if (store.numberingMode === 'per-category') return store.categoryNumberBlockSize
+  if (store.numberingMode === 'per-group') return store.groupNumberBlockSize
   return 10
 })
 
-const activeBibOverrides = computed(() => {
-  if (store.bibNumberingMode === 'per-group') return store.bibGroupRangeOverrides
-  if (store.bibNumberingMode === 'per-category') return store.bibCategoryRangeOverrides
+const activeNumberOverrides = computed(() => {
+  if (store.numberingMode === 'per-group') return store.groupNumberRangeOverrides
+  if (store.numberingMode === 'per-category') return store.categoryNumberRangeOverrides
   return {}
 })
 
-// Map first-dancer row indices to their BibRange for interactive editing
+// Map first-dancer row indices to their NumberRange for interactive editing
 const activeFirstDancerRows = computed(() => {
   const map = new Map<number, (typeof activeRanges.value)[number]>()
   const ranges = activeRanges.value
   if (ranges.length === 0) return map
 
-  if (store.bibNumberingMode === 'per-group') {
+  if (store.numberingMode === 'per-group') {
     // Per-group: ranges appear in partition order, one per group header
     let rangeIndex = 0
     let expectingFirstDancer = false
@@ -107,7 +107,7 @@ const activeFirstDancerRows = computed(() => {
         expectingFirstDancer = false
       }
     })
-  } else if (store.bibNumberingMode === 'per-category') {
+  } else if (store.numberingMode === 'per-category') {
     // Per-category: only the first group header per category gets a range
     const rangeMap = new Map(ranges.map((r) => [r.categoryCode, r]))
     const seenCategories = new Set<string>()
@@ -134,25 +134,25 @@ const activeFirstDancerRows = computed(() => {
   return map
 })
 
-function setActiveBibOverride(partitionKey: string, startBib: number) {
-  if (store.bibNumberingMode === 'per-group') {
-    store.bibGroupRangeOverrides = { ...store.bibGroupRangeOverrides, [partitionKey]: startBib }
-  } else if (store.bibNumberingMode === 'per-category') {
-    store.bibCategoryRangeOverrides = {
-      ...store.bibCategoryRangeOverrides,
-      [partitionKey]: startBib,
+function setActiveNumberOverride(partitionKey: string, startNumber: number) {
+  if (store.numberingMode === 'per-group') {
+    store.groupNumberRangeOverrides = { ...store.groupNumberRangeOverrides, [partitionKey]: startNumber }
+  } else if (store.numberingMode === 'per-category') {
+    store.categoryNumberRangeOverrides = {
+      ...store.categoryNumberRangeOverrides,
+      [partitionKey]: startNumber,
     }
   }
 }
 
-function clearActiveBibOverride(partitionKey: string) {
-  if (store.bibNumberingMode === 'per-group') {
-    store.bibGroupRangeOverrides = Object.fromEntries(
-      Object.entries(store.bibGroupRangeOverrides).filter(([key]) => key !== partitionKey),
+function clearActiveNumberOverride(partitionKey: string) {
+  if (store.numberingMode === 'per-group') {
+    store.groupNumberRangeOverrides = Object.fromEntries(
+      Object.entries(store.groupNumberRangeOverrides).filter(([key]) => key !== partitionKey),
     )
-  } else if (store.bibNumberingMode === 'per-category') {
-    store.bibCategoryRangeOverrides = Object.fromEntries(
-      Object.entries(store.bibCategoryRangeOverrides).filter(([key]) => key !== partitionKey),
+  } else if (store.numberingMode === 'per-category') {
+    store.categoryNumberRangeOverrides = Object.fromEntries(
+      Object.entries(store.categoryNumberRangeOverrides).filter(([key]) => key !== partitionKey),
     )
   }
 }
@@ -160,15 +160,15 @@ function clearActiveBibOverride(partitionKey: string) {
 // Export function using shared logic
 const { isTransitioning, withViewTransition } = useViewTransition()
 
-function updateBibNumberingMode(value: AcceptableValue) {
+function updateNumberingMode(value: AcceptableValue) {
   if (value === null) return
-  const wasGlobal = store.bibNumberingMode === 'global'
+  const wasGlobal = store.numberingMode === 'global'
   const willBeGlobal = String(value) === 'global'
   const typedValue = String(value) as 'global' | 'per-category' | 'per-group'
   if (wasGlobal !== willBeGlobal) {
-    withViewTransition(() => store.updateExportSettings({ bibNumberingMode: typedValue }))
+    withViewTransition(() => store.updateExportSettings({ numberingMode: typedValue }))
   } else {
-    store.updateExportSettings({ bibNumberingMode: typedValue })
+    store.updateExportSettings({ numberingMode: typedValue })
   }
 }
 
@@ -217,7 +217,7 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
     :open="open"
     v-model:show-sidebar="showSidebar"
     title="Export Settings"
-    description="A preview of your output CSV. Bib numbers and formatting can be adjusted as needed."
+    description="A preview of your output CSV. Adjust numbers and formatting as needed."
     @update:open="emit('update:open', $event)"
   >
     <!-- Export preview table with merged group header rows -->
@@ -231,7 +231,7 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
             :class="{
               'bg-destructive/10':
                 activeFirstDancerRows.has(rowIndex) &&
-                store.bibRangeWarnings.has(activeFirstDancerRows.get(rowIndex)!.partitionKey),
+                store.numberRangeWarnings.has(activeFirstDancerRows.get(rowIndex)!.partitionKey),
             }"
           >
             <template v-if="isGroupHeaderRow(row)">
@@ -250,50 +250,50 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
                 :key="colIndex"
                 class="px-2 py-1 align-middle truncate max-w-xs h-8 border-r border-b border-border"
               >
-                <!-- First dancer in group/category: show editable bib input instead of plain number -->
+                <!-- First dancer in group/category: show editable number input instead of plain number -->
                 <template v-if="colIndex === 0 && activeFirstDancerRows.has(rowIndex)">
                   <div class="-my-1 -mx-2">
                     <div class="flex items-center gap-1">
                       <Input
                         type="number"
                         :step="activeBlockSize"
-                        :aria-label="`Start bib for ${activeFirstDancerRows.get(rowIndex)!.label}`"
+                        :aria-label="`Starting number for ${activeFirstDancerRows.get(rowIndex)!.label}`"
                         :aria-invalid="
-                          store.bibRangeWarnings.has(
+                          store.numberRangeWarnings.has(
                             activeFirstDancerRows.get(rowIndex)!.partitionKey,
                           ) || undefined
                         "
                         :model-value="
-                          activeFirstDancerRows.get(rowIndex)!.partitionKey in activeBibOverrides
-                            ? activeFirstDancerRows.get(rowIndex)!.startBib
+                          activeFirstDancerRows.get(rowIndex)!.partitionKey in activeNumberOverrides
+                            ? activeFirstDancerRows.get(rowIndex)!.startNumber
                             : undefined
                         "
-                        :placeholder="String(activeFirstDancerRows.get(rowIndex)!.startBib)"
+                        :placeholder="String(activeFirstDancerRows.get(rowIndex)!.startNumber)"
                         class="min-w-20 field-sizing-content h-8 px-2 [font-size:inherit]! border-primary! border-2 ring-inset text-xs"
                         :class="{
                           'border-accent!':
-                            activeFirstDancerRows.get(rowIndex)!.partitionKey in activeBibOverrides,
-                          'border-destructive!': store.bibRangeWarnings.has(
+                            activeFirstDancerRows.get(rowIndex)!.partitionKey in activeNumberOverrides,
+                          'border-destructive!': store.numberRangeWarnings.has(
                             activeFirstDancerRows.get(rowIndex)!.partitionKey,
                           ),
                         }"
                         @update:model-value="
                           (value: string | number) => {
                             const key = activeFirstDancerRows.get(rowIndex)!.partitionKey
-                            if (value === '' || value === undefined) clearActiveBibOverride(key)
-                            else setActiveBibOverride(key, Number(value))
+                            if (value === '' || value === undefined) clearActiveNumberOverride(key)
+                            else setActiveNumberOverride(key, Number(value))
                           }
                         "
                       />
                       <Tooltip
                         v-if="
-                          activeFirstDancerRows.get(rowIndex)!.partitionKey in activeBibOverrides
+                          activeFirstDancerRows.get(rowIndex)!.partitionKey in activeNumberOverrides
                         "
                       >
                         <TooltipTrigger
                           class="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded-full hover:bg-accent/15 transition-colors"
                           @click="
-                            clearActiveBibOverride(
+                            clearActiveNumberOverride(
                               activeFirstDancerRows.get(rowIndex)!.partitionKey,
                             )
                           "
@@ -308,7 +308,7 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
                     </div>
                     <div
                       v-if="
-                        store.bibRangeWarnings.has(
+                        store.numberRangeWarnings.has(
                           activeFirstDancerRows.get(rowIndex)!.partitionKey,
                         )
                       "
@@ -316,7 +316,7 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
                     >
                       <TriangleAlert class="size-3 shrink-0" />
                       <span class="truncate">{{
-                        store.bibRangeWarnings.get(
+                        store.numberRangeWarnings.get(
                           activeFirstDancerRows.get(rowIndex)!.partitionKey,
                         )
                       }}</span>
@@ -335,26 +335,26 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
 
     <template #sidebar>
       <div class="space-y-4">
-        <!-- Bib numbering settings -->
+        <!-- Numbering settings -->
         <div
           :class="[
             'space-y-3',
-            store.bibNumberingMode !== 'global' && 'rounded-xl border p-3',
+            store.numberingMode !== 'global' && 'rounded-xl border p-3',
             isTransitioning &&
               '[view-transition-name:match-element] [view-transition-class:contain]',
           ]"
         >
-          <!-- Bib numbering mode -->
+          <!-- Numbering mode -->
           <div class="space-y-2">
             <Label
-              for="bib-mode"
+              for="number-mode"
               :class="isTransitioning && '[view-transition-name:match-element]'"
             >
-              Bib numbering
+              Numbering
             </Label>
             <Select
-              :model-value="store.bibNumberingMode"
-              @update:model-value="updateBibNumberingMode"
+              :model-value="store.numberingMode"
+              @update:model-value="updateNumberingMode"
             >
               <SelectTrigger
                 class="w-full"
@@ -363,32 +363,31 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="global">Global</SelectItem>
-                <SelectItem value="per-category">Per-category</SelectItem>
-                <SelectItem value="per-group">Per-group</SelectItem>
+                <SelectItem value="global">All dancers</SelectItem>
+                <SelectItem value="per-category">By category</SelectItem>
+                <SelectItem value="per-group">By age group</SelectItem>
               </SelectContent>
             </Select>
             <p
               class="text-xs text-muted-foreground"
               :class="isTransitioning && '[view-transition-name:match-element]'"
             >
-              <template v-if="store.bibNumberingMode === 'global'">
-                Bibs are numbered across all categories/groups/dancers based on reverse registration
-                order.
+              <template v-if="store.numberingMode === 'global'">
+                Numbers are assigned across all dancers in reverse registration order.
               </template>
-              <template v-else-if="store.bibNumberingMode === 'per-category'">
-                Each category gets its own bib range. If needed, edit the start number for each
+              <template v-else-if="store.numberingMode === 'per-category'">
+                Each category gets its own number range. If needed, edit the start number for each
                 category in the preview.
               </template>
               <template v-else>
-                Each age group gets its own bib range. If needed, edit the start number for each
+                Each age group gets its own number range. If needed, edit the start number for each
                 group in the preview.
               </template>
             </p>
           </div>
 
           <!-- Block size (per-category or per-group) -->
-          <div v-if="store.bibNumberingMode !== 'global'" class="flex items-center justify-between">
+          <div v-if="store.numberingMode !== 'global'" class="flex items-center justify-between">
             <div class="w-full">
               <Label for="block-size">Block size</Label>
               <p class="text-xs text-muted-foreground">Gap between each range's start number</p>
@@ -401,33 +400,33 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
               class="w-24"
               @update:model-value="
                 (value: string | number) => {
-                  if (store.bibNumberingMode === 'per-category')
-                    store.bibCategoryBlockSize = Number(value)
-                  else store.bibGroupBlockSize = Number(value)
+                  if (store.numberingMode === 'per-category')
+                    store.categoryNumberBlockSize = Number(value)
+                  else store.groupNumberBlockSize = Number(value)
                 }
               "
             />
           </div>
         </div>
 
-        <!-- Lowest bib number (used by all modes) -->
+        <!-- Starting number (used by all modes) -->
         <div
           class="flex items-center justify-between"
           :class="isTransitioning && '[view-transition-name:match-element]'"
         >
           <div class="w-full">
-            <Label for="min-bib">Lowest bib number</Label>
-            <p class="text-xs text-muted-foreground">Bib numbers count up from here</p>
+            <Label for="min-number">Starting number</Label>
+            <p class="text-xs text-muted-foreground">Numbers count up from here</p>
           </div>
           <Input
-            id="min-bib"
+            id="min-number"
             type="number"
             :step="activeBlockSize"
-            :model-value="store.minBibNumber"
+            :model-value="store.minNumber"
             class="w-24"
             @update:model-value="
               (value: string | number) =>
-                store.updateExportSettings({ minBibNumber: Number(value) })
+                store.updateExportSettings({ minNumber: Number(value) })
             "
           />
         </div>
@@ -531,14 +530,14 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
           >
             Download
           </Button>
-          <Tooltip v-if="store.bibRangeWarnings.size">
+          <Tooltip v-if="store.numberRangeWarnings.size">
             <TooltipTrigger as-child>
               <TriangleAlert class="size-4 text-destructive" />
             </TooltipTrigger>
             <TooltipContent>
               <p>
-                {{ store.bibRangeWarnings.size }} bib range overlap{{
-                  store.bibRangeWarnings.size > 1 ? 's' : ''
+                {{ store.numberRangeWarnings.size }} number range overlap{{
+                  store.numberRangeWarnings.size > 1 ? 's' : ''
                 }}
               </p>
             </TooltipContent>

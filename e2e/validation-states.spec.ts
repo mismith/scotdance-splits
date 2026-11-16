@@ -196,7 +196,7 @@ test.describe('Validation Interactions', () => {
 
     // Export settings dialog should open with title and controls
     await expect(page.getByText('Export Settings')).toBeVisible()
-    await expect(page.getByLabel('Lowest bib number')).toBeVisible()
+    await expect(page.getByLabel('Starting number')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Download' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Send to ScotDance.app' })).toBeVisible()
     await waitForAnimations(page)

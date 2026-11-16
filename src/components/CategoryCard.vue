@@ -140,8 +140,8 @@ const csvRawData = computed(() => {
     .map((row) => row.map((cell) => cell.value))
 })
 
-// Shared computed: O(1) bib number lookup map (replaces O(n) findIndex per dancer)
-const bibNumberLookup = computed(() => {
+// Shared computed: O(1) number lookup map (replaces O(n) findIndex per dancer)
+const dancerNumberLookup = computed(() => {
   const timestampCol = store.colIndexes.timestamp ?? -1
   const firstNameCol = store.colIndexes.firstName ?? 0
   const lastNameCol = store.colIndexes.lastName ?? 0
@@ -173,7 +173,7 @@ const dancersByAgeGroup = computed(() => {
 
   if (!csvRawData.value.length) return []
 
-  const lookup = bibNumberLookup.value
+  const lookup = dancerNumberLookup.value
   const cat = categoryCode.value
 
   const groups = partitionedAgeCountsArray.value.map(([ageRange]) => {
@@ -207,63 +207,63 @@ const dancersByAgeGroup = computed(() => {
           locationParts.push(row[store.colIndexes.country])
         }
 
-        let bibNumber: number
-        if (store.bibNumberingMode === 'per-group' || store.bibNumberingMode === 'per-category') {
-          bibNumber = 0 // placeholder, reassigned below
+        let dancerNumber: number
+        if (store.numberingMode === 'per-group' || store.numberingMode === 'per-category') {
+          dancerNumber = 0 // placeholder, reassigned below
         } else {
-          // Global mode: count up from minBibNumber, first registered = highest
+          // Global mode: count up from minNumber, first registered = highest
           const key = `${row[timestampCol] ?? ''}|${row[firstNameCol]}|${row[lastNameCol]}`
           const globalIndex = lookup.get(key) ?? 0
           const totalCount = lookup.size
-          bibNumber = (store.minBibNumber || 100) + (totalCount - 1 - globalIndex)
+          dancerNumber = (store.minNumber || 100) + (totalCount - 1 - globalIndex)
         }
 
         return {
           firstName: row[firstNameCol] || '',
           lastName: row[lastNameCol] || '',
           location: locationParts.filter(Boolean).join(', ') || 'Unknown',
-          bibNumber,
+          number: dancerNumber,
         }
       })
 
-    // For per-group mode, reassign bibs by local index (already sorted by timestamp)
-    if (store.bibNumberingMode === 'per-group') {
+    // For per-group mode, reassign numbers by local index (already sorted by timestamp)
+    if (store.numberingMode === 'per-group') {
       const partKey = getPartitionKey(cat, [minAge, maxAge])
-      const range = store.bibGroupRanges.find((r) => r.partitionKey === partKey)
-      const startBib = range?.startBib ?? 100
-      // First registered (index 0) → highest bib in range
+      const range = store.groupNumberRanges.find((r) => r.partitionKey === partKey)
+      const startNumber = range?.startNumber ?? 100
+      // First registered (index 0) → highest number in range
       dancers.forEach((d, i) => {
-        d.bibNumber = startBib + (dancers.length - 1 - i)
+        d.number = startNumber + (dancers.length - 1 - i)
       })
     }
 
     return dancers
   })
 
-  // For per-category mode, assign bibs across all age groups in this category together
-  if (store.bibNumberingMode === 'per-category') {
-    const catRange = store.bibCategoryRanges.find((r) => r.categoryCode === cat)
-    const startBib = catRange?.startBib ?? 100
+  // For per-category mode, assign numbers across all age groups in this category together
+  if (store.numberingMode === 'per-category') {
+    const catRange = store.categoryNumberRanges.find((r) => r.categoryCode === cat)
+    const startNumber = catRange?.startNumber ?? 100
 
-    // Flatten all dancers, assign bibs by timestamp order across the whole category
+    // Flatten all dancers, assign numbers by timestamp order across the whole category
     const allDancers = groups.flatMap((g: (typeof groups)[number], groupIndex: number) =>
       g.map((d: (typeof g)[number]) => ({ ...d, groupIndex })),
     )
-    // Bibs assigned by flat index (groups already timestamp-sorted, category order preserved)
-    allDancers.forEach((d: { bibNumber: number }, i: number) => {
-      d.bibNumber = startBib + (allDancers.length - 1 - i)
+    // Numbers assigned by flat index (groups already timestamp-sorted, category order preserved)
+    allDancers.forEach((d: { number: number }, i: number) => {
+      d.number = startNumber + (allDancers.length - 1 - i)
     })
 
-    // Distribute back into groups and sort by bib number
+    // Distribute back into groups and sort by number
     return groups.map((_, groupIndex) =>
       allDancers
         .filter((d) => d.groupIndex === groupIndex)
-        .sort((a, b) => a.bibNumber - b.bibNumber),
+        .sort((a, b) => a.number - b.number),
     )
   }
 
-  // For per-group or global mode, sort each group by bib number
-  return groups.map((dancers) => dancers.sort((a, b) => a.bibNumber - b.bibNumber))
+  // For per-group or global mode, sort each group by number
+  return groups.map((dancers) => dancers.sort((a, b) => a.number - b.number))
 })
 
 const colsRef = ref()

@@ -41,49 +41,49 @@ const beforeData = [
   { name: 'Hannah Martin', category: 'Beginner', age: 11, date: daysAgo(1) },
 ]
 
-type BibMode = 'global' | 'per-category' | 'per-group'
-const bibMode = ref<BibMode>('global')
+type NumberingMode = 'global' | 'per-category' | 'per-group'
+const numberingMode = ref<NumberingMode>('global')
 
-const bibModeOptions: { value: BibMode; label: string }[] = [
-  { value: 'global', label: 'Global' },
+const numberingModeOptions: { value: NumberingMode; label: string }[] = [
+  { value: 'global', label: 'All dancers' },
   { value: 'per-category', label: 'Per Category' },
   { value: 'per-group', label: 'Per Group' },
 ]
 
-// Bibs assigned by registration order (oldest registration = highest bib within range)
+// Numbers assigned by registration order (oldest registration = highest number within range)
 // Listed ascending within each group on the right
 interface AfterGroup {
   label: string
-  dancers: { bib: number; name: string }[]
+  dancers: { number: number; name: string }[]
 }
 
-const afterGroupsByMode: Record<BibMode, AfterGroup[]> = {
+const afterGroupsByMode: Record<NumberingMode, AfterGroup[]> = {
   global: [
     {
       label: 'Beginner 7 & Under 9 Years',
       dancers: [
-        { bib: 102, name: 'Lily Wright' },
-        { bib: 106, name: 'Olivia Hill' },
-        { bib: 110, name: 'Grace Brown' },
-        { bib: 112, name: 'Isla Morrison' },
+        { number: 102, name: 'Lily Wright' },
+        { number: 106, name: 'Olivia Hill' },
+        { number: 110, name: 'Grace Brown' },
+        { number: 112, name: 'Isla Morrison' },
       ],
     },
     {
       label: 'Beginner 10 & 11 Years',
       dancers: [
-        { bib: 101, name: 'Hannah Martin' },
-        { bib: 104, name: 'Hannah Scott' },
-        { bib: 105, name: 'Isabella Clark' },
-        { bib: 108, name: 'Sophie King' },
+        { number: 101, name: 'Hannah Martin' },
+        { number: 104, name: 'Hannah Scott' },
+        { number: 105, name: 'Isabella Clark' },
+        { number: 108, name: 'Sophie King' },
       ],
     },
     {
       label: 'Premier 15 Years & Over',
       dancers: [
-        { bib: 103, name: 'Megan Grant' },
-        { bib: 107, name: 'Ruby Walker' },
-        { bib: 109, name: 'Freya Scott' },
-        { bib: 111, name: 'Angus Clark' },
+        { number: 103, name: 'Megan Grant' },
+        { number: 107, name: 'Ruby Walker' },
+        { number: 109, name: 'Freya Scott' },
+        { number: 111, name: 'Angus Clark' },
       ],
     },
   ],
@@ -91,28 +91,28 @@ const afterGroupsByMode: Record<BibMode, AfterGroup[]> = {
     {
       label: 'Beginner 7 & Under 9 Years',
       dancers: [
-        { bib: 101, name: 'Lily Wright' },
-        { bib: 104, name: 'Olivia Hill' },
-        { bib: 106, name: 'Grace Brown' },
-        { bib: 107, name: 'Isla Morrison' },
+        { number: 101, name: 'Lily Wright' },
+        { number: 104, name: 'Olivia Hill' },
+        { number: 106, name: 'Grace Brown' },
+        { number: 107, name: 'Isla Morrison' },
       ],
     },
     {
       label: 'Beginner 10 & 11 Years',
       dancers: [
-        { bib: 100, name: 'Hannah Martin' },
-        { bib: 102, name: 'Hannah Scott' },
-        { bib: 103, name: 'Isabella Clark' },
-        { bib: 105, name: 'Sophie King' },
+        { number: 100, name: 'Hannah Martin' },
+        { number: 102, name: 'Hannah Scott' },
+        { number: 103, name: 'Isabella Clark' },
+        { number: 105, name: 'Sophie King' },
       ],
     },
     {
       label: 'Premier 15 Years & Over',
       dancers: [
-        { bib: 110, name: 'Megan Grant' },
-        { bib: 111, name: 'Ruby Walker' },
-        { bib: 112, name: 'Freya Scott' },
-        { bib: 113, name: 'Angus Clark' },
+        { number: 110, name: 'Megan Grant' },
+        { number: 111, name: 'Ruby Walker' },
+        { number: 112, name: 'Freya Scott' },
+        { number: 113, name: 'Angus Clark' },
       ],
     },
   ],
@@ -120,34 +120,34 @@ const afterGroupsByMode: Record<BibMode, AfterGroup[]> = {
     {
       label: 'Beginner 7 & Under 9 Years',
       dancers: [
-        { bib: 100, name: 'Lily Wright' },
-        { bib: 101, name: 'Olivia Hill' },
-        { bib: 102, name: 'Grace Brown' },
-        { bib: 103, name: 'Isla Morrison' },
+        { number: 100, name: 'Lily Wright' },
+        { number: 101, name: 'Olivia Hill' },
+        { number: 102, name: 'Grace Brown' },
+        { number: 103, name: 'Isla Morrison' },
       ],
     },
     {
       label: 'Beginner 10 & 11 Years',
       dancers: [
-        { bib: 110, name: 'Hannah Martin' },
-        { bib: 111, name: 'Hannah Scott' },
-        { bib: 112, name: 'Isabella Clark' },
-        { bib: 113, name: 'Sophie King' },
+        { number: 110, name: 'Hannah Martin' },
+        { number: 111, name: 'Hannah Scott' },
+        { number: 112, name: 'Isabella Clark' },
+        { number: 113, name: 'Sophie King' },
       ],
     },
     {
       label: 'Premier 15 Years & Over',
       dancers: [
-        { bib: 120, name: 'Megan Grant' },
-        { bib: 121, name: 'Ruby Walker' },
-        { bib: 122, name: 'Freya Scott' },
-        { bib: 123, name: 'Angus Clark' },
+        { number: 120, name: 'Megan Grant' },
+        { number: 121, name: 'Ruby Walker' },
+        { number: 122, name: 'Freya Scott' },
+        { number: 123, name: 'Angus Clark' },
       ],
     },
   ],
 }
 
-const afterGroups = computed(() => afterGroupsByMode[bibMode.value])
+const afterGroups = computed(() => afterGroupsByMode[numberingMode.value])
 </script>
 
 <template>
@@ -237,11 +237,11 @@ const afterGroups = computed(() => afterGroupsByMode[bibMode.value])
               <div class="space-y-1">
                 <div
                   v-for="dancer in group.dancers"
-                  :key="dancer.bib"
+                  :key="dancer.number"
                   class="flex items-center gap-3 text-[13px] py-1 px-1"
                 >
                   <span class="font-mono text-primary/50 w-7 text-right text-xs tabular-nums">{{
-                    dancer.bib
+                    dancer.number
                   }}</span>
                   <span>{{ dancer.name }}</span>
                 </div>
@@ -250,19 +250,19 @@ const afterGroups = computed(() => afterGroupsByMode[bibMode.value])
           </div>
         </div>
 
-        <!-- Bib mode toggle -->
+        <!-- Number mode toggle -->
         <div class="flex flex-col items-center justify-center gap-2 mt-3">
           <span class="text-[10px] uppercase tracking-widest text-muted-foreground/60"
-            >Bib numbering</span
+            >Numbering</span
           >
           <div class="inline-flex rounded-lg border border-border/80 overflow-hidden">
             <Button
-              v-for="option in bibModeOptions"
+              v-for="option in numberingModeOptions"
               :key="option.value"
               size="sm"
-              :variant="bibMode === option.value ? 'default' : 'ghost'"
+              :variant="numberingMode === option.value ? 'default' : 'ghost'"
               class="rounded-none text-xs px-3 h-7"
-              @click="bibMode = option.value"
+              @click="numberingMode = option.value"
             >
               {{ option.label }}
             </Button>

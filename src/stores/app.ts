@@ -15,11 +15,11 @@ import {
   isSynthesisMode,
 } from '@/lib/input'
 import {
-  type BibNumberingMode,
-  type BibRange,
-  DEFAULT_MIN_BIB,
-  calculateBibCategoryRanges,
-  calculateBibGroupRanges,
+  type NumberingMode,
+  type NumberRange,
+  DEFAULT_MIN_NUMBER,
+  calculateCategoryNumberRanges,
+  calculateGroupNumberRanges,
   getPartitionKey,
 } from '@/lib/output'
 import type { Cell } from '@/lib/types'
@@ -37,7 +37,7 @@ export interface DancerData {
   location: string
   code: string
   age?: number
-  bibNumber?: number
+  dancerNumber?: number
   timestamp?: string
 }
 
@@ -75,13 +75,14 @@ export const useAppStore = defineStore('app', () => {
   // Layout
   const isDesktop = useMediaQuery('(min-width: 768px)')
 
+  // Keep legacy storage keys so existing numbering preferences survive the terminology change.
   // Export configuration
-  const minBibNumber = ref<number>(DEFAULT_MIN_BIB)
-  const bibNumberingMode = useLocalStorage<BibNumberingMode>('bibNumberingMode', 'global')
-  const bibGroupRangeOverrides = ref<Record<string, number>>({})
-  const bibCategoryRangeOverrides = ref<Record<string, number>>({})
-  const bibCategoryBlockSize = useLocalStorage('bibCategoryBlockSize', 10)
-  const bibGroupBlockSize = useLocalStorage('bibGroupBlockSize', 10)
+  const minNumber = ref<number>(DEFAULT_MIN_NUMBER)
+  const numberingMode = useLocalStorage<NumberingMode>('bibNumberingMode', 'global')
+  const groupNumberRangeOverrides = ref<Record<string, number>>({})
+  const categoryNumberRangeOverrides = ref<Record<string, number>>({})
+  const categoryNumberBlockSize = useLocalStorage('bibCategoryBlockSize', 10)
+  const groupNumberBlockSize = useLocalStorage('bibGroupBlockSize', 10)
   const isPrintingYears = useLocalStorage('isPrintingYears', true)
   const includeCountry = useLocalStorage('includeCountry', false)
   const combineNames = useLocalStorage('combineNames', false)
@@ -110,7 +111,7 @@ export const useAppStore = defineStore('app', () => {
     return processedDancers.value.length
   })
 
-  // Shared: resolved data rows and codes for bib range calculations
+  // Shared: resolved data rows and codes for number range calculations
   const resolvedDataRowsAndCodes = computed(() => {
     if (!inputCSV.value) return null
     const rawData = inputCSV.value.map((row) => row.map((cell) => cell.value))
@@ -121,8 +122,8 @@ export const useAppStore = defineStore('app', () => {
     return { dataRows, codes }
   })
 
-  // Computed bib group ranges for per-group mode
-  const bibGroupRanges = computed((): BibRange[] => {
+  // Computed number group ranges for per-group mode
+  const groupNumberRanges = computed((): NumberRange[] => {
     if (!categories.value || !partitionedCategories.value || !resolvedDataRowsAndCodes.value) {
       return []
     }
@@ -139,17 +140,17 @@ export const useAppStore = defineStore('app', () => {
       dancerCounts.set(key, codes.filter((code) => partition.codes.includes(code)).length)
     }
 
-    return calculateBibGroupRanges(
+    return calculateGroupNumberRanges(
       sortedPartitions,
       dancerCounts,
-      bibGroupRangeOverrides.value,
-      minBibNumber.value,
-      bibGroupBlockSize.value,
+      groupNumberRangeOverrides.value,
+      minNumber.value,
+      groupNumberBlockSize.value,
     )
   })
 
-  // Computed bib category ranges for per-category mode
-  const bibCategoryRanges = computed((): BibRange[] => {
+  // Computed number category ranges for per-category mode
+  const categoryNumberRanges = computed((): NumberRange[] => {
     if (!categories.value || !resolvedDataRowsAndCodes.value) return []
 
     const presentCategories = CATEGORY_ORDER.filter((code) => categories.value![code])
@@ -160,31 +161,31 @@ export const useAppStore = defineStore('app', () => {
       dancerCounts.set(categoryCode, codes.filter((code) => code.startsWith(categoryCode)).length)
     }
 
-    return calculateBibCategoryRanges(
+    return calculateCategoryNumberRanges(
       presentCategories,
       dancerCounts,
-      bibCategoryRangeOverrides.value,
-      minBibNumber.value,
-      bibCategoryBlockSize.value,
+      categoryNumberRangeOverrides.value,
+      minNumber.value,
+      categoryNumberBlockSize.value,
     )
   })
 
-  // Warnings for bib range overlaps, keyed by partitionKey of each involved group
-  const bibRangeWarnings = computed((): Map<string, string> => {
+  // Warnings for number range overlaps, keyed by partitionKey of each involved group
+  const numberRangeWarnings = computed((): Map<string, string> => {
     const warnings = new Map<string, string>()
     const ranges =
-      bibNumberingMode.value === 'per-category' ? bibCategoryRanges.value : bibGroupRanges.value
+      numberingMode.value === 'per-category' ? categoryNumberRanges.value : groupNumberRanges.value
 
-    // Check all pairs for overlap (ranges may not be in startBib order due to manual overrides)
+    // Check all pairs for overlap (ranges may not be in startNumber order due to manual overrides)
     for (let i = 0; i < ranges.length; i++) {
       for (let j = i + 1; j < ranges.length; j++) {
         const a = ranges[i]
         const b = ranges[j]
-        const aEnd = a.startBib + a.dancerCount - 1
-        const bEnd = b.startBib + b.dancerCount - 1
+        const aEnd = a.startNumber + a.dancerCount - 1
+        const bEnd = b.startNumber + b.dancerCount - 1
 
-        if (a.startBib <= bEnd && b.startBib <= aEnd) {
-          const message = `"${a.label}" (${a.startBib}-${aEnd}) overlaps with "${b.label}" (${b.startBib}-${bEnd})`
+        if (a.startNumber <= bEnd && b.startNumber <= aEnd) {
+          const message = `"${a.label}" (${a.startNumber}-${aEnd}) overlaps with "${b.label}" (${b.startNumber}-${bEnd})`
           if (!warnings.has(a.partitionKey)) {
             warnings.set(a.partitionKey, message)
           }
@@ -331,8 +332,8 @@ export const useAppStore = defineStore('app', () => {
     inputHeaders.value = []
     colIndexes.value = {}
     manualPartitions.value = {}
-    bibGroupRangeOverrides.value = {}
-    bibCategoryRangeOverrides.value = {}
+    groupNumberRangeOverrides.value = {}
+    categoryNumberRangeOverrides.value = {}
     resolvedCodes.value = []
     competitionDate.value = undefined
   }
@@ -357,7 +358,7 @@ export const useAppStore = defineStore('app', () => {
       const partitionedCats = autoPartitionCategories(cats)
 
       setProcessedData(cats, partitionedCats)
-      minBibNumber.value = DEFAULT_MIN_BIB
+      minNumber.value = DEFAULT_MIN_NUMBER
     }
   }
 
@@ -368,17 +369,17 @@ export const useAppStore = defineStore('app', () => {
   }
 
   function updateExportSettings(settings: {
-    minBibNumber?: number
-    bibNumberingMode?: BibNumberingMode
+    minNumber?: number
+    numberingMode?: NumberingMode
     isPrintingYears?: boolean
     includeCountry?: boolean
     combineNames?: boolean
   }) {
-    if (settings.minBibNumber !== undefined) {
-      minBibNumber.value = settings.minBibNumber
+    if (settings.minNumber !== undefined) {
+      minNumber.value = settings.minNumber
     }
-    if (settings.bibNumberingMode !== undefined) {
-      bibNumberingMode.value = settings.bibNumberingMode
+    if (settings.numberingMode !== undefined) {
+      numberingMode.value = settings.numberingMode
     }
     if (settings.isPrintingYears !== undefined) {
       isPrintingYears.value = settings.isPrintingYears
@@ -436,10 +437,10 @@ export const useAppStore = defineStore('app', () => {
         row.map((value) => ({ value, error: false, warning: false })),
       )
 
-      // Replace only after parsing succeeds. Old group/bib overrides belong to the old list.
+      // Replace only after parsing succeeds. Old group/number overrides belong to the old list.
       manualPartitions.value = {}
-      bibGroupRangeOverrides.value = {}
-      bibCategoryRangeOverrides.value = {}
+      groupNumberRangeOverrides.value = {}
+      categoryNumberRangeOverrides.value = {}
       hasHeaderRow.value = hasHeaders
       setInputData([file], cellData)
 
@@ -486,15 +487,15 @@ export const useAppStore = defineStore('app', () => {
     hasHeaderRow,
     inputHeaders,
     colIndexes,
-    minBibNumber,
-    bibNumberingMode,
-    bibGroupRanges,
-    bibGroupRangeOverrides,
-    bibCategoryRanges,
-    bibCategoryRangeOverrides,
-    bibCategoryBlockSize,
-    bibGroupBlockSize,
-    bibRangeWarnings,
+    minNumber,
+    numberingMode,
+    groupNumberRanges,
+    groupNumberRangeOverrides,
+    categoryNumberRanges,
+    categoryNumberRangeOverrides,
+    categoryNumberBlockSize,
+    groupNumberBlockSize,
+    numberRangeWarnings,
     isPrintingYears,
     includeCountry,
     combineNames,

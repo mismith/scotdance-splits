@@ -1,12 +1,12 @@
 # Splits
 
-Free online tool that splits highland dance competition registrations into age groups with bib numbers.
+Free online tool that splits highland dance competition registrations into age groups with numbers.
 
 ## Features
 
 - **CSV Import**: Upload files from eventry.net, HDComps.com, or any registration system
 - **Auto-grouping**: Algorithm splits dancers into balanced age groups
-- **Bib numbering**: Reverse-registration-order with customizable starting numbers
+- **Numbering**: Reverse-registration-order with customizable starting numbers
 - **Privacy-first**: All processing happens locally; your data stays on your computer until you send it
 - **Entries hand-off**: Receive paid dancers from ScotDance Entries, retaining the competition date, studio and destination.
 - **Send to ScotDance.app**: ScotDance.app's own sheet opens over Splits (its `embed.js`): sign in and review the import. Lists from Entries already name their competition; manual uploads keep the picker.

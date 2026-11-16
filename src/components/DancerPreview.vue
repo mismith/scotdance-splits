@@ -1,6 +1,6 @@
 <script setup lang="ts">
 export interface DancerData {
-  bibNumber: number
+  number: number
   firstName: string
   lastName: string
   location: string
