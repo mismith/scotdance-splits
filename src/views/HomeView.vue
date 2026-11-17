@@ -303,8 +303,8 @@ function scrollToTop() {
 
                 <p class="text-sm text-muted-foreground/70 max-w-lg mx-auto">
                   Each age group gets as close to an equal number of dancers as possible. Assign
-                  number numbers by registration order—globally, per category, or per age group. You
-                  can tweak these settings and/or drag to resize groups as needed.
+                  numbers by registration order—globally, per category, or per age group. You can
+                  tweak these settings and/or drag to resize groups as needed.
                 </p>
 
                 <!-- Visual diagram showing splitting -->

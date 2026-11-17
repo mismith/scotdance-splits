@@ -187,8 +187,10 @@ function handleExportDownload() {
 }
 
 // Send: ScotDance.app's own sheet opens over Splits and says where it went (lib/scotdance.ts)
-const sending = ref(false)
+// `sendPending` for the whole send, so a second press does nothing; `sending` (the spinner)
+// only until ScotDance.app's sheet opens, which shows its own loading from there
 const sendPending = ref(false)
+const sending = ref(false)
 const sendNote = ref<{ text: string; url?: string; error?: boolean } | null>(null)
 async function handleSend() {
   if (sendPending.value) return
@@ -512,22 +514,21 @@ const inputFilename = computed(() => store.inputFiles?.[0]?.name || `${store.exp
         <div class="flex flex-wrap items-center gap-2">
           <!-- ScotDance.app's own button, as on every tool: Scott in the round left end, the words
                centred in the rest (14px after him when the button is only as wide as its words) -->
-          <button
-            type="button"
-            class="inline-flex items-center justify-center rounded-full relative w-full sm:w-auto h-13 border-0 pl-13 sm:pl-14 pr-[26px] text-base font-bold bg-[#1a6fd0] text-white hover:bg-[#1a6fd0]/90"
+          <Button
+            class="relative w-full sm:w-auto h-13 border-0 pl-13 sm:pl-14 pr-[26px] text-base font-bold bg-[#1a6fd0] text-white hover:bg-[#1a6fd0]/90"
             :disabled="sendPending"
-            :aria-busy="sendPending || undefined"
+            :aria-busy="sending || undefined"
             @click="handleSend"
           >
             <span class="absolute top-2.5 left-2.5 size-8" aria-hidden="true">
               <LoaderCircle
-                v-if="sendPending"
+                v-if="sending"
                 class="size-8 p-1 animate-spin motion-reduce:animate-none"
               />
               <ScotDanceMark v-else class="size-8" />
             </span>
             Send to ScotDance.app
-          </button>
+          </Button>
           <Button
             class="flex-1 sm:flex-initial h-13 px-6 text-base"
             @click="
